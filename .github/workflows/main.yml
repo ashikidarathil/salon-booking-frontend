@@ -24,10 +24,10 @@ jobs:
         run: npm ci
 
       - name: Typecheck
-        run: npm run typecheck --if-present
+        run: npm run typecheck
 
-      - name: Lint
-        run: npm run lint --if-present
+      - name: Build
+        run: npm run build
 
       - name: Build
         run: npm run build
