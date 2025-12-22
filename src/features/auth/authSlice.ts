@@ -12,7 +12,6 @@ const initialState: AuthState = {
   loading: false,
   error: null,
   isAuthenticated: !!token,
-
   forgotPasswordSuccess: false,
   resetPasswordSuccess: false,
 };
