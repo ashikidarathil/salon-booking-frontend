@@ -14,7 +14,7 @@ export default function ProtectedRoute({
   const { token, user } = useAppSelector((state) => state.auth);
 
   if (!token || !user) {
-    return null; // ⛔ do NOT redirect immediately
+    return null;
   }
 
   if (!roles.includes(user.role)) {

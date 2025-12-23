@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "clean": "rm -rf node_modules dist node_modules/.vite node_modules/.cache tsconfig.tsbuildinfo",
     "build": "vite build",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
