@@ -1,34 +1,3 @@
-// import { useAppDispatch } from '../../app/hooks';
-// import { logout } from '../../features/auth/authThunks';
-// import { useNavigate } from 'react-router-dom';
-
-// export default function AdminDashboard() {
-//   const dispatch = useAppDispatch();
-//   const navigate = useNavigate();
-
-//   const handleLogout = async () => {
-//     await dispatch(logout());
-//     navigate('/login');
-//   };
-
-//   return (
-//     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-//       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-//         <h2 className="mb-6 text-2xl font-bold text-center text-gray-800">Admin Dashboard</h2>
-
-//         <p className="mb-6 text-center text-grey-600">Welcome, Admin! You have full access.</p>
-
-//         <button
-//           onClick={handleLogout}
-//           className="w-full px-4 py-2 font-medium text-white transition-colors duration-200 bg-red-600 rounded-md hover:bg-red-700"
-//         >
-//           Logout
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
 'use client';
 
 import {
