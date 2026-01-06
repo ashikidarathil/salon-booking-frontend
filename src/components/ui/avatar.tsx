@@ -14,9 +14,11 @@ export function AvatarImage({ src }: { src?: string }) {
   return <img src={src} alt="" className="object-cover w-full h-full" />;
 }
 
-export function AvatarFallback({ children }: { children: React.ReactNode }) {
+export function AvatarFallback({ children, className }: UIProps) {
   return (
-    <div className="flex items-center justify-center w-full h-full text-sm bg-muted">
+    <div
+      className={cn('flex items-center justify-center w-full h-full text-sm bg-muted', className)}
+    >
       {children}
     </div>
   );

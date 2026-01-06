@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { forgotPassword } from '../../features/auth/authThunks';
+import { showSuccess, showError, showLoading, closeLoading } from '@/utils/swal';
 
 export default function ForgotPasswordPage() {
   const dispatch = useAppDispatch();
@@ -11,14 +12,30 @@ export default function ForgotPasswordPage() {
 
   const [email, setEmail] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(forgotPassword({ email }));
+    if (!email.trim()) return;
+
+    showLoading('Sending reset instructions...');
+
+    const result = await dispatch(forgotPassword({ email: email.trim() }));
+
+    closeLoading();
+
+    if (forgotPassword.fulfilled.match(result)) {
+      await showSuccess(
+        'Check Your Email!',
+        'We have sent a password reset OTP to your email address.',
+      );
+      navigate('/verify-reset-otp', { state: { email: email.trim() } });
+    } else {
+      await showError('Failed to Send', error || 'Please check your email and try again');
+    }
   };
 
   useEffect(() => {
     if (forgotPasswordSuccess) {
-      navigate('/reset-password', { state: { email } });
+      navigate('/verify-reset-otp', { state: { email } });
     }
   }, [forgotPasswordSuccess, navigate, email]);
 

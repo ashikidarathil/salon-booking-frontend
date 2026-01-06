@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import * as React from 'react';
 
-export interface UIProps {
-  children: ReactNode;
+export type UIProps = {
   className?: string;
-}
+  children?: React.ReactNode;
+} & React.AriaAttributes; // Optional: adds accessibility props
