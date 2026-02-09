@@ -12,7 +12,7 @@ import {
   verifySmsOtp,
 } from './authThunks';
 
-import { uploadProfilePicture } from '@/features/profile/profileThunks';
+import { uploadProfilePicture, updateProfile } from '@/features/profile/profileThunks';
 
 const initialState: AuthState = {
   user: null,
@@ -105,6 +105,15 @@ const authSlice = createSlice({
     builder.addCase(uploadProfilePicture.fulfilled, (state, action) => {
       if (state.user) {
         state.user.profilePicture = action.payload.profilePicture;
+      }
+    });
+
+    builder.addCase(updateProfile.fulfilled, (state, action) => {
+      if (state.user && action.payload.user) {
+        // Update user with new profile data while preserving existing fields
+        state.user.name = action.payload.user.name;
+        if (action.payload.user.email) state.user.email = action.payload.user.email;
+        if (action.payload.user.phone) state.user.phone = action.payload.user.phone;
       }
     });
 

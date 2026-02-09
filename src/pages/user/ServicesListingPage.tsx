@@ -143,7 +143,7 @@ export default function ServicesListingPage() {
                   {categories && categories.length > 0 ? (
                     categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
+                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
                       </SelectItem>
                     ))
                   ) : (
@@ -183,7 +183,7 @@ export default function ServicesListingPage() {
                   }
                   onClick={() => handleCategoryFilter(cat.id)}
                 >
-                  {cat.name}
+                  {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
                 </Button>
               ))}
           </div>
@@ -217,7 +217,7 @@ export default function ServicesListingPage() {
                   {/* Service Details */}
                   <div className="p-6 pt-6">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-bold">{service.name}</h3>
+                      <h3 className="text-lg font-bold">{service.name.charAt(0).toUpperCase() + service.name.slice(1)}</h3>
                       {service.categoryName && (
                         <Badge className="px-2 font-normal border-none rounded-sm bg-primary/10 text-primary hover:bg-primary/20">
                           {service.categoryName}
@@ -240,7 +240,7 @@ export default function ServicesListingPage() {
 
                     <div className="flex items-center justify-between mt-auto">
                       <span className="text-2xl font-bold text-foreground">
-                        {service.price ? `₹${service.price}` : 'Price on request'}
+                        {service.price ? `₹${service.price.toLocaleString('en-IN')}` : 'Price on request'}
                       </span>
                       <Button
                         className="shadow-md bg-primary hover:bg-primary/90 shadow-primary/20"

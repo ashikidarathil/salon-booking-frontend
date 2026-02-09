@@ -315,7 +315,7 @@ export default function BranchServiceModal({
                           ) : svc.price === null ? (
                             <span className="text-muted-foreground">—</span>
                           ) : (
-                            `₹${svc.price}`
+                            `₹${svc.price.toLocaleString('en-IN')}`
                           )}
                         </TableCell>
                         <TableCell>

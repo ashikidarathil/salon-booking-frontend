@@ -58,11 +58,16 @@ export default function AcceptInvitePage() {
 
   const validatePhone = (value: string): string => {
     if (!value.trim()) {
-      return '';
+      return ''; // Optional field
     }
-    const phoneRegex = /^[+]?[\d\s-()]{10,}$/;
-    if (!phoneRegex.test(value.trim())) {
-      return 'Please enter a valid phone number (at least 10 digits)';
+    // Strip all spaces for validation (matching profile update behavior)
+    const cleanPhone = value.replace(/\s/g, '');
+    
+    // Check for exactly 10 digits (optionally with +91 prefix)
+    const coreNumber = cleanPhone.startsWith('+91') ? cleanPhone.slice(3) : cleanPhone;
+    
+    if (!/^\d{10}$/.test(coreNumber)) {
+      return 'Phone number must contain exactly 10 digits';
     }
     return '';
   };
@@ -122,7 +127,10 @@ export default function AcceptInvitePage() {
     const { id, value } = e.target;
     const field = id as keyof typeof form;
 
-    setForm((prev) => ({ ...prev, [field]: value }));
+    // Strip spaces from phone numbers as user types (matching profile update behavior)
+    const newValue = field === 'phone' ? value.replace(/\s/g, '') : value;
+
+    setForm((prev) => ({ ...prev, [field]: newValue }));
 
     if (touched[field]) {
       validateField(field);
@@ -161,11 +169,14 @@ export default function AcceptInvitePage() {
     });
 
     if (!nameError && !phoneError && !passwordError && !confirmPasswordError && token) {
+      // Strip spaces from phone before sending (matching profile update behavior)
+      const cleanPhone = form.phone.trim().replace(/\s/g, '');
+      
       dispatch(
         acceptInvite({
           token,
           name: form.name.trim(),
-          phone: form.phone.trim() || undefined,
+          phone: cleanPhone || undefined,
           password: form.password,
         }),
       );

@@ -12,6 +12,19 @@ export interface UpdateProfilePayload {
   phone?: string;
 }
 
+export interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  user: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    profilePicture?: string;
+    role: string;
+  };
+}
+
 export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
@@ -40,7 +53,7 @@ export const profileService = {
   },
 
   updateProfile(data: UpdateProfilePayload) {
-    return api.put<ApiResponse<SuccessMessageResponse>>(API_ROUTES.PROFILE.UPDATE_PROFILE, data);
+    return api.put<ApiResponse<UpdateProfileResponse>>(API_ROUTES.PROFILE.UPDATE_PROFILE, data);
   },
 
   changePassword(data: ChangePasswordPayload) {

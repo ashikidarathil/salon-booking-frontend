@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { profileService } from '@/services/profile.service';
+import { profileService, type UpdateProfileResponse } from '@/services/profile.service';
 import type { UpdateProfilePayload, ChangePasswordPayload } from '@/services/profile.service';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import type { SuccessMessageResponse } from '@/common/types/api.types';
@@ -42,7 +42,7 @@ export const updateProfilePicture = createAsyncThunk<
 });
 
 export const updateProfile = createAsyncThunk<
-  SuccessMessageResponse,
+  UpdateProfileResponse,
   UpdateProfilePayload,
   { rejectValue: string }
 >('profile/updateProfile', async (data, { rejectWithValue }) => {

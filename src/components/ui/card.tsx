@@ -24,3 +24,7 @@ export function CardTitle({ children, className }: UIProps) {
 export function CardContent({ children, className }: UIProps) {
   return <div className={cn('p-6 pt-0', className)}>{children}</div>;
 }
+
+export function CardFooter({ children, className }: UIProps) {
+  return <div className={cn('flex items-center p-6 pt-0', className)}>{children}</div>;
+}
