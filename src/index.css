@@ -41,7 +41,40 @@
     --radius: 0.75rem;
   }
 
-  /* Add this to your globals.css or tailwind config */
+  /* SweetAlert2 Z-Index Fix - CRITICAL */
+  .swal2-container {
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+  }
+
+  .swal2-popup {
+    z-index: 10001 !important;
+    pointer-events: auto !important;
+  }
+
+  .swal2-backdrop-show {
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ensure backdrop is always behind */
+  body.swal2-shown > .swal2-backdrop {
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Modal wrapper */
+  .swal2-html-container,
+  .swal2-title,
+  .swal2-actions {
+    z-index: 10002 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Buttons inside SweetAlert */
+  .swal2-actions button {
+    pointer-events: auto !important;
+  }
 
   .swal-confirm-btn {
     background-color: hsl(0, 92%, 71%) !important; /* Your primary red */
@@ -67,6 +100,21 @@
 
   .swal-cancel-btn:hover {
     opacity: 0.8 !important;
+  }
+
+  /* Dialog backdrop - lower z-index than SweetAlert */
+  [role='dialog'] {
+    z-index: 1000 !important;
+  }
+
+  /* Dialog overlay/backdrop */
+  .fixed.inset-0.z-50 {
+    z-index: 1000 !important;
+  }
+
+  /* Radix Dialog backdrop */
+  [data-radix-dialog-overlay] {
+    z-index: 1000 !important;
   }
 
   .theme-admin {

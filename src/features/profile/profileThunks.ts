@@ -2,9 +2,15 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { profileService } from '@/services/profile.service';
 import type { UpdateProfilePayload, ChangePasswordPayload } from '@/services/profile.service';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
+import type { SuccessMessageResponse } from '@/common/types/api.types';
+
+export interface ProfilePictureResponse {
+  profilePicture: string;
+}
 
 export const uploadProfilePicture = createAsyncThunk<
-  { profilePicture: string },
+  ProfilePictureResponse,
   File,
   { rejectValue: string }
 >('profile/uploadProfilePicture', async (file, { rejectWithValue }) => {
@@ -13,14 +19,14 @@ export const uploadProfilePicture = createAsyncThunk<
     return res.data.data;
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to upload picture');
+      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
     }
-    return rejectWithValue('Failed to upload picture');
+    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
 export const updateProfilePicture = createAsyncThunk<
-  { profilePicture: string },
+  ProfilePictureResponse,
   File,
   { rejectValue: string }
 >('profile/updateProfilePicture', async (file, { rejectWithValue }) => {
@@ -29,14 +35,14 @@ export const updateProfilePicture = createAsyncThunk<
     return res.data.data;
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to update picture');
+      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
     }
-    return rejectWithValue('Failed to update picture');
+    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
 export const updateProfile = createAsyncThunk<
-  { message: string },
+  SuccessMessageResponse,
   UpdateProfilePayload,
   { rejectValue: string }
 >('profile/updateProfile', async (data, { rejectWithValue }) => {
@@ -45,14 +51,14 @@ export const updateProfile = createAsyncThunk<
     return res.data.data;
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to update profile');
+      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
     }
-    return rejectWithValue('Failed to update profile');
+    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
 export const changePassword = createAsyncThunk<
-  { message: string },
+  SuccessMessageResponse,
   ChangePasswordPayload,
   { rejectValue: string }
 >('profile/changePassword', async (data, { rejectWithValue }) => {
@@ -61,8 +67,8 @@ export const changePassword = createAsyncThunk<
     return res.data.data;
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to change password');
+      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
     }
-    return rejectWithValue('Failed to change password');
+    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
   }
 });

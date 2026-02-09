@@ -1,5 +1,3 @@
-// frontend/src/pages/user/ProfileContent.tsx
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -12,7 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@iconify/react';
 import { AlertCircle } from 'lucide-react';
 import { uploadProfilePicture } from '@/features/profile/profileThunks';
-import { showSuccess, showError } from '@/utils/swal';
+import { showSuccess, showError } from '@/common/utils/swal.utils';
 
 export default function ProfileContent() {
   const dispatch = useAppDispatch();
@@ -67,7 +65,8 @@ export default function ProfileContent() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     console.log('Saving profile:', form);
     showSuccess('Saved!', 'Profile updated successfully');
   };
@@ -75,7 +74,7 @@ export default function ProfileContent() {
   const isPasswordValid = form.newPassword.length >= 8 && form.newPassword === form.confirmPassword;
 
   return (
-    <div className="max-w-6xl p-6 mx-auto space-y-8">
+    <form onSubmit={handleSave} className="max-w-6xl p-6 mx-auto space-y-8">
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight font-heading">Profile Settings</h1>
         <p className="text-lg text-muted-foreground">
@@ -110,7 +109,7 @@ export default function ProfileContent() {
             className="hidden"
           />
 
-          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
             {uploading ? 'Uploading...' : 'Change Photo'}
           </Button>
 
@@ -132,6 +131,7 @@ export default function ProfileContent() {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
+                type="text"
                 value={form.name}
                 onChange={(e) => handleChange('name', e.target.value)}
                 placeholder="Enter your full name"
@@ -142,6 +142,7 @@ export default function ProfileContent() {
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 value={form.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 placeholder={!hasEmail ? 'Add your email' : undefined}
@@ -188,6 +189,7 @@ export default function ProfileContent() {
             <Input
               id="current-password"
               type="password"
+              autoComplete="current-password"
               value={form.currentPassword}
               onChange={(e) => handleChange('currentPassword', e.target.value)}
               placeholder="Enter current password"
@@ -200,6 +202,7 @@ export default function ProfileContent() {
               <Input
                 id="new-password"
                 type="password"
+                autoComplete="new-password"
                 value={form.newPassword}
                 onChange={(e) => handleChange('newPassword', e.target.value)}
                 placeholder="Enter new password"
@@ -210,6 +213,7 @@ export default function ProfileContent() {
               <Input
                 id="confirm-password"
                 type="password"
+                autoComplete="new-password"
                 value={form.confirmPassword}
                 onChange={(e) => handleChange('confirmPassword', e.target.value)}
                 placeholder="Confirm new password"
@@ -221,9 +225,11 @@ export default function ProfileContent() {
 
       {/* Save Button */}
       <div className="flex justify-end gap-4">
-        <Button variant="outline">Cancel</Button>
+        <Button type="reset" variant="outline">
+          Cancel
+        </Button>
         <Button
-          onClick={handleSave}
+          type="submit"
           disabled={uploading || !isPasswordValid}
           className="shadow-lg shadow-primary/20 bg-gradient-to-br from-primary to-primary/90"
         >
@@ -231,6 +237,6 @@ export default function ProfileContent() {
           Save Changes
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

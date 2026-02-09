@@ -1,15 +1,14 @@
-// frontend/src/pages/admin/stylist/StylistManagementPage.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
-  fetchStylists,
   approveStylist,
   rejectStylist,
-  toggleBlockStylist,
   createStylistInvite,
   sendInviteToApplied,
+  fetchPaginatedStylists,
+  blockUnblockStylist,
 } from '@/features/stylistInvite/stylistInviteThunks';
 import { clearInviteLink } from '@/features/stylistInvite/stylistInviteSlice';
 
@@ -36,17 +35,25 @@ import {
 } from '@/components/ui/dialog';
 import Pagination from '@/components/pagination/Pagination';
 import { Copy, Check } from 'lucide-react';
-import { showSuccess, showError, showConfirm, showLoading, closeLoading } from '@/utils/swal'; // ← NEW
+import {
+  showSuccess,
+  showError,
+  showConfirm,
+  showLoading,
+  closeLoading,
+} from '@/common/utils/swal.utils';
 
-import type { StylistListItem } from '@/services/stylistInvite.service';
+import type { StylistListItem } from '@/features/stylistInvite/stylistInvite.types';
 
 const ITEMS_PER_PAGE = 5;
 
-const ADMIN_COLOR = '#10B981'; // Emerald green
+const ADMIN_COLOR = '#10B981';
 
 export default function StylistManagementPage() {
   const dispatch = useAppDispatch();
-  const { stylists, loading, inviteLink, error } = useAppSelector((state) => state.stylistInvite);
+  const { stylists, loading, inviteLink, error, pagination } = useAppSelector(
+    (state) => state.stylistInvite,
+  );
 
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,8 +68,14 @@ export default function StylistManagementPage() {
   });
 
   useEffect(() => {
-    dispatch(fetchStylists());
-  }, [dispatch]);
+    dispatch(
+      fetchPaginatedStylists({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        search: searchTerm || undefined,
+      }),
+    );
+  }, [dispatch, currentPage, searchTerm]);
 
   useEffect(() => {
     if (inviteLink) {
@@ -70,6 +83,11 @@ export default function StylistManagementPage() {
       return () => clearTimeout(timer);
     }
   }, [inviteLink, dispatch]);
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   const handleManualInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,12 +105,55 @@ export default function StylistManagementPage() {
 
     if (result.meta.requestStatus === 'fulfilled') {
       await showSuccess('Invitation Sent!', 'Stylist has been invited successfully');
-      setTimeout(() => dispatch(fetchStylists()), 500);
+      setTimeout(
+        () =>
+          dispatch(
+            fetchPaginatedStylists({
+              page: currentPage,
+              limit: ITEMS_PER_PAGE,
+              search: searchTerm || undefined,
+            }),
+          ),
+        500,
+      );
+      setIsManualInviteOpen(false);
     } else {
       await showError('Failed to Send Invite', error || 'Please try again');
     }
 
     setManualForm({ email: '', specialization: '', experience: 0 });
+  };
+
+  const handleToggleBlock = async (stylistId: string, name: string, isBlocked: boolean) => {
+    const action = isBlocked ? 'Unblock' : 'Block';
+    const confirmed = await showConfirm(
+      `${action} Stylist?`,
+      `Are you sure you want to ${action.toLowerCase()} ${name || 'this stylist'}?`,
+      `Yes, ${action}`,
+      'Cancel',
+      isBlocked ? ADMIN_COLOR : '#ef4444',
+    );
+
+    if (!confirmed) return;
+
+    showLoading(`${action}ing stylist...`);
+
+    const result = await dispatch(blockUnblockStylist({ stylistId, isBlocked: !isBlocked }));
+
+    closeLoading();
+
+    if (result.meta.requestStatus === 'fulfilled') {
+      await showSuccess(`${action}ed!`, `${name || 'Stylist'} has been ${action.toLowerCase()}ed`);
+      dispatch(
+        fetchPaginatedStylists({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          search: searchTerm || undefined,
+        }),
+      );
+    } else {
+      await showError('Failed', `Could not ${action.toLowerCase()} stylist`);
+    }
   };
 
   const handleSendInviteToApplied = async (userId: string, name: string) => {
@@ -114,7 +175,17 @@ export default function StylistManagementPage() {
 
     if (result.meta.requestStatus === 'fulfilled') {
       await showSuccess('Invitation Sent!', `${name || 'Stylist'} has been invited`);
-      setTimeout(() => dispatch(fetchStylists()), 500);
+      setTimeout(
+        () =>
+          dispatch(
+            fetchPaginatedStylists({
+              page: currentPage,
+              limit: ITEMS_PER_PAGE,
+              search: searchTerm || undefined,
+            }),
+          ),
+        500,
+      );
       if (viewInviteDialog?.userId === userId) {
         setViewInviteDialog(null);
       }
@@ -142,7 +213,13 @@ export default function StylistManagementPage() {
 
     if (result.meta.requestStatus === 'fulfilled') {
       await showSuccess('Approved!', `${name || 'Stylist'} is now active`);
-      dispatch(fetchStylists());
+      dispatch(
+        fetchPaginatedStylists({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          search: searchTerm || undefined,
+        }),
+      );
     } else {
       await showError('Failed', 'Could not approve stylist');
     }
@@ -154,7 +231,7 @@ export default function StylistManagementPage() {
       `Reject ${name || 'this stylist'}? This cannot be undone.`,
       'Yes, Reject',
       'Cancel',
-      '#ef4444', // red for reject
+      '#ef4444',
     );
 
     if (!confirmed) return;
@@ -167,12 +244,19 @@ export default function StylistManagementPage() {
 
     if (result.meta.requestStatus === 'fulfilled') {
       await showSuccess('Rejected', `${name || 'Stylist'} has been rejected`);
-      dispatch(fetchStylists());
+      dispatch(
+        fetchPaginatedStylists({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          search: searchTerm || undefined,
+        }),
+      );
     } else {
       await showError('Failed', 'Could not reject stylist');
     }
   };
 
+  /*
   const handleToggleBlock = async (userId: string, name: string, isBlocked: boolean) => {
     const action = isBlocked ? 'Unblock' : 'Block';
     const confirmed = await showConfirm(
@@ -198,24 +282,13 @@ export default function StylistManagementPage() {
       await showError('Failed', `Could not ${action.toLowerCase()} stylist`);
     }
   };
+  */
 
   const handleCopyLink = (link: string) => {
     navigator.clipboard.writeText(link);
     setCopiedLink(link);
     setTimeout(() => setCopiedLink(null), 2000);
   };
-
-  const filteredStylists = stylists.filter(
-    (stylist) =>
-      stylist.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      stylist.email?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const totalPages = Math.ceil(filteredStylists.length / ITEMS_PER_PAGE);
-  const paginatedStylists = filteredStylists.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
 
   const getFlowStatus = (stylist: StylistListItem): string => {
     if (stylist.status === 'ACTIVE') return 'ACTIVE';
@@ -230,9 +303,19 @@ export default function StylistManagementPage() {
     const flowStatus = getFlowStatus(stylist);
 
     if (flowStatus === 'ACTIVE') return <Badge className="bg-green-500">ACTIVE</Badge>;
-    if (flowStatus === 'APPLIED') return <Badge variant="secondary" className='bg-yellow-300'>APPLIED</Badge>;
+    if (flowStatus === 'APPLIED')
+      return (
+        <Badge variant="secondary" className="bg-yellow-300">
+          APPLIED
+        </Badge>
+      );
     if (flowStatus === 'PENDING') return <Badge className="bg-blue-500">INVITE SENT</Badge>;
-    if (flowStatus === 'EXPIRED') return <Badge variant="destructive" className='bg-red-500'>EXPIRED</Badge>;
+    if (flowStatus === 'EXPIRED')
+      return (
+        <Badge variant="destructive" className="bg-red-500">
+          EXPIRED
+        </Badge>
+      );
     if (flowStatus === 'ACCEPTED') return <Badge className="bg-purple-500">REGISTERED</Badge>;
     return <Badge variant="outline">{flowStatus}</Badge>;
   };
@@ -285,7 +368,7 @@ export default function StylistManagementPage() {
         <Button
           size="sm"
           variant={isBlocked ? 'default' : 'destructive'}
-          onClick={() => handleToggleBlock(userId, name, isBlocked)}
+          onClick={() => handleToggleBlock(stylist.id, stylist.name, stylist.isBlocked)}
           style={isBlocked ? { backgroundColor: ADMIN_COLOR } : {}}
           className={isBlocked ? 'text-white hover:opacity-90' : ''}
         >
@@ -318,7 +401,7 @@ export default function StylistManagementPage() {
               Invite Stylist
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="theme-admin">
             <DialogHeader>
               <DialogTitle>Invite New Stylist</DialogTitle>
             </DialogHeader>
@@ -400,12 +483,11 @@ export default function StylistManagementPage() {
         </Dialog>
       </div>
 
-      {/* Search */}
       <div className="max-w-md">
         <Input
-          placeholder="Search by name or email..."
+          placeholder="Search by name, email, specialization..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           className="w-full"
         />
       </div>
@@ -413,7 +495,7 @@ export default function StylistManagementPage() {
       {/* Stylists Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl">All Stylists ({filteredStylists.length})</CardTitle>
+          <CardTitle>All Stylists ({pagination?.totalItems || 0})</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -421,7 +503,7 @@ export default function StylistManagementPage() {
               <div className="w-20 h-20 mx-auto mb-6 border-t-4 border-b-4 rounded-full animate-spin border-primary"></div>
               <p className="text-2xl">Loading stylists...</p>
             </div>
-          ) : filteredStylists.length === 0 ? (
+          ) : stylists.length === 0 ? (
             <div className="py-32 text-center">
               <h2 className="text-3xl font-bold">No Stylists Found</h2>
               <p className="text-xl text-muted-foreground">
@@ -444,7 +526,7 @@ export default function StylistManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedStylists.map((stylist) => (
+                    {stylists.map((stylist) => (
                       <TableRow key={stylist.userId}>
                         <TableCell className="font-medium">
                           {stylist.name || 'Pending Registration'}
@@ -467,8 +549,8 @@ export default function StylistManagementPage() {
 
               <div className="p-4 border-t">
                 <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
+                  currentPage={pagination?.currentPage || 1}
+                  totalPages={pagination?.totalPages || 1}
                   onPageChange={setCurrentPage}
                 />
               </div>

@@ -1,7 +1,7 @@
 // frontend/src/features/stylistInvite/stylistInviteSlice.ts
 
 import { createSlice } from '@reduxjs/toolkit';
-import type { StylistListItem } from '@/services/stylistInvite.service';
+import type { StylistListItem } from './stylistInvite.types';
 import {
   createStylistInvite,
   fetchStylists,
@@ -11,9 +11,13 @@ import {
   validateInvite,
   acceptInvite,
   sendInviteToApplied,
+  fetchPaginatedStylists,
+  blockUnblockStylist,
 } from './stylistInviteThunks';
 
-import type { InvitePreview } from './stylistInviteThunks';
+import type { InvitePreview } from './stylistInvite.types';
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+
 
 interface State {
   stylists: StylistListItem[];
@@ -22,6 +26,7 @@ interface State {
   inviteLink: string | null;
   invitePreview: InvitePreview | null;
   acceptSuccess: boolean;
+  pagination: PaginationMetadata;
 }
 
 const initialState: State = {
@@ -31,6 +36,14 @@ const initialState: State = {
   inviteLink: null,
   invitePreview: null,
   acceptSuccess: false,
+  pagination: {
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  },
 };
 
 const slice = createSlice({
@@ -43,6 +56,33 @@ const slice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // ===== FETCH PAGINATED STYLISTS =====
+      .addCase(fetchPaginatedStylists.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPaginatedStylists.fulfilled, (state, action) => {
+        state.loading = false;
+        state.stylists = action.payload.data;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchPaginatedStylists.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to load stylists';
+      })
+
+      // ===== BLOCK/UNBLOCK STYLIST =====
+      .addCase(blockUnblockStylist.fulfilled, (state, action) => {
+        const { stylistId, isBlocked } = action.payload;
+        const stylist = state.stylists.find((s) => s.id === stylistId);
+        if (stylist) {
+          stylist.isBlocked = isBlocked;
+        }
+      })
+      .addCase(blockUnblockStylist.rejected, (state, action) => {
+        state.error = action.payload || 'Failed to block/unblock stylist';
+      })
+
       // ===== FETCH STYLISTS =====
       .addCase(fetchStylists.pending, (state) => {
         state.loading = true;

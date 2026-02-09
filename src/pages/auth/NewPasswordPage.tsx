@@ -1,5 +1,3 @@
-// File: frontend/src/pages/auth/NewPasswordPage.tsx
-
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
@@ -9,7 +7,7 @@ import { Icon } from '@iconify/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
-import { showSuccess, showError } from '@/utils/swal'; // ← NEW
+import { showSuccess, showError } from '@/common/utils/swal.utils';
 
 export default function NewPasswordPage() {
   const dispatch = useAppDispatch();

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@iconify/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { showSuccess, showError } from '@/utils/swal';
+import { showSuccess, showError } from '@/common/utils/swal.utils';
 
 export default function VerifyResetOtpPage() {
   const dispatch = useAppDispatch();
@@ -75,6 +75,8 @@ export default function VerifyResetOtpPage() {
     if (verifyResetOtp.fulfilled.match(result)) {
       await showSuccess('OTP Verified!', 'Now set your new password');
       navigate('/new-password', { state: { email, otp } });
+    } else {
+      await showError('Invalid OTP', 'The code you entered is incorrect. Please try again.');
     }
   };
 

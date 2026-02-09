@@ -1,12 +1,10 @@
-// frontend/src/pages/auth/SignupPage.tsx
-
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { signup, googleLogin } from '@/features/auth/authThunks';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { showSuccess } from '@/utils/swal';
+import { showSuccess } from '@/common/utils/swal.utils';
 
 export default function SignupPage() {
   const dispatch = useAppDispatch();
@@ -352,43 +350,6 @@ export default function SignupPage() {
               </p>
             </div>
           )}
-
-          {/* Password */}
-          {/* <div>
-            <label className="block mb-2 text-sm font-medium text-foreground">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="At least 8 characters"
-                autoComplete="new-password"
-                value={form.password}
-                onChange={handleChange}
-                onBlur={() => handleBlur('password')}
-                disabled={loading}
-                className={`w-full px-3 py-2 pr-10 border rounded transition-colors disabled:opacity-50 ${
-                  touched.password && fieldErrors.password
-                    ? 'border-red-500 bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'
-                    : 'border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-400'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            {touched.password && fieldErrors.password && (
-              <div className="flex gap-2 mt-2 text-sm text-red-600">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <p>{fieldErrors.password}</p>
-              </div>
-            )}
-          </div> */}
 
           {/* Password */}
           <div>

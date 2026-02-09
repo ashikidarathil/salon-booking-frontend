@@ -1,0 +1,249 @@
+// FILE: frontend/src/pages/user/BranchesListingPage.tsx
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { useNavigate } from 'react-router-dom';
+import { fetchNearestBranches, fetchPublicBranches } from '@/features/branch/branch.thunks';
+import { setBranchSelected } from '@/features/branch/branch.slice';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Icon } from '@iconify/react';
+import Swal from 'sweetalert2';
+import { Header } from '@/components/user/Header';
+import { Footer } from '@/components/user/Footer';
+import type { Branch } from '@/features/branch/branch.types';
+
+export default function BranchesListingPage() {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+
+  // Redux state
+  const { nearestBranches, branches, loading } = useAppSelector((state) => state.branch);
+
+  // Component state
+  const [search, setSearch] = useState('');
+  const [hasLocation, setHasLocation] = useState(false);
+  const [filteredBranches, setFilteredBranches] = useState<Branch[]>([]);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Get user location and fetch nearest branches
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      // Fallback: fetch all branches
+      dispatch(fetchPublicBranches());
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log(`User location: ${latitude}, ${longitude}`);
+
+        // Dispatch to fetch nearest branches
+        dispatch(fetchNearestBranches({ latitude, longitude })).then(() => {
+          setHasLocation(true);
+        });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setLocationError(error.message);
+        // Fallback: fetch all branches
+        dispatch(fetchPublicBranches());
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+  }, [dispatch]);
+
+  // Filter branches based on search
+  useEffect(() => {
+    const branchesToFilter = hasLocation && nearestBranches.length > 0 ? nearestBranches : branches;
+
+    if (!search.trim()) {
+      setFilteredBranches(branchesToFilter);
+      return;
+    }
+
+    const searchLower = search.toLowerCase();
+    const filtered = branchesToFilter.filter((branch) => {
+      return (
+        branch.name.toLowerCase().includes(searchLower) ||
+        branch.address?.toLowerCase().includes(searchLower) ||
+        (branch.phone && branch.phone.includes(search))
+      );
+    });
+
+    setFilteredBranches(filtered);
+  }, [search, nearestBranches, branches, hasLocation]);
+
+  // Handle branch selection
+  const handleSelectBranch = (branch: Branch) => {
+    // Dispatch to Redux
+    dispatch(setBranchSelected(branch));
+
+    // Show success message
+    Swal.fire({
+      icon: 'success',
+      title: 'Success!',
+      text: `${branch.name} has been selected`,
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
+    // Navigate to return path or home
+    setTimeout(() => {
+      const returnPath = localStorage.getItem('returnPath');
+      if (returnPath) {
+        localStorage.removeItem('returnPath');
+        navigate(returnPath);
+      } else {
+        navigate('/');
+      }
+    }, 500);
+  };
+
+  // Loading state
+  if (loading && filteredBranches.length === 0) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background">
+        <Header />
+        <main className="flex items-center justify-center flex-1">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 rounded-full border-primary border-t-transparent animate-spin"></div>
+            <p className="text-muted-foreground">
+              {hasLocation ? 'Finding nearest branches...' : 'Loading branches...'}
+            </p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+
+      <main className="flex-1">
+        <div className="container px-4 py-8 mx-auto">
+          {/* Header Section */}
+          <div className="mb-8">
+            <h1 className="mb-2 text-4xl font-bold">Find Our Branches</h1>
+            <p className="text-lg text-muted-foreground">
+              {hasLocation ? '📍 Showing branches nearest to you' : 'Browse our salons'}
+            </p>
+            {locationError && (
+              <div className="p-3 mt-3 text-sm text-yellow-800 border border-yellow-200 rounded-lg bg-yellow-50">
+                <Icon icon="solar:info-circle-bold" className="inline mr-2" />
+                {locationError}
+              </div>
+            )}
+          </div>
+
+          {/* Search Input */}
+          <div className="mb-8">
+            <div className="relative max-w-md">
+              <Icon
+                icon="solar:magnifier-bold"
+                className="absolute pointer-events-none left-3 top-3 size-5 text-muted-foreground"
+              />
+              <Input
+                placeholder="Search by name, address, or phone..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="py-2 pl-10 h-11"
+              />
+            </div>
+          </div>
+
+          {/* Branches Grid */}
+          {filteredBranches && filteredBranches.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredBranches.map((branch: any, index: number) => (
+                <Card
+                  key={branch.id || index}
+                  className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg"
+                >
+                  <div className="flex flex-col flex-1 p-6">
+                    {/* Distance Badge (if available) */}
+                    {branch.distance && (
+                      <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-sm font-semibold w-fit">
+                        <Icon icon="solar:map-point-bold" className="size-4" />
+                        {(branch.distance / 1000).toFixed(1)} km away
+                      </div>
+                    )}
+
+                    {/* Branch Name */}
+                    <h3 className="mb-3 text-xl font-bold text-gray-900">{branch.name}</h3>
+
+                    {/* Address */}
+                    <div className="flex gap-3 mb-4 text-sm text-muted-foreground">
+                      <Icon icon="solar:home-bold" className="flex-shrink-0 size-5 text-primary" />
+                      <p className="line-clamp-2">{branch.address}</p>
+                    </div>
+
+                    {/* Phone */}
+                    {branch.phone && (
+                      <div className="flex gap-3 mb-6 text-sm text-muted-foreground">
+                        <Icon
+                          icon="solar:phone-bold"
+                          className="flex-shrink-0 size-5 text-primary"
+                        />
+                        <p>{branch.phone}</p>
+                      </div>
+                    )}
+
+                    {/* Spacer */}
+                    <div className="flex-1"></div>
+
+                    {/* Select Button */}
+                    <Button
+                      onClick={() => handleSelectBranch(branch)}
+                      className="w-full font-semibold text-white bg-primary hover:bg-primary/90"
+                      size="lg"
+                    >
+                      <Icon icon="solar:check-circle-bold" className="mr-2 size-5" />
+                      Select Branch
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center">
+              <Icon
+                icon="solar:map-point-bold"
+                className="mx-auto mb-4 size-20 text-muted-foreground/30"
+              />
+              <p className="mb-2 text-lg text-muted-foreground">
+                {search ? 'No branches found matching your search' : 'No branches available'}
+              </p>
+              {search && (
+                <Button variant="outline" onClick={() => setSearch('')} className="mt-4">
+                  Clear Search
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Results Count */}
+          {filteredBranches.length > 0 && (
+            <div className="mt-8 text-sm text-center text-muted-foreground">
+              Showing {filteredBranches.length} branch
+              {filteredBranches.length !== 1 ? 'es' : ''}
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

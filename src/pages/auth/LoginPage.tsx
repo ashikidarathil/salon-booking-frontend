@@ -1,12 +1,10 @@
-// frontend/src/pages/user/LoginPage.tsx
-
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { login, googleLogin } from '@/features/auth/authThunks';
 import { GoogleLogin } from '@react-oauth/google';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { getErrorInfo, useAuthValidation } from '@/utils/authErrorHelper';
+import { getErrorInfo, useAuthValidation } from '@/common/utils/auth.utils';
 
 export default function LoginPage() {
   const dispatch = useAppDispatch();
@@ -79,7 +77,6 @@ export default function LoginPage() {
     });
 
     if (!identifierError && !passwordError) {
-      // Normalize phone number for backend
       let loginIdentifier = identifier.trim();
       const digitsOnly = loginIdentifier.replace(/\D/g, '');
 

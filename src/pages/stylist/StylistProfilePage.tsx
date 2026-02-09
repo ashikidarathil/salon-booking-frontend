@@ -1,5 +1,3 @@
-// frontend/src/pages/stylist/StylistProfilePage.tsx
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -12,7 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
 import { uploadProfilePicture } from '@/features/profile/profileThunks';
-import { showSuccess, showError } from '@/utils/swal';
+import { showSuccess, showError } from '@/common/utils/swal.utils';
 
 export default function StylistProfilePage() {
   const dispatch = useAppDispatch();

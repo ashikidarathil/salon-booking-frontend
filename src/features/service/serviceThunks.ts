@@ -1,0 +1,254 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+import { serviceService } from '@/services/service.service';
+import type { Service, ServiceStatus } from './service.types';
+import type { ApiResponse } from '@/common/types/api.types';
+
+/* =========================
+   FETCH (ADMIN)
+========================= */
+export const fetchServices = createAsyncThunk<
+  Service[],
+  { includeDeleted?: boolean } | undefined,
+  { rejectValue: string }
+>('service/fetchServices', async (payload, { rejectWithValue }) => {
+  try {
+    const res = await serviceService.adminList(payload?.includeDeleted);
+    return res.data.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      return rejectWithValue(err.response?.data?.message ?? 'Failed to fetch services');
+    }
+    return rejectWithValue('Failed to fetch services');
+  }
+});
+
+export const fetchPaginatedServices = createAsyncThunk<
+  {
+    data: Service[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+      itemsPerPage: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  },
+  {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    categoryId?: string;
+    status?: 'ACTIVE' | 'INACTIVE';
+    isDeleted?: boolean;
+  },
+  { rejectValue: string }
+>('service/fetchPaginatedServices', async (params, { rejectWithValue }) => {
+  try {
+    const res = await serviceService.getPaginatedServices(params);
+    return res.data.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const apiResponse = err.response?.data as ApiResponse;
+      const errorMessage = apiResponse?.message || 'Failed to fetch services';
+      return rejectWithValue(errorMessage);
+    }
+    return rejectWithValue('Failed to fetch services - Network error');
+  }
+});
+
+/* =========================
+   CREATE
+========================= */
+export const createService = createAsyncThunk<
+  Service,
+  {
+    name: string;
+    description?: string;
+    categoryId: string;
+    status?: ServiceStatus;
+    whatIncluded?: string[];
+  },
+  { rejectValue: string }
+>('service/createService', async (data, { rejectWithValue }) => {
+  try {
+    const res = await serviceService.create(data);
+    return res.data.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const apiResponse = err.response?.data as ApiResponse;
+      const errorMessage = apiResponse?.message || 'Failed to create service';
+      return rejectWithValue(errorMessage);
+    }
+    return rejectWithValue('Failed to create service');
+  }
+});
+
+/* =========================
+   UPDATE
+========================= */
+export const updateService = createAsyncThunk<
+  Service,
+  {
+    id: string;
+    data: Partial<{
+      name: string;
+      description?: string;
+      status: ServiceStatus;
+      imageUrl: string;
+    }>;
+  },
+  { rejectValue: string }
+>('service/updateService', async ({ id, data }, { rejectWithValue }) => {
+  try {
+    const res = await serviceService.update(id, data);
+    return res.data.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      return rejectWithValue(err.response?.data?.message ?? 'Failed to update service');
+    }
+    return rejectWithValue('Failed to update service');
+  }
+});
+
+/* =========================
+   TOGGLE STATUS
+========================= */
+export const toggleServiceStatus = createAsyncThunk<
+  Service,
+  { id: string; status: ServiceStatus },
+  { rejectValue: string }
+>('service/toggleServiceStatus', async ({ id, status }, { rejectWithValue }) => {
+  try {
+    const res = await serviceService.update(id, { status });
+    return res.data.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      return rejectWithValue(err.response?.data?.message ?? 'Failed to toggle status');
+    }
+    return rejectWithValue('Failed to toggle status');
+  }
+});
+
+/* =========================
+   UPLOAD IMAGE
+========================= */
+export const uploadServiceImage = createAsyncThunk<
+  Service,
+  { serviceId: string; file: File },
+  { rejectValue: string }
+>('service/uploadServiceImage', async ({ serviceId, file }, { rejectWithValue }) => {
+  try {
+    const res = await serviceService.uploadImage(serviceId, file);
+    return res.data.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      return rejectWithValue(err.response?.data?.message ?? 'Failed to upload image');
+    }
+    return rejectWithValue('Failed to upload image');
+  }
+});
+
+/* =========================
+   DELETE IMAGE
+========================= */
+export const deleteServiceImage = createAsyncThunk<Service, string, { rejectValue: string }>(
+  'service/deleteServiceImage',
+  async (serviceId, { rejectWithValue }) => {
+    try {
+      const res = await serviceService.deleteImage(serviceId);
+      return res.data.data;
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        return rejectWithValue(err.response?.data?.message ?? 'Failed to delete image');
+      }
+      return rejectWithValue('Failed to delete image');
+    }
+  },
+);
+
+/* =========================
+   SOFT DELETE
+========================= */
+export const softDeleteService = createAsyncThunk<Service, string, { rejectValue: string }>(
+  'service/softDeleteService',
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await serviceService.softDelete(id);
+      return res.data.data;
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        return rejectWithValue(err.response?.data?.message ?? 'Failed to delete service');
+      }
+      return rejectWithValue('Failed to delete service');
+    }
+  },
+);
+
+/* =========================
+   RESTORE
+========================= */
+export const restoreService = createAsyncThunk<Service, string, { rejectValue: string }>(
+  'service/restoreService',
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await serviceService.restore(id);
+      return res.data.data;
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        return rejectWithValue(err.response?.data?.message ?? 'Failed to restore service');
+      }
+      return rejectWithValue('Failed to restore service');
+    }
+  },
+);
+
+export const fetchPublicServicesPaginated = createAsyncThunk<
+  {
+    data: Service[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+      itemsPerPage: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  },
+  {
+    page?: number;
+    limit?: number;
+    search?: string;
+    categoryId?: string;
+  },
+  { rejectValue: string }
+>('service/fetchPublicServicesPaginated', async (params, { rejectWithValue }) => {
+  try {
+    const res = await serviceService.listPublicPaginated(params);
+    return res.data.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch services');
+    }
+    return rejectWithValue('Failed to fetch services');
+  }
+});
+
+// ✅ NEW: Fetch public service details
+export const fetchPublicServiceDetails = createAsyncThunk<Service, string, { rejectValue: string }>(
+  'service/fetchPublicServiceDetails',
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await serviceService.getPublic(id);
+      return res.data.data;
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        return rejectWithValue(err.response?.data?.message || 'Failed to fetch service');
+      }
+      return rejectWithValue('Failed to fetch service');
+    }
+  },
+);

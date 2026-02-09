@@ -15,18 +15,22 @@ const defaultConfig: SweetAlertOptions = {
     htmlContainer: 'text-base',
     confirmButton: 'px-6 py-3 text-base font-medium rounded-lg',
   },
+  allowOutsideClick: () => !Swal.isLoading(),
 };
 
 export const showSuccess = (title: string, text?: string, timer = 3000, color?: string) => {
   return Swal.fire({
     ...defaultConfig,
     icon: 'success',
-    title,
+    title: title || 'Success!',
     text,
     timer: timer > 0 ? timer : undefined,
     timerProgressBar: timer > 0,
     showConfirmButton: timer === 0,
     confirmButtonColor: color,
+    didOpen: () => {
+      ensureZIndex();
+    },
   } as SweetAlertOptions);
 };
 
@@ -34,10 +38,13 @@ export const showError = (title: string, text?: string, color?: string) => {
   return Swal.fire({
     ...defaultConfig,
     icon: 'error',
-    title: title || 'Something went wrong!',
-    text,
+    title: title || 'Error!',
+    text: text || 'Something went wrong',
     confirmButtonText: 'OK',
     confirmButtonColor: color,
+    didOpen: () => {
+      ensureZIndex();
+    },
   } as SweetAlertOptions);
 };
 
@@ -57,7 +64,12 @@ export const showConfirm = async (
     confirmButtonText: confirmText,
     cancelButtonText: cancelText,
     confirmButtonColor: color,
-    cancelButtonColor: '#6B7280', // gray
+    cancelButtonColor: '#6B7280',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      ensureZIndex();
+    },
   } as SweetAlertOptions);
 
   return result.isConfirmed;
@@ -69,6 +81,7 @@ export const showLoading = (title = 'Loading...') => {
     allowOutsideClick: false,
     allowEscapeKey: false,
     didOpen: () => {
+      ensureZIndex();
       Swal.showLoading();
     },
   } as SweetAlertOptions);
@@ -93,4 +106,23 @@ export const showToast = (
     timerProgressBar: true,
     iconColor: color,
   } as SweetAlertOptions);
+};
+
+
+const ensureZIndex = () => {
+  requestAnimationFrame(() => {
+    const swalContainer = document.querySelector('.swal2-container') as HTMLElement;
+    const swalPopup = document.querySelector('.swal2-popup') as HTMLElement;
+    const swalBackdrop = document.querySelector('.swal2-backdrop-show') as HTMLElement;
+
+    if (swalContainer) {
+      swalContainer.style.setProperty('z-index', '10000', 'important');
+    }
+    if (swalPopup) {
+      swalPopup.style.setProperty('z-index', '10001', 'important');
+    }
+    if (swalBackdrop) {
+      swalBackdrop.style.setProperty('z-index', '9999', 'important');
+    }
+  });
 };

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@iconify/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { showSuccess, showError } from '@/utils/swal';
+import { showSuccess, showError } from '@/common/utils/swal.utils';
 
 export default function VerifyOtpPage() {
   const dispatch = useAppDispatch();
@@ -69,6 +69,8 @@ export default function VerifyOtpPage() {
     if (verifyOtp.fulfilled.match(result)) {
       await showSuccess('Email Verified Successfully!', 'Welcome to SalonBook!');
       navigate('/login');
+    } else {
+      await showError('Invalid OTP', 'The code you entered is incorrect. Please try again.');
     }
   };
 

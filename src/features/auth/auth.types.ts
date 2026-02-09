@@ -1,4 +1,3 @@
-// features/auth/authTypes.ts
 export interface User {
   id: string;
   name: string;
@@ -9,22 +8,13 @@ export interface User {
   password?: string;
   googleId?: string;
   authProvider?: 'LOCAL' | 'GOOGLE';
-  profilePicture?: string | null; // ✅ IMPORTANT
+  profilePicture?: string | null;
   role: 'USER' | 'ADMIN' | 'STYLIST';
   isActive?: boolean;
   isBlocked?: boolean;
   status?: string;
   createdAt?: Date;
   updatedAt?: Date;
-}
-
-export interface AuthState {
-  user: User | null;
-  loading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
-  forgotPasswordSuccess: boolean;
-  resetPasswordSuccess: boolean;
 }
 
 export type SignupPayload =
@@ -38,3 +28,12 @@ export type SignupPayload =
       phone: string;
       password: string;
     };
+
+export interface AuthState {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
+  forgotPasswordSuccess: boolean;
+  resetPasswordSuccess: boolean;
+}

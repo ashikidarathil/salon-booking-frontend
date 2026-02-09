@@ -1,11 +1,9 @@
-// frontend/src/pages/stylist/StylistLoginPage.tsx
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { login } from '@/features/auth/authThunks';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react'; // ← Added EyeOff
-import { getErrorInfo, useAuthValidation } from '@/utils/authErrorHelper';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { getErrorInfo, useAuthValidation } from '@/common/utils/auth.utils';
 
 export default function StylistLoginPage() {
   const dispatch = useAppDispatch();
@@ -15,7 +13,7 @@ export default function StylistLoginPage() {
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // ← NEW STATE
+  const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState({ identifier: false, password: false });
   const [fieldErrors, setFieldErrors] = useState({ identifier: '', password: '' });
 

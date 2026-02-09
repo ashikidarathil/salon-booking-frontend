@@ -1,5 +1,5 @@
 import { createSlice, isFulfilled, isPending, isRejected } from '@reduxjs/toolkit';
-import type { AuthState } from './authTypes';
+import type { AuthState } from './auth.types';
 import {
   login,
   logout,

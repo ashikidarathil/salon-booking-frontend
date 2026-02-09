@@ -1,11 +1,9 @@
-// frontend/src/pages/admin/AdminLoginPage.tsx
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { login } from '@/features/auth/authThunks';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { getErrorInfo, useAuthValidation } from '@/utils/authErrorHelper';
+import { getErrorInfo, useAuthValidation } from '@/common/utils/auth.utils';
 
 export default function AdminLoginPage() {
   const dispatch = useAppDispatch();
@@ -19,7 +17,6 @@ export default function AdminLoginPage() {
   const [fieldErrors, setFieldErrors] = useState({ identifier: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Handle blur event
   const handleBlur = (field: 'identifier' | 'password') => {
     setTouched((prev) => ({ ...prev, [field]: true }));
 

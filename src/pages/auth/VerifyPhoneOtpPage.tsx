@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Icon } from '@iconify/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { showSuccess ,showError} from '@/utils/swal';
+import { showSuccess, showError } from '@/common/utils/swal.utils';
 
 export default function VerifyPhoneOtpPage() {
   const dispatch = useAppDispatch();
@@ -19,10 +19,8 @@ export default function VerifyPhoneOtpPage() {
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [timeLeft, setTimeLeft] = useState(60);
 
-  // ✅ derived state (NO useState needed)
   const canResend = timeLeft <= 0;
 
-  // ⏱️ countdown timer
   useEffect(() => {
     if (timeLeft <= 0) return;
 
@@ -75,6 +73,8 @@ export default function VerifyPhoneOtpPage() {
     if (verifySmsOtp.fulfilled.match(result)) {
       await showSuccess('Phone Verified Successfully!', 'Welcome to SalonBook!');
       navigate('/login');
+    } else {
+      await showError('Invalid OTP', 'The code you entered is incorrect. Please try again.');
     }
   };
   const formatTime = (seconds: number) => {

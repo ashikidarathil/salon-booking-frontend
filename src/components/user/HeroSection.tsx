@@ -1,11 +1,23 @@
 // src/components/HeroSection.tsx
 'use client';
-
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
+import { useAppSelector } from '@/app/hooks';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export function HeroSection() {
+  const navigate = useNavigate();
+  const { selectedBranch } = useAppSelector((state) => state.branch);
+
+  const handleBookAppointment = () => {
+    if (selectedBranch) {
+      navigate('/services');
+    } else {
+      navigate('/branches');
+    }
+  };
+
   return (
     <section className="container px-2 py-16 mx-auto md:py-24 ">
       <div className="max-w-3xl">
@@ -21,14 +33,26 @@ export function HeroSection() {
         <div className="flex flex-wrap items-center gap-4 mb-12">
           <Button
             size="lg"
-            className="shadow-lg shadow-primary/20 bg-gradient-to-br from-primary to-primary/90"
+            onClick={() => navigate('/branches')}
+            className="gap-2 px-6 py-3 font-semibold text-white bg-primary hover:bg-primary/90"
           >
-            <Icon icon="solar:calendar-bold" className="mr-2 size-5" />
-            Book Appointment
-          </Button>
-          <Button size="lg" variant="outline">
-            <Icon icon="solar:map-point-bold" className="mr-2 size-5" />
+            <Icon icon="solar:map-point-bold" className="size-5" />
             Find Us On The Map
+          </Button>
+
+          {/* Browse / Book Button (feature added, UI untouched) */}
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={handleBookAppointment}
+            className={`gap-2 font-semibold px-6 py-3 ${
+              selectedBranch
+                ? 'border-primary text-primary hover:bg-primary/10'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Icon icon="solar:bag-bold" className="size-5" />
+            {selectedBranch ? 'Browse Our Services' : 'Select Branch First'}
           </Button>
         </div>
         <div className="flex flex-wrap items-center gap-8">

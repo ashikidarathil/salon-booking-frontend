@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { forgotPassword } from '../../features/auth/authThunks';
-import { showSuccess, showError, showLoading, closeLoading } from '@/utils/swal';
+import { showSuccess, showError, showLoading, closeLoading } from '@/common/utils/swal.utils';
 
 export default function ForgotPasswordPage() {
   const dispatch = useAppDispatch();

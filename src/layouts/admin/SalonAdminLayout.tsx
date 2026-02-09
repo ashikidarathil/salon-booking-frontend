@@ -17,6 +17,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@iconify/react';
 import { useAppDispatch } from '@/app/hooks';
 import { logout } from '@/features/auth/authThunks';
+import { APP_ROUTES } from '@/common/constants/app.routes';
 
 export function SalonAdminLayout() {
   const dispatch = useAppDispatch();
@@ -67,6 +68,27 @@ export function SalonAdminLayout() {
                 <SidebarMenuButton onClick={() => navigate('/admin/stylists')}>
                   <Icon icon="solar:user-bold" className="size-4" />
                   <span>Stylists</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate(APP_ROUTES.ADMIN.CATEGORIES)}>
+                  <Icon icon="solar:folder-bold" className="size-4" />
+                  <span>Categories</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate(APP_ROUTES.ADMIN.SERVICES)}>
+                  <Icon icon="solar:scissors-square-bold" className="size-4" />
+                  <span>Services</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate(APP_ROUTES.ADMIN.BRANCHES)}>
+                  <Icon icon="solar:buildings-bold" className="size-4" />
+                  <span>Branches</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 

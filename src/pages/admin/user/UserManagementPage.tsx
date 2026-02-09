@@ -1,5 +1,3 @@
-// frontend/src/pages/admin/user/UserManagementPage.tsx
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -18,21 +16,35 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Pagination from '@/components/pagination/Pagination';
-import { showSuccess, showError, showConfirm, showLoading, closeLoading } from '@/utils/swal';
+import {
+  showSuccess,
+  showError,
+  showConfirm,
+  showLoading,
+  closeLoading,
+} from '@/common/utils/swal.utils';
 
-const ITEMS_PER_PAGE = 5;
 const ADMIN_COLOR = '#10B981';
 
 export default function UserManagementPage() {
   const dispatch = useAppDispatch();
-  const { users, loading, error } = useAppSelector((state) => state.user);
+  const { data, pagination, loading, error } = useAppSelector((state) => state.user);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const limit = 5;
 
   useEffect(() => {
-    dispatch(fetchUsers());
-  }, [dispatch]);
+    dispatch(
+      fetchUsers({
+        page: currentPage,
+        limit,
+        search: searchTerm,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      }),
+    );
+  }, [dispatch, currentPage, limit, searchTerm]);
 
   const handleToggleBlock = async (userId: string, name: string, isBlocked: boolean) => {
     const action = isBlocked ? 'Unblock' : 'Block';
@@ -54,23 +66,10 @@ export default function UserManagementPage() {
 
     if (result.meta.requestStatus === 'fulfilled') {
       await showSuccess(`${action}ed!`, `${name} has been ${action.toLowerCase()}ed`);
-      // No need to refetch — slice updates optimistically
     } else {
       await showError('Failed', result.payload as string);
     }
   };
-
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
 
   if (error) {
     return (
@@ -82,23 +81,30 @@ export default function UserManagementPage() {
 
   return (
     <div className="p-8 space-y-10">
+      {/* Header */}
       <div>
         <h1 className="text-4xl font-bold">User Management</h1>
         <p className="mt-2 text-muted-foreground">Manage all registered customers</p>
       </div>
 
+      {/* Search Bar - ✨ NEW */}
       <div className="max-w-md">
         <Input
           placeholder="Search by name or email..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1); // Reset to first page on new search
+          }}
           className="w-full"
         />
       </div>
 
+      {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl">All Users ({filteredUsers.length})</CardTitle>
+          {/* ✨ CHANGED: Show total from pagination */}
+          <CardTitle className="text-3xl">All Users ({pagination?.totalItems || 0})</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -106,7 +112,7 @@ export default function UserManagementPage() {
               <div className="w-20 h-20 mx-auto mb-6 border-t-4 border-b-4 rounded-full animate-spin border-primary"></div>
               <p className="text-2xl">Loading users...</p>
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : !data || data.length === 0 ? (
             <div className="py-32 text-center">
               <h2 className="text-3xl font-bold">No Users Found</h2>
               <p className="text-xl text-muted-foreground">
@@ -128,12 +134,15 @@ export default function UserManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedUsers.map((user) => (
-                      <TableRow key={user.userId}>
+                    {/* ✨ CHANGED: Using data from pagination response */}
+                    {data.map((user) => (
+                      <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.phone || '—'}</TableCell>
-                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>
                             {user.isBlocked ? 'BLOCKED' : 'ACTIVE'}
@@ -143,9 +152,7 @@ export default function UserManagementPage() {
                           <Button
                             size="sm"
                             variant={user.isBlocked ? 'default' : 'destructive'}
-                            onClick={() =>
-                              handleToggleBlock(user.userId, user.name, user.isBlocked)
-                            }
+                            onClick={() => handleToggleBlock(user.id, user.name, user.isBlocked)}
                             style={user.isBlocked ? { backgroundColor: ADMIN_COLOR } : {}}
                             className={user.isBlocked ? 'text-white hover:opacity-90' : ''}
                           >
@@ -158,13 +165,16 @@ export default function UserManagementPage() {
                 </Table>
               </div>
 
-              <div className="p-4 border-t">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
+              {/* ✨ NEW: Pagination from backend response */}
+              {pagination && (
+                <div className="p-4 border-t">
+                  <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
             </>
           )}
         </CardContent>

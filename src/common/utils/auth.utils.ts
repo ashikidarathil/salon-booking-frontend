@@ -1,7 +1,6 @@
-// frontend/src/utils/authErrorHelper.ts
-
 import { AlertCircle, Clock, LockIcon, ShieldAlert } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { ERROR_MESSAGES } from '../constants/error.messages';
 
 export type ErrorType = 'blocked' | 'notVerified' | 'pending' | 'invalid' | 'role' | 'default';
 
@@ -54,7 +53,7 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorInfo> = {
   invalid: {
     type: 'invalid',
     title: 'Invalid Credentials',
-    message: 'Email/phone or password is incorrect.',
+    message: ERROR_MESSAGES.INVALID_CREDENTIALS,
     detail: 'Please check your credentials and try again.',
     icon: AlertCircle,
     bgColor: 'bg-red-50',
@@ -65,7 +64,7 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorInfo> = {
   role: {
     type: 'role',
     title: 'Unauthorized Access',
-    message: 'Your account does not have access to this section.',
+    message: ERROR_MESSAGES.FORBIDDEN,
     detail: 'Please log in with the correct account type.',
     icon: LockIcon,
     bgColor: 'bg-red-50',
@@ -75,8 +74,8 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorInfo> = {
   },
   default: {
     type: 'default',
-    title: 'Login Failed',
-    message: 'An error occurred during login.',
+    title: 'Operation Failed',
+    message: ERROR_MESSAGES.OPERATION_FAILED,
     detail: 'Please try again or contact support.',
     icon: AlertCircle,
     bgColor: 'bg-red-50',
@@ -86,11 +85,6 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorInfo> = {
   },
 };
 
-/**
- * Determine error type from error message
- * @param error - Error message from server
- * @returns ErrorType
- */
 export const getErrorType = (error: string | null): ErrorType => {
   if (!error) return 'default';
 
@@ -128,11 +122,6 @@ export const getErrorType = (error: string | null): ErrorType => {
   return 'default';
 };
 
-/**
- * Get complete error info with styling and messaging
- * @param error - Error message from server
- * @returns ErrorInfo or null if no error
- */
 export const getErrorInfo = (error: string | null): ErrorInfo | null => {
   if (!error) return null;
 
@@ -149,32 +138,32 @@ export const getErrorInfo = (error: string | null): ErrorInfo | null => {
   return config;
 };
 
+export const validateEmail = (email: string): string => {
+  if (!email.trim()) return ERROR_MESSAGES.REQUIRED_FIELD;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return ERROR_MESSAGES.INVALID_EMAIL;
+  return '';
+};
+
+export const validatePassword = (password: string): string => {
+  if (!password) return ERROR_MESSAGES.REQUIRED_FIELD;
+  if (password.length < 6) return ERROR_MESSAGES.PASSWORD_TOO_SHORT;
+  return '';
+};
+
+export const validateIdentifier = (value: string): string => {
+  if (!value.trim()) return ERROR_MESSAGES.REQUIRED_FIELD;
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[+]?[\d\s-()]{10,}$/;
+
+  if (!emailRegex.test(value) && !phoneRegex.test(value)) {
+    return 'Please enter a valid email or phone number';
+  }
+
+  return '';
+};
+
 export const useAuthValidation = () => {
-  const validateIdentifier = (value: string): string => {
-    if (!value.trim()) {
-      return 'Email or phone is required';
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[+]?[\d\s-()]{10,}$/;
-
-    if (!emailRegex.test(value) && !phoneRegex.test(value)) {
-      return 'Please enter a valid email or phone number';
-    }
-
-    return '';
-  };
-
-  const validatePassword = (value: string): string => {
-    if (!value) {
-      return 'Password is required';
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
-    }
-    return '';
-  };
-
   return {
     validateIdentifier,
     validatePassword,
