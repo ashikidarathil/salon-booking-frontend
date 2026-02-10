@@ -130,12 +130,11 @@ export default function StylistLoginPage() {
             )}
           </div>
 
-          {/* Password Field - NOW WITH TOGGLE EYE */}
           <div>
             <label className="block mb-2 text-sm font-medium text-foreground">Password</label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'} // ← Toggle type
+                type={showPassword ? 'text' : 'password'} 
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 value={password}

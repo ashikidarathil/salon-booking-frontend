@@ -1,4 +1,3 @@
-// src/pages/admin/BranchServiceModal.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -70,8 +69,8 @@ export default function BranchServiceModal({
   );
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
   const [editingService, setEditingService] = useState<BranchServiceItem | null>(null);
-  const [editPrice, setEditPrice] = useState<number>(0);
-  const [editDuration, setEditDuration] = useState<number>(0);
+  const [editPrice, setEditPrice] = useState<string>('0');
+  const [editDuration, setEditDuration] = useState<string>('0');
   useEffect(() => {
     if (open && branchId) {
       dispatch(
@@ -104,12 +103,15 @@ export default function BranchServiceModal({
 
   const handleEdit = (service: BranchServiceItem) => {
     setEditingService(service);
-    setEditPrice(service.price || 0);
-    setEditDuration(service.duration || 0);
+    setEditPrice(service.price?.toString() || '0');
+    setEditDuration(service.duration?.toString() || '0');
   };
 
   const handleSaveEdit = async (serviceId: string, serviceName: string) => {
-    if (editPrice <= 0 || editDuration <= 0) {
+    const priceNum = Number(editPrice);
+    const durationNum = Number(editDuration);
+
+    if (priceNum <= 0 || durationNum <= 0) {
       showError('Invalid values', 'Price and duration must be greater than 0');
       return;
     }
@@ -119,8 +121,8 @@ export default function BranchServiceModal({
       upsertBranchService({
         branchId,
         serviceId,
-        price: editPrice,
-        duration: editDuration,
+        price: priceNum,
+        duration: durationNum,
         isActive: true,
       }),
     );
@@ -307,7 +309,13 @@ export default function BranchServiceModal({
                             <Input
                               type="number"
                               value={editPrice}
-                              onChange={(e) => setEditPrice(Number(e.target.value))}
+                              onChange={(e) => {
+                                let val = e.target.value;
+                                if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                                  val = val.substring(1);
+                                }
+                                setEditPrice(val);
+                              }}
                               className="w-24"
                               min="0"
                               step="0.01"
@@ -323,7 +331,13 @@ export default function BranchServiceModal({
                             <Input
                               type="number"
                               value={editDuration}
-                              onChange={(e) => setEditDuration(Number(e.target.value))}
+                              onChange={(e) => {
+                                let val = e.target.value;
+                                if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                                  val = val.substring(1);
+                                }
+                                setEditDuration(val);
+                              }}
                               className="w-24"
                               min="1"
                             />

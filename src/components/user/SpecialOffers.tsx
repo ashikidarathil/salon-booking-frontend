@@ -1,4 +1,3 @@
-// src/components/SpecialOffers.tsx
 'use client';
 
 import { Icon } from '@iconify/react';

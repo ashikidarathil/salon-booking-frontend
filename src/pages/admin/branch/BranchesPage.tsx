@@ -110,11 +110,11 @@ export default function BranchesPage() {
   };
 
   const resetFormAndCloseDialog = () => {
-    reset(); // Clear form
-    setEditingBranch(null); // Clear editing state
-    setSelectedLocation(undefined); // Clear location
-    setIsMapOpen(false); // Close map
-    setIsAddDialogOpen(false); // Close dialog
+    reset();
+    setEditingBranch(null);
+    setSelectedLocation(undefined);
+    setIsMapOpen(false); 
+    setIsAddDialogOpen(false); 
   };
 
   const onSubmit = async (data: BranchFormData) => {
@@ -153,10 +153,8 @@ export default function BranchesPage() {
 
   const handleDialogClose = (open: boolean) => {
     if (!open) {
-      // Dialog is closing, reset everything
       resetFormAndCloseDialog();
     } else {
-      // Dialog is opening
       setIsAddDialogOpen(open);
     }
   };
@@ -204,7 +202,6 @@ export default function BranchesPage() {
   };
 
   const handleAddNewBranch = () => {
-    // Explicitly reset everything
     reset({
       name: '',
       address: '',

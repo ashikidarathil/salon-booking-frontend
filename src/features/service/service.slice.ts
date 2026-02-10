@@ -1,5 +1,5 @@
-import { createSlice } from '@reduxjs/toolkit';
-import type { Service } from './service.types';
+import { createSlice, isPending, isRejected } from '@reduxjs/toolkit';
+import type { ServiceState } from './service.types';
 import {
   fetchServices,
   createService,
@@ -13,16 +13,6 @@ import {
   fetchPublicServiceDetails,
   fetchPublicServicesPaginated,
 } from './serviceThunks';
-import type { PaginationMetadata } from '@/common/types/pagination.metadata';
-
-interface ServiceState {
-  services: Service[];
-  loading: boolean;
-  currentService: Service | null;
-  imageLoading: boolean;
-  error: string | null;
-  pagination: PaginationMetadata;
-}
 
 const initialState: ServiceState = {
   services: [],
@@ -46,31 +36,12 @@ const serviceSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchPaginatedServices.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchPaginatedServices.fulfilled, (state, action) => {
-        state.loading = false;
         state.services = action.payload.data;
         state.pagination = action.payload.pagination;
       })
-      .addCase(fetchPaginatedServices.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      .addCase(fetchServices.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchServices.fulfilled, (state, action) => {
-        state.loading = false;
         state.services = action.payload;
-      })
-      .addCase(fetchServices.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       })
       .addCase(createService.fulfilled, (state, action) => {
         state.services.push(action.payload);
@@ -94,9 +65,8 @@ const serviceSlice = createSlice({
           s.id === action.payload.id ? action.payload : s,
         );
       })
-      .addCase(uploadServiceImage.rejected, (state, action) => {
+      .addCase(uploadServiceImage.rejected, (state) => {
         state.imageLoading = false;
-        state.error = action.payload as string;
       })
       .addCase(deleteServiceImage.fulfilled, (state, action) => {
         state.services = state.services.map((s) =>
@@ -112,37 +82,28 @@ const serviceSlice = createSlice({
         state.services = state.services.map((s) =>
           s.id === action.payload.id ? action.payload : s,
         );
-      });
-
-    builder
-      .addCase(fetchPublicServicesPaginated.pending, (state) => {
-        state.loading = true;
-        state.error = null;
       })
       .addCase(fetchPublicServicesPaginated.fulfilled, (state, action) => {
-        state.loading = false;
         state.services = action.payload.data;
         state.pagination = action.payload.pagination;
       })
-      .addCase(fetchPublicServicesPaginated.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Error fetching services';
-      });
-
-    // Fetch service details
-    builder
-      .addCase(fetchPublicServiceDetails.pending, (state) => {
+      .addCase(fetchPublicServiceDetails.fulfilled, (state, action) => {
+        state.currentService = action.payload;
+      })
+      .addMatcher(isPending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchPublicServiceDetails.fulfilled, (state, action) => {
+      .addMatcher(isRejected, (state, action) => {
         state.loading = false;
-        state.currentService = action.payload;
+        state.error = action.payload as string;
       })
-      .addCase(fetchPublicServiceDetails.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Error fetching service details';
-      });
+      .addMatcher(
+        (action) => action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.loading = false;
+        },
+      );
   },
 });
 

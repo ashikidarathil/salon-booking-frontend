@@ -1,12 +1,10 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { categoryService } from '@/services/category.service';
 import type { Category, CategoryStatus } from './category.types';
-import type { ApiResponse } from '@/common/types/api.types';
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+import { handleThunkError } from '@/common/utils/thunk.utils';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 
-// =======================
-// FETCH
-// =======================
 export const fetchCategories = createAsyncThunk<
   Category[],
   { includeDeleted?: boolean } | undefined,
@@ -16,10 +14,7 @@ export const fetchCategories = createAsyncThunk<
     const res = await categoryService.listCategories(payload?.includeDeleted);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed');
-    }
-    return rejectWithValue('Failed to fetch categories');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
@@ -32,24 +27,14 @@ export const fetchPublicCategories = createAsyncThunk<
     const res = await categoryService.listPublic();
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch categories');
-    }
-    return rejectWithValue('Failed to fetch categories');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
 export const fetchPaginatedCategories = createAsyncThunk<
   {
     data: Category[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-      itemsPerPage: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
+    pagination: PaginationMetadata;
   },
   {
     page?: number;
@@ -66,20 +51,10 @@ export const fetchPaginatedCategories = createAsyncThunk<
     const res = await categoryService.getPaginatedCategories(params);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const apiResponse = err.response?.data as ApiResponse;
-
-      const errorMessage = apiResponse?.message || 'Failed to fetch categories';
-
-      return rejectWithValue(errorMessage);
-    }
-    return rejectWithValue('Failed to fetch categories');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
-// =======================
-// CREATE
-// =======================
 export const createCategory = createAsyncThunk<
   Category,
   { name: string; description?: string },
@@ -89,24 +64,10 @@ export const createCategory = createAsyncThunk<
     const res = await categoryService.createCategory(data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const apiResponse = err.response?.data as ApiResponse;
-
-      const errorMessage =
-        apiResponse?.message ||
-        apiResponse?.errors?.name?.[0] ||
-        apiResponse?.errors?.description?.[0] ||
-        'Failed to create category';
-
-      return rejectWithValue(errorMessage);
-    }
-    return rejectWithValue('Failed to create category');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.CREATE_FAILED);
   }
 });
 
-// =======================
-// UPDATE
-// =======================
 export const updateCategory = createAsyncThunk<
   Category,
   {
@@ -123,23 +84,10 @@ export const updateCategory = createAsyncThunk<
     const res = await categoryService.updateCategory(id, data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const apiResponse = err.response?.data as ApiResponse;
-
-      const errorMessage =
-        apiResponse?.message ||
-        Object.values(apiResponse?.errors || {})?.[0]?.[0] ||
-        'Failed to update category';
-
-      return rejectWithValue(errorMessage);
-    }
-    return rejectWithValue('Failed to update category');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
-// =======================
-// TOGGLE STATUS
-// =======================
 export const toggleCategoryStatus = createAsyncThunk<
   { id: string; status: CategoryStatus },
   { id: string; status: CategoryStatus },
@@ -149,20 +97,10 @@ export const toggleCategoryStatus = createAsyncThunk<
     await categoryService.updateCategory(id, { status });
     return { id, status };
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const apiResponse = err.response?.data as ApiResponse;
-
-      const errorMessage = apiResponse?.message || 'Failed to toggle status';
-
-      return rejectWithValue(errorMessage);
-    }
-    return rejectWithValue('Failed to toggle status');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
-// =======================
-// SOFT DELETE
-// =======================
 export const softDeleteCategory = createAsyncThunk<string, string, { rejectValue: string }>(
   'category/softDeleteCategory',
   async (id, { rejectWithValue }) => {
@@ -170,21 +108,11 @@ export const softDeleteCategory = createAsyncThunk<string, string, { rejectValue
       await categoryService.softDeleteCategory(id);
       return id;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const apiResponse = err.response?.data as ApiResponse;
-
-        const errorMessage = apiResponse?.message || 'Failed to delete category';
-
-        return rejectWithValue(errorMessage);
-      }
-      return rejectWithValue('Failed to soft delete');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DELETE_FAILED);
     }
   },
 );
 
-// =======================
-// RESTORE
-// =======================
 export const restoreCategory = createAsyncThunk<string, string, { rejectValue: string }>(
   'category/restoreCategory',
   async (id, { rejectWithValue }) => {
@@ -192,14 +120,7 @@ export const restoreCategory = createAsyncThunk<string, string, { rejectValue: s
       await categoryService.restoreCategory(id);
       return id;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const apiResponse = err.response?.data as ApiResponse;
-
-        const errorMessage = apiResponse?.message || 'Failed to restore category';
-
-        return rejectWithValue(errorMessage);
-      }
-      return rejectWithValue('Failed to restore');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );

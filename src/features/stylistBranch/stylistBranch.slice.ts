@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, isPending, isRejected } from '@reduxjs/toolkit';
 import type { BranchStylist, UnassignedStylist } from './stylistBranch.types';
 import {
   fetchBranchStylists,
@@ -51,59 +51,23 @@ const stylistBranchSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch assigned stylists
-      .addCase(fetchBranchStylists.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchBranchStylists.fulfilled, (state, action) => {
-        state.loading = false;
         state.assignedStylists = action.payload;
-      })
-      .addCase(fetchBranchStylists.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       })
 
       // Fetch unassigned options
-      .addCase(fetchUnassignedStylists.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchUnassignedStylists.fulfilled, (state, action) => {
-        state.loading = false;
         state.unassignedOptions = action.payload;
       })
-      .addCase(fetchUnassignedStylists.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
 
-      .addCase(fetchBranchStylistsPaginated.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchBranchStylistsPaginated.fulfilled, (state, action) => {
-        state.loading = false;
         state.assignedStylists = action.payload.data;
         state.assignedPagination = action.payload.pagination;
       })
-      .addCase(fetchBranchStylistsPaginated.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
 
-      .addCase(fetchUnassignedStylistsPaginated.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchUnassignedStylistsPaginated.fulfilled, (state, action) => {
-        state.loading = false;
         state.unassignedOptions = action.payload.data;
         state.unassignedPagination = action.payload.pagination;
-      })
-      .addCase(fetchUnassignedStylistsPaginated.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       })
 
       // Assign stylist
@@ -128,7 +92,21 @@ const stylistBranchSlice = createSlice({
         if (index !== -1) {
           state.assignedStylists[index] = action.payload;
         }
-      });
+      })
+      .addMatcher(isPending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addMatcher(isRejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) || action.error.message || 'Something went wrong';
+      })
+      .addMatcher(
+        (action) => action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.loading = false;
+        },
+      );
   },
 });
 

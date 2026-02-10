@@ -52,7 +52,6 @@ export default function NewPasswordPage() {
     }
   };
 
-  // Validate confirm password on change
   const handleConfirmPasswordChange = (value: string) => {
     setConfirmPassword(value);
 

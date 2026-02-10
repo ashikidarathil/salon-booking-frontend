@@ -1,4 +1,3 @@
-// src/utils/swal.ts
 import Swal from 'sweetalert2';
 import type { SweetAlertOptions } from 'sweetalert2';
 

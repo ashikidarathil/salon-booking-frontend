@@ -1,5 +1,3 @@
-// frontend/src/components/layouts/ProfileLayout.tsx
-
 'use client';
 
 import { Outlet, Link } from 'react-router-dom';

@@ -1,8 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { branchCategoryService } from '@/services/branchCategory.service';
 import type { BranchCategoryItem } from './branchCategory.types';
 import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
+import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export const fetchBranchCategories = createAsyncThunk<
   BranchCategoryItem[],
@@ -13,10 +14,7 @@ export const fetchBranchCategories = createAsyncThunk<
     const res = await branchCategoryService.list(branchId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch categories');
-    }
-    return rejectWithValue('Failed to fetch categories');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
@@ -31,10 +29,7 @@ export const toggleBranchCategory = createAsyncThunk<
       const res = await branchCategoryService.toggle(branchId, categoryId, isActive);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to toggle category');
-      }
-      return rejectWithValue('Failed to toggle category');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -56,22 +51,13 @@ export const fetchBranchCategoriesPaginated = createAsyncThunk<
   { rejectValue: string }
 >(
   'branchCategory/fetchBranchCategoriesPaginated',
-  async ({ branchId, page, limit, search, sortBy, sortOrder, isActive }, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const res = await branchCategoryService.listPaginated(branchId, {
-        page,
-        limit,
-        search,
-        sortBy,
-        sortOrder,
-        isActive,
-      });
+      const { branchId, ...rest } = params;
+      const res = await branchCategoryService.listPaginated(branchId, rest);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch categories');
-      }
-      return rejectWithValue('Failed to fetch categories');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );

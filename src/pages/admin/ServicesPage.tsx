@@ -43,7 +43,7 @@ import {
   showLoading,
   closeLoading,
 } from '@/common/utils/swal.utils';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Service } from '@/features/service/service.types';
@@ -105,14 +105,7 @@ export default function ServicesPage() {
   const [selectedServiceForWhatIncluded, setSelectedServiceForWhatIncluded] =
     useState<Service | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<ServiceFormData>({
+  const form = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       name: '',
@@ -122,7 +115,23 @@ export default function ServicesPage() {
     },
   });
 
-  const whatIncluded = watch('whatIncluded') ?? [];
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = form;
+
+  /* 
+   * FIXED: Use useWatch to subscribe to form updates efficiently and avoid 
+   * "incompatible library" warnings from React Compiler regarding watch().
+   */
+  const whatIncluded = useWatch({ 
+    control: form.control, 
+    name: 'whatIncluded', 
+    defaultValue: [] 
+  }) || [];
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -140,7 +149,6 @@ export default function ServicesPage() {
     );
   }, [dispatch, currentPage, searchTerm, categoryFilter, statusFilter]);
 
-  // ✅ FIXED: Let TypeScript infer the type
   const onSubmit = async (data: ServiceFormData) => {
     showLoading(editingService ? 'Updating service...' : 'Creating service...');
 
@@ -488,7 +496,8 @@ export default function ServicesPage() {
                 <Label htmlFor="categoryId">Category *</Label>
                 <select
                   id="categoryId"
-                  value={watch('categoryId') || ''}
+                  /* FIXED: Use useWatch for categoryId to avoid React Compiler warning */
+                  value={useWatch({ control: form.control, name: 'categoryId' }) || ''}
                   onChange={(e) => setValue('categoryId', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 >

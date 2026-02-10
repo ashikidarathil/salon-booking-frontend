@@ -56,7 +56,7 @@ export const serviceService = {
           hasPreviousPage: boolean;
         };
       }>
-    >(`/admin/services/paginated?${queryParams.toString()}`);
+    >(`${API_ROUTES.SERVICE.PAGINATED}?${queryParams.toString()}`);
   },
 
   create(data: CreateServiceInput) {
@@ -100,12 +100,10 @@ export const serviceService = {
     return api.delete<ApiResponse<Service>>(url);
   },
 
-  // ✅ NEW: Get single public service
   async getPublic(id: string) {
-    return api.get<ApiResponse<Service>>(`/services/${id}`);
+    return api.get<ApiResponse<Service>>(API_ROUTES.SERVICE.PUBLIC_BY_ID(id));
   },
 
-  // ✅ NEW: Get paginated public services
   async listPublicPaginated(params?: {
     page?: number;
     limit?: number;
@@ -130,6 +128,6 @@ export const serviceService = {
           hasPreviousPage: boolean;
         };
       }>
-    >(`/services/paginated?${queryParams.toString()}`);
+    >(`${API_ROUTES.SERVICE.PUBLIC_PAGINATED}?${queryParams.toString()}`);
   },
 };

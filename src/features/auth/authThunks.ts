@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { authService } from '@/services/auth.service';
 import type { SignupPayload, User } from './auth.types';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
+import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export const signup = createAsyncThunk<User, SignupPayload, { rejectValue: string }>(
   'auth/signup',
@@ -11,10 +11,7 @@ export const signup = createAsyncThunk<User, SignupPayload, { rejectValue: strin
       const res = await authService.signup(data);
       return res.data.data.user;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.CREATE_FAILED);
-      }
-      return rejectWithValue(ERROR_MESSAGES.CREATE_FAILED);
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.CREATE_FAILED);
     }
   },
 );
@@ -28,10 +25,7 @@ export const verifyOtp = createAsyncThunk<
     const res = await authService.verifyOtp(data);
     return res.data.data.user;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
@@ -44,10 +38,7 @@ export const verifySmsOtp = createAsyncThunk<
     const res = await authService.verifySmsOtp(payload);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
@@ -57,10 +48,7 @@ export const resendEmailOtp = createAsyncThunk<void, string, { rejectValue: stri
     try {
       await authService.resendEmailOtp({ email });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-      }
-      return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -71,10 +59,7 @@ export const resendSmsOtp = createAsyncThunk<void, string, { rejectValue: string
     try {
       await authService.resendSmsOtp({ phone });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-      }
-      return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -91,11 +76,7 @@ export const login = createAsyncThunk<
     sessionStorage.setItem('user_role', user.role);
     return user;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const errorMessage = err.response?.data?.message || ERROR_MESSAGES.INVALID_CREDENTIALS;
-      return rejectWithValue(errorMessage);
-    }
-    return rejectWithValue(ERROR_MESSAGES.NETWORK_ERROR);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.INVALID_CREDENTIALS);
   }
 });
 
@@ -106,10 +87,7 @@ export const googleLogin = createAsyncThunk<User, { idToken: string }, { rejectV
       const res = await authService.googleLogin(payload);
       return res.data.data.user;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-      }
-      return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -126,10 +104,7 @@ export const forgotPassword = createAsyncThunk<
       message: res.data.message || 'Reset instructions sent',
     };
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
@@ -142,10 +117,7 @@ export const resendResetOtp = createAsyncThunk<
     const res = await authService.resendResetOtp({ email });
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
@@ -158,10 +130,7 @@ export const verifyResetOtp = createAsyncThunk<
     const res = await authService.verifyResetOtp({ email, otp });
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
@@ -177,10 +146,7 @@ export const resetPassword = createAsyncThunk<
       message: res.data.message || 'Password reset successful',
     };
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.OPERATION_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
@@ -196,10 +162,7 @@ export const fetchMe = createAsyncThunk<User, void, { rejectValue: string }>(
 
       return response.data.data.user;
     } catch (error) {
-      if (error instanceof Error && error.message.includes('401')) {
-        return rejectWithValue(ERROR_MESSAGES.UNAUTHORIZED);
-      }
-      return rejectWithValue(ERROR_MESSAGES.DATA_LOAD_FAILED);
+      return handleThunkError(error, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );

@@ -1,4 +1,3 @@
-// src/components/user/Header.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -34,7 +33,6 @@ export function Header() {
   
   const [branchPopoverOpen, setBranchPopoverOpen] = useState(false);
 
-  // 🔹 Load selected branch from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('selectedBranch');
     if (saved && !selectedBranch) {
@@ -42,7 +40,6 @@ export function Header() {
     }
   }, [dispatch, selectedBranch]);
 
-  // 🔹 Fetch all branches for the dropdown
   useEffect(() => {
     if (branches.length === 0) {
       dispatch(fetchPublicBranches());

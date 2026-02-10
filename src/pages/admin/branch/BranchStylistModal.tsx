@@ -35,7 +35,6 @@ import {
   closeLoading,
 } from '@/common/utils/swal.utils';
 import Pagination from '@/components/pagination/Pagination';
-// import { Badge } from '@/components/ui/badge';
 
 interface BranchStylistModalProps {
   branchId: string;
@@ -116,7 +115,6 @@ export default function BranchStylistModal({
     if (result.meta.requestStatus === 'fulfilled') {
       showSuccess('Assigned', 'Stylist assigned successfully');
 
-      // Refresh both lists
       dispatch(
         fetchBranchStylistsPaginated({
           branchId,

@@ -1,9 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { profileService, type UpdateProfileResponse } from '@/services/profile.service';
 import type { UpdateProfilePayload, ChangePasswordPayload } from '@/services/profile.service';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import type { SuccessMessageResponse } from '@/common/types/api.types';
+import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export interface ProfilePictureResponse {
   profilePicture: string;
@@ -18,10 +18,7 @@ export const uploadProfilePicture = createAsyncThunk<
     const res = await profileService.uploadProfilePicture(file);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -34,10 +31,7 @@ export const updateProfilePicture = createAsyncThunk<
     const res = await profileService.updateProfilePicture(file);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -50,10 +44,7 @@ export const updateProfile = createAsyncThunk<
     const res = await profileService.updateProfile(data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -66,9 +57,6 @@ export const changePassword = createAsyncThunk<
     const res = await profileService.changePassword(data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });

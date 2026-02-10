@@ -119,7 +119,6 @@ export default function BranchCategoryModal({
 
     if (result.meta.requestStatus === 'fulfilled') {
       showSuccess('Success', `${categoryName} ${isEnable ? 'enabled' : 'disabled'}`);
-      // Refresh the current page after toggle
       dispatch(
         fetchBranchCategoriesPaginated({
           branchId,

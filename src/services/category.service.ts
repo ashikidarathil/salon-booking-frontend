@@ -2,6 +2,7 @@ import { api } from '@/services/api/api';
 import { API_ROUTES } from '@/common/constants/api.routes';
 import type { ApiResponse } from '@/common/types/api.types';
 import type { Category } from '@/features/category/category.types';
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 
 export const categoryService = {
   listCategories(includeDeleted = false) {
@@ -55,19 +56,12 @@ export const categoryService = {
     return api.get<
       ApiResponse<{
         data: Category[];
-        pagination: {
-          currentPage: number;
-          totalPages: number;
-          totalItems: number;
-          itemsPerPage: number;
-          hasNextPage: boolean;
-          hasPreviousPage: boolean;
-        };
+        pagination: PaginationMetadata;
       }>
-    >(`/admin/categories/paginated?${queryParams.toString()}`);
+    >(`${API_ROUTES.CATEGORY.PAGINATED}?${queryParams.toString()}`);
   },
 
   async listPublic() {
-    return api.get<ApiResponse<Category[]>>('/categories');
+    return api.get<ApiResponse<Category[]>>(API_ROUTES.CATEGORY.PUBLIC_LIST);
   },
 };

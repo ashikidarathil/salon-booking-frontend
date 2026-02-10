@@ -1,3 +1,5 @@
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+
 export interface UserListItem {
   id: string;
   name: string;
@@ -9,14 +11,7 @@ export interface UserListItem {
 
 export interface UserState {
   users: UserListItem[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  } | null;
+  pagination: PaginationMetadata | null;
   loading: boolean;
   error: string | null;
 }

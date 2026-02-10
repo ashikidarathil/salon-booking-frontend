@@ -1,9 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { stylistInviteService } from '@/services/stylistInvite.service';
-import type { StylistListItem, InvitePreview } from './stylistInvite.types';
+import type { StylistListItem, InvitePreview, PaginatedStylistResponse } from './stylistInvite.types';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import type { SuccessMessageResponse, SuccessResponse } from '@/common/types/api.types';
+import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export const createStylistInvite = createAsyncThunk<
   { inviteLink: string; userId: string },
@@ -14,25 +14,12 @@ export const createStylistInvite = createAsyncThunk<
     const res = await stylistInviteService.createInvite(payload);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.CREATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.CREATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.CREATE_FAILED);
   }
 });
 
 export const fetchPaginatedStylists = createAsyncThunk<
-  {
-    data: StylistListItem[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-      itemsPerPage: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
-  },
+  PaginatedStylistResponse,
   {
     page?: number;
     limit?: number;
@@ -49,11 +36,7 @@ export const fetchPaginatedStylists = createAsyncThunk<
     const res = await stylistInviteService.getPaginatedStylists(params);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const message = err.response?.data?.message || ERROR_MESSAGES.DATA_LOAD_FAILED;
-      return rejectWithValue(message);
-    }
-    return rejectWithValue(ERROR_MESSAGES.NETWORK_ERROR);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
@@ -66,10 +49,7 @@ export const blockUnblockStylist = createAsyncThunk<
     await stylistInviteService.blockStylist(stylistId, isBlocked);
     return { success: true, isBlocked, stylistId };
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -82,10 +62,7 @@ export const applyAsStylist = createAsyncThunk<
     const res = await stylistInviteService.applyAsStylist(payload);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || ERROR_MESSAGES.CREATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.NETWORK_ERROR);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.CREATE_FAILED);
   }
 });
 
@@ -98,10 +75,7 @@ export const validateInvite = createAsyncThunk<
     const res = await stylistInviteService.validate(token);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.NOT_FOUND);
-    }
-    return rejectWithValue(ERROR_MESSAGES.NETWORK_ERROR);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.NOT_FOUND);
   }
 });
 
@@ -114,10 +88,7 @@ export const acceptInvite = createAsyncThunk<
     const res = await stylistInviteService.accept(token, data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.OPERATION_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.OPERATION_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
   }
 });
 
@@ -129,11 +100,7 @@ export const fetchStylists = createAsyncThunk<StylistListItem[], void, { rejectV
       return res.data.data;
     } catch (err) {
       console.error('fetchStylists error:', err);
-      if (axios.isAxiosError(err)) {
-        const message = err.response?.data?.message || ERROR_MESSAGES.DATA_LOAD_FAILED;
-        return rejectWithValue(message);
-      }
-      return rejectWithValue(ERROR_MESSAGES.NETWORK_ERROR);
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );
@@ -147,10 +114,7 @@ export const approveStylist = createAsyncThunk<
     const res = await stylistInviteService.approve(userId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -163,10 +127,7 @@ export const rejectStylist = createAsyncThunk<
     const res = await stylistInviteService.reject(userId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.DELETE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.DELETE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DELETE_FAILED);
   }
 });
 
@@ -179,10 +140,7 @@ export const sendInviteToApplied = createAsyncThunk<
     const res = await stylistInviteService.sendInviteToApplied(userId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.CREATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.CREATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.CREATE_FAILED);
   }
 });
 
@@ -195,9 +153,6 @@ export const toggleBlockStylist = createAsyncThunk<
     await stylistInviteService.toggleBlock(userId, block);
     return { success: true, block, userId };
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? ERROR_MESSAGES.UPDATE_FAILED);
-    }
-    return rejectWithValue(ERROR_MESSAGES.UPDATE_FAILED);
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });

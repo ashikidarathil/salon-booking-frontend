@@ -1,8 +1,8 @@
-// frontend/src/services/branch.service.ts
 import { api } from '@/services/api/api';
 import { API_ROUTES } from '@/common/constants/api.routes';
 import type { ApiResponse } from '@/common/types/api.types';
 import type { Branch, NearestBranch } from '@/features/branch/branch.types';
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 
 export const branchService = {
   create(data: { name: string; address: string; phone?: string }) {
@@ -26,24 +26,19 @@ export const branchService = {
   },
 
   getNearestBranches(latitude: number, longitude: number, maxDistance?: number) {
-    return api.post<ApiResponse<NearestBranch[]>>('/branches/nearest', {
+    return api.post<ApiResponse<NearestBranch[]>>(API_ROUTES.BRANCH.PUBLIC_NEAREST, {
       latitude,
       longitude,
       ...(maxDistance && { maxDistance }),
     });
   },
 
-  // getNearestBranches(lat: number, lng: number) {
-  //   return api.get(`/branches/nearest?lat=${lat}&lng=${lng}`);
-  // },
-
   async listPublic() {
-    return api.get<ApiResponse<Branch[]>>('/branches');
+    return api.get<ApiResponse<Branch[]>>(API_ROUTES.BRANCH.PUBLIC_LIST);
   },
 
-  // ✅ NEW: Get single branch details
   async getPublic(id: string) {
-    return api.get<ApiResponse<Branch>>(`/branches/${id}`);
+    return api.get<ApiResponse<Branch>>(API_ROUTES.BRANCH.PUBLIC_BY_ID(id));
   },
 
   restore(id: string) {
@@ -71,15 +66,22 @@ export const branchService = {
     return api.get<
       ApiResponse<{
         data: Branch[];
-        pagination: {
-          currentPage: number;
-          totalPages: number;
-          totalItems: number;
-          itemsPerPage: number;
-          hasNextPage: boolean;
-          hasPreviousPage: boolean;
-        };
+        pagination: PaginationMetadata;
       }>
-    >(`${API_ROUTES.BRANCH.BASE_NEW}?${queryParams.toString()}`);
+    >(`${API_ROUTES.BRANCH.ADMIN_PAGINATED}?${queryParams.toString()}`);
+  },
+  
+  listPublicPaginated(params?: { page?: number; limit?: number; search?: string }) {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+
+    return api.get<
+      ApiResponse<{
+        data: Branch[];
+        pagination: PaginationMetadata;
+      }>
+    >(`${API_ROUTES.BRANCH.PUBLIC_PAGINATED}?${queryParams.toString()}`);
   },
 };

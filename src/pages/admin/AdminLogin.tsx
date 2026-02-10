@@ -33,7 +33,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  // ✅ Handle input change
   const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setIdentifier(value);
@@ -58,12 +57,10 @@ export default function AdminLoginPage() {
     }
   };
 
-  // ✅ Check if form is valid
   const isFormValid = () => {
     return !validateIdentifier(identifier) && !validatePassword(password);
   };
 
-  // ✅ Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -82,10 +79,8 @@ export default function AdminLoginPage() {
     }
   };
 
-  // ✅ Get error info from helper (reusing utility)
   const errorInfo = getErrorInfo(error);
 
-  // ✅ Redirect on successful login
   useEffect(() => {
     if (!isAuthenticated || !user) return;
     if (user.role === 'ADMIN') navigate('/admin', { replace: true });
@@ -96,7 +91,6 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md p-6 border rounded-lg bg-card">
         <h1 className="mb-6 text-2xl font-semibold text-center">Admin Login</h1>
 
-        {/* ✅ Error Message (using helper) */}
         {errorInfo && (
           <div
             className={`flex gap-3 p-4 mb-6 border rounded-lg ${errorInfo.bgColor} ${errorInfo.borderColor}`}
@@ -111,7 +105,6 @@ export default function AdminLoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* ✅ Email Field */}
           <div>
             <label className="block mb-2 text-sm font-medium text-foreground">Email Address</label>
             <input

@@ -1,25 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { fetchUsers, toggleBlockUser } from './userThunks';
-import type { UserListItem } from './user.types';
-
-interface PaginationMetadata {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
-
-interface UserState {
-  data: UserListItem[];
-  pagination: PaginationMetadata | null;
-  loading: boolean;
-  error: string | null;
-}
+import type { UserState } from './user.types';
 
 const initialState: UserState = {
-  data: [],
+  users: [],
   pagination: null,
   loading: false,
   error: null,
@@ -33,7 +17,7 @@ const userSlice = createSlice({
       state.error = null;
     },
     resetUsers: (state) => {
-      state.data = [];
+      state.users = [];
       state.pagination = null;
       state.error = null;
     },
@@ -46,7 +30,7 @@ const userSlice = createSlice({
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload.data;
+        state.users = action.payload.data;
         state.pagination = action.payload.pagination;
         state.error = null;
       })
@@ -57,7 +41,7 @@ const userSlice = createSlice({
 
       builder
       .addCase(toggleBlockUser.fulfilled, (state, action) => {
-        const user = state.data.find((u) => u.id === action.payload.userId);
+        const user = state.users.find((u) => u.id === action.payload.userId);
         if (user) {
           user.isBlocked = action.payload.isBlocked;
         }

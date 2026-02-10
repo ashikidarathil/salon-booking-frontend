@@ -1,3 +1,5 @@
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+
 export type CategoryStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface Category {
@@ -10,11 +12,9 @@ export interface Category {
   updatedAt: string;
 }
 
-export interface PaginationMetadata {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
+export interface CategoryState {
+  categories: Category[];
+  loading: boolean;
+  error: string | null;
+  pagination: PaginationMetadata;
 }

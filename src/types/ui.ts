@@ -3,4 +3,4 @@ import * as React from 'react';
 export type UIProps = {
   className?: string;
   children?: React.ReactNode;
-} & React.AriaAttributes; // Optional: adds accessibility props
+} & React.AriaAttributes; 

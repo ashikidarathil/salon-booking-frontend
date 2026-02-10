@@ -1,8 +1,8 @@
-// src/features/branch/branch.thunks.ts
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { branchService } from '@/services/branch.service';
 import type { Branch, NearestBranch } from './branch.types';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
+import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export const fetchBranches = createAsyncThunk<Branch[], undefined, { rejectValue: string }>(
   'branch/fetchBranches',
@@ -11,10 +11,7 @@ export const fetchBranches = createAsyncThunk<Branch[], undefined, { rejectValue
       const res = await branchService.list(true);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch branches');
-      }
-      return rejectWithValue('Failed to fetch branches');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );
@@ -28,10 +25,7 @@ export const createBranch = createAsyncThunk<
     const res = await branchService.create(data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to create branch');
-    }
-    return rejectWithValue('Failed to create branch');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.CREATE_FAILED);
   }
 });
 
@@ -44,10 +38,7 @@ export const updateBranch = createAsyncThunk<
     const res = await branchService.update(id, data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to update branch');
-    }
-    return rejectWithValue('Failed to update branch');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -58,10 +49,7 @@ export const softDeleteBranch = createAsyncThunk<Branch, string, { rejectValue: 
       const res = await branchService.softDelete(id);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to disable branch');
-      }
-      return rejectWithValue('Failed to disable branch');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DELETE_FAILED);
     }
   },
 );
@@ -73,10 +61,7 @@ export const restoreBranch = createAsyncThunk<Branch, string, { rejectValue: str
       const res = await branchService.restore(id);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to restore branch');
-      }
-      return rejectWithValue('Failed to restore branch');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -107,28 +92,9 @@ export const fetchPaginatedBranches = createAsyncThunk<
     const res = await branchService.getPaginatedBranches(params);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch branches');
-    }
-    return rejectWithValue('Failed to fetch branches');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
-
-// export const fetchNearestBranches = createAsyncThunk<
-//   NearestBranch[],
-//   { latitude: number; longitude: number },
-//   { rejectValue: string }
-// >('branch/fetchNearestBranches', async ({ latitude, longitude }, { rejectWithValue }) => {
-//   try {
-//     const res = await branchService.getNearestBranches(latitude, longitude);
-//     return res.data.data;
-//   } catch (err) {
-//     if (axios.isAxiosError(err)) {
-//       return rejectWithValue(err.response?.data?.message || 'Failed to fetch nearest branches');
-//     }
-//     return rejectWithValue('Failed to fetch nearest branches');
-//   }
-// });
 
 export const fetchPublicBranches = createAsyncThunk<Branch[], undefined, { rejectValue: string }>(
   'branch/fetchPublicBranches',
@@ -137,15 +103,11 @@ export const fetchPublicBranches = createAsyncThunk<Branch[], undefined, { rejec
       const res = await branchService.listPublic();
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch branches');
-      }
-      return rejectWithValue('Failed to fetch branches');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );
 
-// ✅ NEW: Fetch nearest branches (geolocation)
 export const fetchNearestBranches = createAsyncThunk<
   NearestBranch[],
   { latitude: number; longitude: number; maxDistance?: number },
@@ -157,15 +119,11 @@ export const fetchNearestBranches = createAsyncThunk<
       const res = await branchService.getNearestBranches(latitude, longitude, maxDistance);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch nearest branches');
-      }
-      return rejectWithValue('Failed to fetch nearest branches');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
 
-// ✅ NEW: Get single branch details
 export const fetchBranchById = createAsyncThunk<Branch, string, { rejectValue: string }>(
   'branch/fetchBranchById',
   async (id, { rejectWithValue }) => {
@@ -173,10 +131,33 @@ export const fetchBranchById = createAsyncThunk<Branch, string, { rejectValue: s
       const res = await branchService.getPublic(id);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch branch');
-      }
-      return rejectWithValue('Failed to fetch branch');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );
+export const fetchPublicPaginatedBranches = createAsyncThunk<
+  {
+    data: Branch[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+      itemsPerPage: number;
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+    };
+  },
+  {
+    page?: number;
+    limit?: number;
+    search?: string;
+  },
+  { rejectValue: string }
+>('branch/fetchPublicPaginatedBranches', async (params, { rejectWithValue }) => {
+  try {
+    const res = await branchService.listPublicPaginated(params);
+    return res.data.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
+  }
+});

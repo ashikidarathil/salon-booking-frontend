@@ -1,8 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { branchServiceService } from '@/services/branchService.service';
 import type { BranchServiceItem } from './branchService.types';
 import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
+import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export const fetchBranchServices = createAsyncThunk<
   BranchServiceItem[],
@@ -13,10 +14,7 @@ export const fetchBranchServices = createAsyncThunk<
     const res = await branchServiceService.list(branchId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch services');
-    }
-    return rejectWithValue('Failed to fetch services');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
@@ -38,26 +36,13 @@ export const fetchBranchServicesPaginated = createAsyncThunk<
   { rejectValue: string }
 >(
   'branchService/fetchBranchServicesPaginated',
-  async (
-    { branchId, page, limit, search, sortBy, sortOrder, configured, isActive },
-    { rejectWithValue },
-  ) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const res = await branchServiceService.listPaginated(branchId, {
-        page,
-        limit,
-        search,
-        sortBy,
-        sortOrder,
-        configured,
-        isActive,
-      });
+      const { branchId, ...rest } = params;
+      const res = await branchServiceService.listPaginated(branchId, rest);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch services');
-      }
-      return rejectWithValue('Failed to fetch services');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );
@@ -77,10 +62,7 @@ export const upsertBranchService = createAsyncThunk<
       });
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to upsert service');
-      }
-      return rejectWithValue('Failed to upsert service');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -96,10 +78,7 @@ export const toggleBranchServiceStatus = createAsyncThunk<
       const res = await branchServiceService.toggleStatus(branchId, serviceId, isActive);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to toggle status');
-      }
-      return rejectWithValue('Failed to toggle status');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -119,25 +98,17 @@ export const fetchBranchServicesPublicPaginated = createAsyncThunk<
   { rejectValue: string }
 >(
   'branchService/fetchBranchServicesPublicPaginated',
-  async ({ branchId, page, limit, search, categoryId }, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const res = await branchServiceService.listPublicPaginated(branchId, {
-        page,
-        limit,
-        search,
-        categoryId,
-      });
+      const { branchId, ...rest } = params;
+      const res = await branchServiceService.listPublicPaginated(branchId, rest);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch services');
-      }
-      return rejectWithValue('Failed to fetch services');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );
 
-// ✅ NEW: Fetch service details for specific branch (public)
 export const fetchBranchServicePublicDetails = createAsyncThunk<
   BranchServiceItem,
   { branchId: string; serviceId: string },
@@ -149,10 +120,7 @@ export const fetchBranchServicePublicDetails = createAsyncThunk<
       const res = await branchServiceService.getPublic(branchId, serviceId);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch service details');
-      }
-      return rejectWithValue('Failed to fetch service details');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );

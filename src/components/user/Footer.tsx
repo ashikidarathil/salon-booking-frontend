@@ -1,4 +1,3 @@
-// src/components/Footer.tsx
 'use client';
 
 import { Icon } from '@iconify/react';

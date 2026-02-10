@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '@/app/hooks';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,23 +46,14 @@ export default function StylistProfilePage() {
     phone: user?.phone || '',
   });
 
-  const [previewImage, setPreviewImage] = useState<string | null>(user?.profilePicture || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasEmail = !!user?.email;
   const hasPhone = !!user?.phone;
 
-  // Password visibility states
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Sync preview image with user profile picture from Redux
-  useEffect(() => {
-    if (user?.profilePicture) {
-      setPreviewImage(user.profilePicture);
-    }
-  }, [user?.profilePicture]);
 
   const profileChanged = useMemo(() => {
     return (
@@ -79,7 +70,6 @@ export default function StylistProfilePage() {
   const canSave = profileChanged || (passwordFieldsFilled && !errors.newPassword && !errors.confirmPassword && !errors.currentPassword);
 
   const handleChange = (field: keyof typeof form, value: string) => {
-    // Strip spaces from phone numbers
     const newValue = field === 'phone' ? value.replace(/\s/g, '') : value;
     
     setForm((prev) => ({ ...prev, [field]: newValue }));
@@ -88,7 +78,6 @@ export default function StylistProfilePage() {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
 
-    // Real-time password validation
     if (field === 'newPassword') {
       if (value.length > 0) {
         if (value.length < 8) {
@@ -109,7 +98,6 @@ export default function StylistProfilePage() {
       }
     }
 
-    // Confirm password validation
     if (field === 'confirmPassword') {
       if (value.length > 0 && value !== form.newPassword) {
         setErrors((prev) => ({ ...prev, confirmPassword: 'Passwords do not match' }));
@@ -122,14 +110,12 @@ export default function StylistProfilePage() {
   const validateForm = (): boolean => {
     const newErrors: FieldErrors = {};
 
-    // Validate name
     if (form.name.trim().length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
     } else if (form.name.trim().length > 50) {
       newErrors.name = 'Name must not exceed 50 characters';
     }
 
-    // Validate email if provided
     if (form.email.trim().length > 0) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(form.email)) {
@@ -137,7 +123,6 @@ export default function StylistProfilePage() {
       }
     }
 
-    // Validate phone if provided
     if (form.phone.trim().length > 0) {
       const phoneRegex = /^\+?[\d\s-()]+$/;
       if (!phoneRegex.test(form.phone)) {
@@ -145,7 +130,6 @@ export default function StylistProfilePage() {
       }
     }
 
-    // Validate password fields if any are filled
     if (passwordFieldsFilled) {
       if (!form.currentPassword) {
         newErrors.currentPassword = 'Current password is required';
@@ -186,15 +170,12 @@ export default function StylistProfilePage() {
       return;
     }
 
-    // Don't set preview from FileReader - let Redux update handle it after upload
-    // This prevents flickering between local preview and server URL
     setUploading(true);
     const result = await dispatch(uploadProfilePicture(file));
 
     setUploading(false);
 
     if (uploadProfilePicture.fulfilled.match(result)) {
-      // Redux state will update user.profilePicture, and useEffect will sync previewImage
       showSuccess('Success!', 'Profile picture updated');
     } else {
       showError('Failed', (result.payload as string) || 'Upload failed');
@@ -204,7 +185,6 @@ export default function StylistProfilePage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validate form
     if (!validateForm()) {
       return;
     }
@@ -212,14 +192,13 @@ export default function StylistProfilePage() {
     let profileUpdated = false;
     let passwordChanged = false;
 
-    // Update profile if changed
     if (profileChanged) {
       showLoading('Updating profile...');
 
-      const profilePayload: { name: string; email?: string; phone: string } = {
+      const profilePayload: { name: string; email?: string; phone?: string } = {
         name: form.name,
         email: form.email,
-        phone: form.phone,
+        ...(form.phone.trim() ? { phone: form.phone } : {}),
       };
 
       const profileResult = await dispatch(updateProfile(profilePayload));
@@ -237,7 +216,6 @@ export default function StylistProfilePage() {
           });
         }
       } else {
-        // Handle backend errors
         const errorMsg = profileResult.payload as string;
         const error = errorMsg.toLowerCase();
         
@@ -254,7 +232,6 @@ export default function StylistProfilePage() {
       }
     }
 
-    // Change password if fields filled
     if (passwordFieldsFilled) {
       showLoading('Changing password...');
 
@@ -270,7 +247,6 @@ export default function StylistProfilePage() {
 
       if (changePassword.fulfilled.match(passwordResult)) {
         passwordChanged = true;
-        // Clear password fields
         setForm((prev) => ({
           ...prev,
           currentPassword: '',
@@ -278,7 +254,6 @@ export default function StylistProfilePage() {
           confirmPassword: '',
         }));
       } else {
-        // Handle password errors
         const errorMsg = passwordResult.payload as string;
         const error = errorMsg.toLowerCase();
         
@@ -334,7 +309,7 @@ export default function StylistProfilePage() {
         <CardContent className="flex flex-col items-center gap-6">
           <div className="relative">
             <Avatar className="w-40 h-40 ring-4 ring-primary/20">
-              <AvatarImage src={previewImage || user?.profilePicture || undefined} />
+              <AvatarImage src={user?.profilePicture || undefined} />
               <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
                 {user?.name?.[0]?.toUpperCase() || 'S'}
               </AvatarFallback>

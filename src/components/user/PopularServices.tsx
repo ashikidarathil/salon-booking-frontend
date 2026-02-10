@@ -1,4 +1,3 @@
-// src/components/PopularServices.tsx
 'use client';
 
 import { Icon } from '@iconify/react';

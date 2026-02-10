@@ -1,4 +1,3 @@
-// src/components/HowItWorks.tsx
 'use client';
 
 export function HowItWorks() {

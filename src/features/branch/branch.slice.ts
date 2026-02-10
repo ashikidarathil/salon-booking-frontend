@@ -1,6 +1,5 @@
-// src/features/branch/branch.slice.ts
-import { createSlice } from '@reduxjs/toolkit';
-import type { Branch } from './branch.types';
+import { createSlice, isPending, isRejected } from '@reduxjs/toolkit';
+import type { Branch, BranchState } from './branch.types';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import {
   fetchBranches,
@@ -12,18 +11,8 @@ import {
   fetchNearestBranches,
   fetchBranchById,
   fetchPublicBranches,
+  fetchPublicPaginatedBranches,
 } from './branch.thunks';
-
-import type { PaginationMetadata } from '@/common/types/pagination.metadata';
-
-interface BranchState {
-  branches: Branch[];
-  nearestBranches: Branch[];
-  selectedBranch: Branch | null;
-  loading: boolean;
-  error: string | null;
-  pagination: PaginationMetadata;
-}
 
 const initialState: BranchState = {
   branches: [],
@@ -45,20 +34,14 @@ const branchSlice = createSlice({
   name: 'branch',
   initialState,
   reducers: {
-    // ✅ NEW: Set selected branch (when user selects branch on listing page)
     setBranchSelected: (state, action: PayloadAction<Branch>) => {
       state.selectedBranch = action.payload;
-      // Store in localStorage for persistence
       localStorage.setItem('selectedBranch', JSON.stringify(action.payload));
     },
-
-    // ✅ NEW: Clear selected branch (when user changes branch)
     clearBranchSelected: (state) => {
       state.selectedBranch = null;
       localStorage.removeItem('selectedBranch');
     },
-
-    // ✅ NEW: Load selected branch from localStorage (on app init)
     loadSelectedBranchFromStorage: (state) => {
       const saved = localStorage.getItem('selectedBranch');
       if (saved) {
@@ -69,46 +52,31 @@ const branchSlice = createSlice({
         }
       }
     },
+    clearError: (state) => {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchBranches.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchBranches.fulfilled, (state, action) => {
-        state.loading = false;
         state.branches = action.payload;
       })
-      .addCase(fetchBranches.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      .addCase(fetchPaginatedBranches.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      //Fetch Nearest Branch
-      .addCase(fetchNearestBranches.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchNearestBranches.fulfilled, (state, action) => {
-        state.loading = false;
         state.nearestBranches = action.payload;
       })
-      .addCase(fetchNearestBranches.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
       .addCase(fetchPaginatedBranches.fulfilled, (state, action) => {
-        state.loading = false;
         state.branches = action.payload.data;
         state.pagination = action.payload.pagination;
       })
-      .addCase(fetchPaginatedBranches.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
+      .addCase(fetchPublicBranches.fulfilled, (state, action) => {
+        state.branches = action.payload;
+      })
+      .addCase(fetchPublicPaginatedBranches.fulfilled, (state, action) => {
+        state.branches = action.payload.data;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchBranchById.fulfilled, (state, action) => {
+        state.selectedBranch = action.payload;
       })
       .addCase(createBranch.fulfilled, (state, action) => {
         state.branches.push(action.payload);
@@ -127,39 +95,28 @@ const branchSlice = createSlice({
         state.branches = state.branches.map((b) =>
           b.id === action.payload.id ? action.payload : b,
         );
-      });
-
-    builder
-      .addCase(fetchPublicBranches.pending, (state) => {
+      })
+      .addMatcher(isPending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchPublicBranches.fulfilled, (state, action) => {
+      .addMatcher(isRejected, (state, action) => {
         state.loading = false;
-        state.branches = action.payload;
+        state.error = (action.payload as string) || action.error.message || 'Something went wrong';
       })
-      .addCase(fetchPublicBranches.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Error fetching branches';
-      });
-
-    // Fetch single branch
-    builder
-      .addCase(fetchBranchById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchBranchById.fulfilled, (state) => {
-        state.loading = false;
-        // Optionally update in branches array or keep as separate state
-      })
-      .addCase(fetchBranchById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Error fetching branch';
-      });
+      .addMatcher(
+        (action) => action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.loading = false;
+        },
+      );
   },
 });
 
-export const { setBranchSelected, clearBranchSelected, loadSelectedBranchFromStorage } =
-  branchSlice.actions;
+export const {
+  setBranchSelected,
+  clearBranchSelected,
+  loadSelectedBranchFromStorage,
+  clearError,
+} = branchSlice.actions;
 export default branchSlice.reducer;

@@ -1,3 +1,5 @@
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+
 export interface Branch {
   id: string;
   name: string;
@@ -29,11 +31,11 @@ export interface PlacesResult {
   };
 }
 
-export interface PaginationMetadata {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
+export interface BranchState {
+  branches: Branch[];
+  nearestBranches: Branch[];
+  selectedBranch: Branch | null;
+  loading: boolean;
+  error: string | null;
+  pagination: PaginationMetadata;
 }

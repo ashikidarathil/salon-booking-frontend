@@ -31,8 +31,7 @@ import { Footer } from '@/components/user/Footer';
 
 export default function ContactPage() {
   const dispatch = useAppDispatch();
-  const { loading, error } = useAppSelector((state) => state.auth); // reuse auth loading/error
-
+  const { loading, error } = useAppSelector((state) => state.auth);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({
     email: '',
@@ -54,7 +53,6 @@ export default function ContactPage() {
 
     if (result.meta.requestStatus === 'fulfilled') {
       setSubmitted(true);
-      // Reset form
       setForm({ email: '', specialization: '', experience: '' });
     }
   };

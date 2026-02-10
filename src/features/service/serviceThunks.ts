@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { serviceService } from '@/services/service.service';
 import type { Service, ServiceStatus } from './service.types';
-import type { ApiResponse } from '@/common/types/api.types';
+import { handleThunkError } from '@/common/utils/thunk.utils';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 
 /* =========================
    FETCH (ADMIN)
@@ -16,10 +16,7 @@ export const fetchServices = createAsyncThunk<
     const res = await serviceService.adminList(payload?.includeDeleted);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to fetch services');
-    }
-    return rejectWithValue('Failed to fetch services');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
@@ -51,12 +48,7 @@ export const fetchPaginatedServices = createAsyncThunk<
     const res = await serviceService.getPaginatedServices(params);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const apiResponse = err.response?.data as ApiResponse;
-      const errorMessage = apiResponse?.message || 'Failed to fetch services';
-      return rejectWithValue(errorMessage);
-    }
-    return rejectWithValue('Failed to fetch services - Network error');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
@@ -78,12 +70,7 @@ export const createService = createAsyncThunk<
     const res = await serviceService.create(data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const apiResponse = err.response?.data as ApiResponse;
-      const errorMessage = apiResponse?.message || 'Failed to create service';
-      return rejectWithValue(errorMessage);
-    }
-    return rejectWithValue('Failed to create service');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.CREATE_FAILED);
   }
 });
 
@@ -107,10 +94,7 @@ export const updateService = createAsyncThunk<
     const res = await serviceService.update(id, data);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to update service');
-    }
-    return rejectWithValue('Failed to update service');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -126,10 +110,7 @@ export const toggleServiceStatus = createAsyncThunk<
     const res = await serviceService.update(id, { status });
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to toggle status');
-    }
-    return rejectWithValue('Failed to toggle status');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
   }
 });
 
@@ -145,10 +126,7 @@ export const uploadServiceImage = createAsyncThunk<
     const res = await serviceService.uploadImage(serviceId, file);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to upload image');
-    }
-    return rejectWithValue('Failed to upload image');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPLOAD_PICTURE_FAILED);
   }
 });
 
@@ -162,10 +140,7 @@ export const deleteServiceImage = createAsyncThunk<Service, string, { rejectValu
       const res = await serviceService.deleteImage(serviceId);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message ?? 'Failed to delete image');
-      }
-      return rejectWithValue('Failed to delete image');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DELETE_FAILED);
     }
   },
 );
@@ -180,10 +155,7 @@ export const softDeleteService = createAsyncThunk<Service, string, { rejectValue
       const res = await serviceService.softDelete(id);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message ?? 'Failed to delete service');
-      }
-      return rejectWithValue('Failed to delete service');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DELETE_FAILED);
     }
   },
 );
@@ -198,10 +170,7 @@ export const restoreService = createAsyncThunk<Service, string, { rejectValue: s
       const res = await serviceService.restore(id);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message ?? 'Failed to restore service');
-      }
-      return rejectWithValue('Failed to restore service');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
   },
 );
@@ -230,14 +199,10 @@ export const fetchPublicServicesPaginated = createAsyncThunk<
     const res = await serviceService.listPublicPaginated(params);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch services');
-    }
-    return rejectWithValue('Failed to fetch services');
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });
 
-// ✅ NEW: Fetch public service details
 export const fetchPublicServiceDetails = createAsyncThunk<Service, string, { rejectValue: string }>(
   'service/fetchPublicServiceDetails',
   async (id, { rejectWithValue }) => {
@@ -245,10 +210,7 @@ export const fetchPublicServiceDetails = createAsyncThunk<Service, string, { rej
       const res = await serviceService.getPublic(id);
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch service');
-      }
-      return rejectWithValue('Failed to fetch service');
+      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }
   },
 );

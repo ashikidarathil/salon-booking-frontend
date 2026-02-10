@@ -1,4 +1,4 @@
-import { createSlice, isFulfilled, isPending, isRejected } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction, type SerializedError } from '@reduxjs/toolkit';
 import type { AuthState } from './auth.types';
 import {
   login,
@@ -7,9 +7,6 @@ import {
   resetPassword,
   googleLogin,
   fetchMe,
-  signup,
-  verifyOtp,
-  verifySmsOtp,
 } from './authThunks';
 
 import { uploadProfilePicture, updateProfile } from '@/features/profile/profileThunks';
@@ -36,16 +33,9 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(login.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-
     builder.addCase(login.fulfilled, (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true;
-      state.loading = false;
-      state.error = null;
     });
 
     builder.addCase(login.rejected, (state, action) => {
@@ -58,20 +48,11 @@ const authSlice = createSlice({
     builder.addCase(googleLogin.fulfilled, (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true;
-      state.loading = false;
-      state.error = null;
-    });
-
-    builder.addCase(fetchMe.pending, (state) => {
-      state.loading = true;
-      state.error = null;
     });
 
     builder.addCase(fetchMe.fulfilled, (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true;
-      state.loading = false;
-      state.error = null;
     });
 
     builder.addCase(fetchMe.rejected, (state) => {
@@ -86,19 +67,13 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.forgotPasswordSuccess = false;
       state.resetPasswordSuccess = false;
-      state.loading = false;
-      state.error = null;
     });
 
     builder.addCase(forgotPassword.fulfilled, (state) => {
-      state.loading = false;
-      state.error = null;
       state.forgotPasswordSuccess = true;
     });
 
     builder.addCase(resetPassword.fulfilled, (state) => {
-      state.loading = false;
-      state.error = null;
       state.resetPasswordSuccess = true;
     });
 
@@ -110,52 +85,37 @@ const authSlice = createSlice({
 
     builder.addCase(updateProfile.fulfilled, (state, action) => {
       if (state.user && action.payload.user) {
-        // Update user with new profile data while preserving existing fields
         state.user.name = action.payload.user.name;
         if (action.payload.user.email) state.user.email = action.payload.user.email;
         if (action.payload.user.phone) state.user.phone = action.payload.user.phone;
       }
     });
 
-    builder.addMatcher(
-      isPending(signup, verifyOtp, verifySmsOtp, login, googleLogin, forgotPassword, resetPassword),
-      (state) => {
-        state.loading = true;
-        state.error = null;
-      },
-    );
-
-    builder.addMatcher(
-      isFulfilled(
-        signup,
-        verifyOtp,
-        verifySmsOtp,
-        login,
-        googleLogin,
-        forgotPassword,
-        resetPassword,
-      ),
-      (state) => {
-        state.loading = false;
-        state.error = null;
-      },
-    );
-
-    builder.addMatcher(
-      isRejected(
-        signup,
-        verifyOtp,
-        verifySmsOtp,
-        login,
-        googleLogin,
-        forgotPassword,
-        resetPassword,
-      ),
-      (state, action) => {
-        state.loading = false;
-        state.error = (action.payload as string) || action.error.message || 'Something went wrong';
-      },
-    );
+    builder
+      .addMatcher(
+        (action) => action.type.startsWith('auth/') && action.type.endsWith('/pending'),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        },
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('auth/') && action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.loading = false;
+          state.error = null;
+        },
+      )
+      .addMatcher(
+        (action): action is PayloadAction<unknown, string, unknown, SerializedError> =>
+          action.type.startsWith('auth/') &&
+          action.type.endsWith('/rejected') &&
+          action.type !== fetchMe.rejected.type,
+        (state, action) => {
+          state.loading = false;
+          state.error = (action.payload as string) || action.error.message || 'Something went wrong';
+        },
+      );
   },
 });
 

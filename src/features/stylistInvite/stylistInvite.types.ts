@@ -1,4 +1,5 @@
 import { UI_CONSTANTS } from '@/common/constants/ui.constants';
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 
 export interface StylistListItem {
   id: string;
@@ -54,4 +55,10 @@ export interface StylistInviteState {
   inviteLink: string | null;
   invitePreview: InvitePreview | null;
   acceptSuccess: boolean;
+  pagination: PaginationMetadata;
+}
+
+export interface PaginatedStylistResponse {
+  data: StylistListItem[];
+  pagination: PaginationMetadata;
 }

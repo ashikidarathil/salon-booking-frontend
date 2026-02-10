@@ -1,4 +1,3 @@
-// src/services/branchService.service.ts
 import { api } from '@/services/api/api';
 import { API_ROUTES } from '@/common/constants/api.routes';
 import type { ApiResponse } from '@/common/types/api.types';
@@ -28,8 +27,6 @@ export const branchServiceService = {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
-    // if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    // if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
     if (params?.configured !== undefined)
       queryParams.append('configured', params.configured.toString());
     if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
@@ -78,20 +75,14 @@ export const branchServiceService = {
     return api.get<
       ApiResponse<{
         data: BranchServiceItem[];
-        pagination: {
-          currentPage: number;
-          totalPages: number;
-          totalItems: number;
-          itemsPerPage: number;
-          hasNextPage: boolean;
-          hasPreviousPage: boolean;
-        };
+        pagination: PaginationMetadata;
       }>
-    >(`/branches/${branchId}/services/paginated?${queryParams.toString()}`);
+    >(`${API_ROUTES.BRANCH_SERVICE.PUBLIC.LIST_PAGINATED(branchId)}?${queryParams.toString()}`);
   },
 
-  // ✅ NEW: Get service details for a branch (public)
   async getPublic(branchId: string, serviceId: string) {
-    return api.get<ApiResponse<BranchServiceItem>>(`/branches/${branchId}/services/${serviceId}`);
+    return api.get<ApiResponse<BranchServiceItem>>(
+      API_ROUTES.BRANCH_SERVICE.PUBLIC.BY_ID(branchId, serviceId),
+    );
   },
 };

@@ -12,13 +12,6 @@ export const getTabId = (): string => {
   return tabId;
 };
 
-// export const buildUrl = (template: string, params: Record<string, string | number>): string => {
-//   return Object.entries(params).reduce(
-//     (url, [key, value]) => url.replace(`:${key}`, String(value)),
-//     template,
-//   );
-// };
-
 export const buildUrl = (route: RouteValue, params?: RouteParams): string => {
   if (typeof route === 'function') {
     if (!params || !params.userId) {

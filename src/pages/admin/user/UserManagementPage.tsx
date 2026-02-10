@@ -28,7 +28,7 @@ const ADMIN_COLOR = '#10B981';
 
 export default function UserManagementPage() {
   const dispatch = useAppDispatch();
-  const { data, pagination, loading, error } = useAppSelector((state) => state.user);
+  const { users, pagination, loading, error } = useAppSelector((state) => state.user);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,7 +94,7 @@ export default function UserManagementPage() {
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
-            setCurrentPage(1); // Reset to first page on new search
+            setCurrentPage(1);
           }}
           className="w-full"
         />
@@ -112,7 +112,7 @@ export default function UserManagementPage() {
               <div className="w-20 h-20 mx-auto mb-6 border-t-4 border-b-4 rounded-full animate-spin border-primary"></div>
               <p className="text-2xl">Loading users...</p>
             </div>
-          ) : !data || data.length === 0 ? (
+          ) : !users || users.length === 0 ? (
             <div className="py-32 text-center">
               <h2 className="text-3xl font-bold">No Users Found</h2>
               <p className="text-xl text-muted-foreground">
@@ -135,7 +135,7 @@ export default function UserManagementPage() {
                   </TableHeader>
                   <TableBody>
                     {/* ✨ CHANGED: Using data from pagination response */}
-                    {data.map((user) => (
+                    {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>

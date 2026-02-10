@@ -1,6 +1,5 @@
-// src/features/category/category.slice.ts
-import { createSlice } from '@reduxjs/toolkit';
-import type { Category } from './category.types';
+import { createSlice, isPending, isRejected } from '@reduxjs/toolkit';
+import type { CategoryState } from './category.types';
 import {
   fetchCategories,
   createCategory,
@@ -11,14 +10,6 @@ import {
   fetchPaginatedCategories,
   fetchPublicCategories,
 } from './categoryThunks';
-import type { PaginationMetadata } from '@/common/types/pagination.metadata';
-
-interface CategoryState {
-  categories: Category[];
-  loading: boolean;
-  error: string | null;
-  pagination: PaginationMetadata;
-}
 
 const initialState: CategoryState = {
   categories: [],
@@ -37,34 +28,19 @@ const initialState: CategoryState = {
 const categorySlice = createSlice({
   name: 'category',
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchPaginatedCategories.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchPaginatedCategories.fulfilled, (state, action) => {
-        state.loading = false;
         state.categories = action.payload.data;
         state.pagination = action.payload.pagination;
       })
-      .addCase(fetchPaginatedCategories.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      .addCase(fetchCategories.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchCategories.fulfilled, (state, action) => {
-        state.loading = false;
         state.categories = action.payload;
-      })
-      .addCase(fetchCategories.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       })
       .addCase(createCategory.fulfilled, (state, action) => {
         state.categories.push(action.payload);
@@ -88,22 +64,26 @@ const categorySlice = createSlice({
         state.categories = state.categories.map((c) =>
           c.id === action.payload ? { ...c, isDeleted: false, status: 'ACTIVE' } : c,
         );
-      });
-
-    builder
-      .addCase(fetchPublicCategories.pending, (state) => {
+      })
+      .addCase(fetchPublicCategories.fulfilled, (state, action) => {
+        state.categories = action.payload;
+      })
+      .addMatcher(isPending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchPublicCategories.fulfilled, (state, action) => {
+      .addMatcher(isRejected, (state, action) => {
         state.loading = false;
-        state.categories = action.payload;
+        state.error = (action.payload as string) || action.error.message || 'Something went wrong';
       })
-      .addCase(fetchPublicCategories.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Error fetching categories';
-      });
+      .addMatcher(
+        (action) => action.type.endsWith('/fulfilled'),
+        (state) => {
+          state.loading = false;
+        },
+      );
   },
 });
 
+export const { clearError } = categorySlice.actions;
 export default categorySlice.reducer;

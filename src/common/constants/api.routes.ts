@@ -53,6 +53,7 @@ export const API_ROUTES = {
     UPDATE: '/admin/categories/:id',
     SOFT_DELETE: '/admin/categories/:id/delete',
     RESTORE: '/admin/categories/:id/restore',
+    PAGINATED: '/admin/categories/paginated',
   },
 
   SERVICE: {
@@ -64,14 +65,21 @@ export const API_ROUTES = {
     RESTORE: '/admin/services/:id/restore',
     UPLOAD_IMAGE: '/admin/services/:id/upload-image',
     DELETE_IMAGE: '/admin/services/:id/delete-image',
+    PAGINATED: '/admin/services/paginated',
+    PUBLIC_BY_ID: (id: string) => `/services/${id}`,
+    PUBLIC_PAGINATED: '/services/paginated',
   },
 
   BRANCH: {
     BASE: '/admin/branches',
-    BASE_NEW: '/admin/branches/paginated',
+    ADMIN_PAGINATED: '/admin/branches/paginated',
     BY_ID: (id: string) => `/admin/branches/${id}`,
     SOFT_DELETE: (id: string) => `/admin/branches/${id}/disable`,
     RESTORE: (id: string) => `/admin/branches/${id}/restore`,
+    PUBLIC_NEAREST: '/branches/nearest',
+    PUBLIC_LIST: '/branches',
+    PUBLIC_PAGINATED: '/branches/paginated',
+    PUBLIC_BY_ID: (id: string) => `/branches/${id}`,
   },
 
   STYLIST_BRANCH: {
@@ -81,7 +89,7 @@ export const API_ROUTES = {
         `/admin/branches/${branchId}/stylists/paginated`,
       OPTIONS_UNASSIGNED: (branchId: string) => `/admin/branches/${branchId}/stylists/options`,
       OPTIONS_UNASSIGNED_PAGINATED: (branchId: string) =>
-        `/admin/branches/${branchId}/stylists/options/paginated`, // ✅ NEW
+        `/admin/branches/${branchId}/stylists/options/paginated`,
       ASSIGN: (branchId: string) => `/admin/branches/${branchId}/stylists/assign`,
       UNASSIGN: (branchId: string) => `/admin/branches/${branchId}/stylists/unassign`,
       CHANGE_BRANCH: (branchId: string) => `/admin/branches/${branchId}/stylists/change`,
@@ -104,6 +112,10 @@ export const API_ROUTES = {
         `/admin/branches/${branchId}/services/${serviceId}`,
       TOGGLE_STATUS: (branchId: string, serviceId: string) =>
         `/admin/branches/${branchId}/services/${serviceId}/status`,
+    },
+    PUBLIC: {
+      LIST_PAGINATED: (branchId: string) => `/branches/${branchId}/services/paginated`,
+      BY_ID: (branchId: string, serviceId: string) => `/branches/${branchId}/services/${serviceId}`,
     },
   },
 } as const;

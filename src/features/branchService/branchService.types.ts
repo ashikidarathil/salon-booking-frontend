@@ -1,3 +1,5 @@
+import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+
 export interface BranchServiceItem {
   branchId: string;
   serviceId: string;
@@ -11,4 +13,12 @@ export interface BranchServiceItem {
   whatIncluded?: string[];
   isActive: boolean;
   configured: boolean;
+}
+
+export interface BranchServiceState {
+  services: BranchServiceItem[];
+  currentService: BranchServiceItem | null;
+  loading: boolean;
+  error: string | null;
+  pagination: PaginationMetadata;
 }

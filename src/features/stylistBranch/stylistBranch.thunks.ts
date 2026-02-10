@@ -1,22 +1,19 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { stylistBranchService } from '@/services/stylistBranch.service';
 import type { BranchStylist, UnassignedStylist } from './stylistBranch.types';
 import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export const fetchBranchStylists = createAsyncThunk<
   BranchStylist[],
-  string, // branchId
+  string,
   { rejectValue: string }
 >('stylistBranch/fetchBranchStylists', async (branchId, { rejectWithValue }) => {
   try {
     const res = await stylistBranchService.listBranchStylists(branchId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch stylists');
-    }
-    return rejectWithValue('Failed to fetch stylists');
+    return handleThunkError(err, rejectWithValue, 'Failed to fetch stylists');
   }
 });
 
@@ -47,27 +44,21 @@ export const fetchBranchStylistsPaginated = createAsyncThunk<
       });
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch stylists');
-      }
-      return rejectWithValue('Failed to fetch stylists');
+      return handleThunkError(err, rejectWithValue, 'Failed to fetch stylists');
     }
   },
 );
 
 export const fetchUnassignedStylists = createAsyncThunk<
   UnassignedStylist[],
-  string, // branchId
+  string,
   { rejectValue: string }
 >('stylistBranch/fetchUnassignedStylists', async (branchId, { rejectWithValue }) => {
   try {
     const res = await stylistBranchService.listUnassignedOptions(branchId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to fetch options');
-    }
-    return rejectWithValue('Failed to fetch options');
+    return handleThunkError(err, rejectWithValue, 'Failed to fetch options');
   }
 });
 
@@ -98,10 +89,7 @@ export const fetchUnassignedStylistsPaginated = createAsyncThunk<
       });
       return res.data.data;
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        return rejectWithValue(err.response?.data?.message || 'Failed to fetch options');
-      }
-      return rejectWithValue('Failed to fetch options');
+      return handleThunkError(err, rejectWithValue, 'Failed to fetch options');
     }
   },
 );
@@ -115,10 +103,7 @@ export const assignStylist = createAsyncThunk<
     const res = await stylistBranchService.assign(branchId, stylistId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to assign');
-    }
-    return rejectWithValue('Failed to assign');
+    return handleThunkError(err, rejectWithValue, 'Failed to assign');
   }
 });
 
@@ -131,10 +116,7 @@ export const unassignStylist = createAsyncThunk<
     const res = await stylistBranchService.unassign(branchId, stylistId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to unassign');
-    }
-    return rejectWithValue('Failed to unassign');
+    return handleThunkError(err, rejectWithValue, 'Failed to unassign');
   }
 });
 
@@ -147,9 +129,6 @@ export const changeStylistBranch = createAsyncThunk<
     const res = await stylistBranchService.changeBranch(branchId, stylistId);
     return res.data.data;
   } catch (err) {
-    if (axios.isAxiosError(err)) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to change branch');
-    }
-    return rejectWithValue('Failed to change branch');
+    return handleThunkError(err, rejectWithValue, 'Failed to change branch');
   }
 });

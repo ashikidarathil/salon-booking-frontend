@@ -1,5 +1,3 @@
-// FILE: frontend/src/pages/user/ServicesListingPage.tsx
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -20,38 +18,40 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
+import Pagination from '@/components/pagination/Pagination';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 
 export default function ServicesListingPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  // Redux state
   const { selectedBranch } = useAppSelector((state) => state.branch);
   const { services, pagination, loading } = useAppSelector((state) => state.branchService);
   const { categories } = useAppSelector((state) => state.category);
 
-  // Component state
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Check if branch exists in localStorage, redirect if not
   useEffect(() => {
     const savedBranch = localStorage.getItem('selectedBranch');
 
     if (!savedBranch) {
-      // No branch in localStorage, redirect to branch selection
       localStorage.setItem('returnPath', '/services');
       navigate('/branches');
     }
   }, [navigate]);
 
-  // Fetch categories on mount
   useEffect(() => {
     dispatch(fetchPublicCategories());
   }, [dispatch]);
 
-  // Fetch services when params change
   useEffect(() => {
     if (selectedBranch?.id) {
       dispatch(
@@ -66,31 +66,26 @@ export default function ServicesListingPage() {
     }
   }, [dispatch, selectedBranch, search, selectedCategory, currentPage]);
 
-  // Handle search
   const handleSearch = (value: string) => {
     setSearch(value);
     setCurrentPage(1);
   };
 
-  // Handle category filter
   const handleCategoryFilter = (categoryId: string) => {
     setSelectedCategory(categoryId === 'all' ? '' : categoryId);
     setCurrentPage(1);
   };
 
-  // Handle view details
   const handleViewDetails = (serviceId: string) => {
     navigate(`/branches/${selectedBranch!.id}/services/${serviceId}`);
   };
 
-  // Handle clear filters
   const handleClearFilters = () => {
     setSearch('');
     setSelectedCategory('');
     setCurrentPage(1);
   };
 
-  // Loading state
   if (loading && services.length === 0) {
     return (
       <div className="flex flex-col min-h-screen bg-background">
@@ -111,7 +106,7 @@ export default function ServicesListingPage() {
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-16 overflow-hidden text-center bg-accent md:py-20">
+        <section className="relative py-16 overflow-hidden text-center bg-accent md:py-20 ">
           <div className="absolute top-0 w-full h-full -translate-x-1/2 pointer-events-none left-1/2 bg-gradient-to-b from-white/50 to-transparent" />
           <div className="container relative z-10 flex flex-col items-center px-4 mx-auto">
             <h1 className="mb-4 text-4xl font-bold md:text-5xl text-foreground font-heading">
@@ -158,34 +153,49 @@ export default function ServicesListingPage() {
         </section>
 
         <div className="container px-4 py-12 mx-auto space-y-12">
-          {/* Category Pills */}
-          <div className="flex flex-wrap justify-center gap-2 md:gap-4">
-            <Button
-              variant={!selectedCategory ? 'default' : 'ghost'}
-              className={
-                !selectedCategory
-                  ? 'rounded-full px-6 shadow-md shadow-primary/20'
-                  : 'rounded-full px-6 bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground'
-              }
-              onClick={() => handleCategoryFilter('all')}
+          {/* Category Carousel */}
+          <div className="relative w-full max-w-4xl px-12 mx-auto">
+            <Carousel
+              opts={{
+                align: 'start',
+                dragFree: true,
+              }}
+              className="w-full"
             >
-              All Services
-            </Button>
-            {categories &&
-              categories.map((cat) => (
-                <Button
-                  key={cat.id}
-                  variant={selectedCategory === cat.id ? 'default' : 'ghost'}
-                  className={
-                    selectedCategory === cat.id
-                      ? 'rounded-full px-6 shadow-md shadow-primary/20'
-                      : 'rounded-full px-6 bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground'
-                  }
-                  onClick={() => handleCategoryFilter(cat.id)}
-                >
-                  {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
-                </Button>
-              ))}
+              <CarouselContent className="-ml-2 md:-ml-4">
+                <CarouselItem className="pl-2 md:pl-4 basis-auto">
+                  <Button
+                    variant={!selectedCategory ? 'default' : 'ghost'}
+                    className={
+                      !selectedCategory
+                        ? 'rounded-full px-6 shadow-md shadow-primary/20'
+                        : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                    }
+                    onClick={() => handleCategoryFilter('all')}
+                  >
+                    All Services
+                  </Button>
+                </CarouselItem>
+                {categories &&
+                  categories.map((cat) => (
+                    <CarouselItem key={cat.id} className="pl-2 md:pl-4 basis-auto">
+                      <Button
+                        variant={selectedCategory === cat.id ? 'default' : 'ghost'}
+                        className={
+                          selectedCategory === cat.id
+                            ? 'rounded-full px-6 shadow-md shadow-primary/20'
+                            : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                        }
+                        onClick={() => handleCategoryFilter(cat.id)}
+                      >
+                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                      </Button>
+                    </CarouselItem>
+                  ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex -left-12" />
+              <CarouselNext className="hidden md:flex -right-12" />
+            </Carousel>
           </div>
 
           {/* Services Grid */}
@@ -219,7 +229,7 @@ export default function ServicesListingPage() {
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="text-lg font-bold">{service.name.charAt(0).toUpperCase() + service.name.slice(1)}</h3>
                       {service.categoryName && (
-                        <Badge className="px-2 font-normal border-none rounded-sm bg-primary/10 text-primary hover:bg-primary/20">
+                        <Badge className="px-2 font-normal border-none rounded-sm bg-primary text-primary hover:bg-primary/70">
                           {service.categoryName}
                         </Badge>
                       )}
@@ -274,41 +284,12 @@ export default function ServicesListingPage() {
           )}
 
           {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-12">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1 || loading}
-              >
-                <Icon icon="solar:alt-arrow-left-linear" className="size-5" />
-              </Button>
-
-              <div className="flex gap-2">
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? 'default' : 'outline'}
-                    size="icon"
-                    onClick={() => setCurrentPage(page)}
-                    disabled={loading}
-                    className={currentPage === page ? 'shadow-md shadow-primary/20' : ''}
-                  >
-                    {page}
-                  </Button>
-                ))}
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))}
-                disabled={currentPage === pagination.totalPages || loading}
-              >
-                <Icon icon="solar:alt-arrow-right-linear" className="size-5" />
-              </Button>
-            </div>
+          {pagination && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={setCurrentPage}
+            />
           )}
         </div>
       </main>

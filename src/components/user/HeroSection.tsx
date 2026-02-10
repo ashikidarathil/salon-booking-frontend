@@ -1,4 +1,3 @@
-// src/components/HeroSection.tsx
 'use client';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';

@@ -16,7 +16,6 @@ import { Label } from '@/components/ui/label';
 import type { MapLocation } from '@/features/branch/branch.types';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icon in React Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -42,7 +41,6 @@ const mapContainerStyle = {
   height: '400px',
 };
 
-// Component to handle map clicks and marker dragging
 function LocationMarker({
   position,
   setPosition,
@@ -77,13 +75,12 @@ function LocationMarker({
   return <Marker ref={markerRef} position={position} draggable={true} eventHandlers={eventHandlers} />;
 }
 
-// Component to handle search
-function SearchControl({ onSearch }: { onSearch: (query: string) => void }) {
+function SearchControl({ onSearch, isSearching }: { onSearch: (query: string) => void; isSearching: boolean }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
+    if (searchQuery.trim() && !isSearching) {
       onSearch(searchQuery);
     }
   };
@@ -97,16 +94,16 @@ function SearchControl({ onSearch }: { onSearch: (query: string) => void }) {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
+          disabled={isSearching}
         />
-        <Button type="submit" variant="outline">
-          Search
+        <Button type="submit" variant="outline" disabled={isSearching}>
+          {isSearching ? '...' : 'Search'}
         </Button>
       </div>
     </form>
   );
 }
 
-// Component to update map center when position changes
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   
@@ -129,22 +126,23 @@ export default function LeafletMapPicker({
   );
   const [address, setAddress] = useState<string>('');
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
-  // Update position when initialLocation changes
   useEffect(() => {
     if (initialLocation && open) {
       setPosition([initialLocation.latitude, initialLocation.longitude]);
     }
   }, [initialLocation, open]);
 
-  // Reset address when modal closes
   useEffect(() => {
     if (!open) {
       setAddress('');
+      setSearchError(null);
+      setIsSearching(false);
     }
   }, [open]);
 
-  // Reverse geocoding using Nominatim (free)
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     setIsGeocoding(true);
     try {
@@ -166,8 +164,9 @@ export default function LeafletMapPicker({
     }
   }, []);
 
-  // Forward geocoding for search
   const searchLocation = useCallback(async (query: string) => {
+    setIsSearching(true);
+    setSearchError(null);
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
@@ -177,15 +176,28 @@ export default function LeafletMapPicker({
           },
         }
       );
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Too many requests. Please wait a moment.');
+        }
+        throw new Error('Search service unavailable');
+      }
+
       const data = await response.json();
       if (data && data.length > 0) {
         const result = data[0];
         const newPos: [number, number] = [parseFloat(result.lat), parseFloat(result.lon)];
         setPosition(newPos);
         setAddress(result.display_name);
+      } else {
+        setSearchError('No results found for this location');
       }
     } catch (error) {
       console.error('Search error:', error);
+      setSearchError(error instanceof Error ? error.message : 'Failed to search location');
+    } finally {
+      setIsSearching(false);
     }
   }, []);
 
@@ -251,7 +263,10 @@ export default function LeafletMapPicker({
         </DialogHeader>
 
         <div className="space-y-4">
-          <SearchControl onSearch={searchLocation} />
+          <div className="space-y-2">
+            <SearchControl onSearch={searchLocation} isSearching={isSearching} />
+            {searchError && <p className="text-sm text-red-500 font-medium">{searchError}</p>}
+          </div>
 
           <MapContainer
             center={position}

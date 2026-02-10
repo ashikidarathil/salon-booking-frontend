@@ -1,16 +1,6 @@
-// frontend/src/features/profile/profileSlice.ts
-
 import { createSlice } from '@reduxjs/toolkit';
 import { updateProfile, changePassword } from './profileThunks';
-
-interface ProfileState {
-  updatingProfile: boolean;
-  changingPassword: boolean;
-  profileError: string | null;
-  passwordError: string | null;
-  profileUpdateSuccess: boolean;
-  passwordChangeSuccess: boolean;
-}
+import type { ProfileState } from './profile.types';
 
 const initialState: ProfileState = {
   updatingProfile: false,
@@ -21,7 +11,7 @@ const initialState: ProfileState = {
   passwordChangeSuccess: false,
 };
 
-const slice = createSlice({
+const profileSlice = createSlice({
   name: 'profile',
   initialState,
   reducers: {
@@ -40,7 +30,6 @@ const slice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Update Profile (name, email, phone)
       .addCase(updateProfile.pending, (state) => {
         state.updatingProfile = true;
         state.profileError = null;
@@ -55,7 +44,6 @@ const slice = createSlice({
         state.profileError = action.payload || 'Failed to update profile';
       })
 
-      // Change Password
       .addCase(changePassword.pending, (state) => {
         state.changingPassword = true;
         state.passwordError = null;
@@ -73,6 +61,6 @@ const slice = createSlice({
 });
 
 export const { clearProfileError, clearPasswordError, clearProfileSuccess, clearPasswordSuccess } =
-  slice.actions;
+  profileSlice.actions;
 
-export default slice.reducer;
+export default profileSlice.reducer;
