@@ -1,13 +1,6 @@
 import { createSlice, type PayloadAction, type SerializedError } from '@reduxjs/toolkit';
 import type { AuthState } from './auth.types';
-import {
-  login,
-  logout,
-  forgotPassword,
-  resetPassword,
-  googleLogin,
-  fetchMe,
-} from './authThunks';
+import { login, logout, forgotPassword, resetPassword, googleLogin, fetchMe } from './authThunks';
 
 import { uploadProfilePicture, updateProfile } from '@/features/profile/profileThunks';
 
@@ -88,6 +81,7 @@ const authSlice = createSlice({
         state.user.name = action.payload.user.name;
         if (action.payload.user.email) state.user.email = action.payload.user.email;
         if (action.payload.user.phone) state.user.phone = action.payload.user.phone;
+        if (action.payload.user.bio !== undefined) state.user.bio = action.payload.user.bio;
       }
     });
 
@@ -113,7 +107,8 @@ const authSlice = createSlice({
           action.type !== fetchMe.rejected.type,
         (state, action) => {
           state.loading = false;
-          state.error = (action.payload as string) || action.error.message || 'Something went wrong';
+          state.error =
+            (action.payload as string) || action.error.message || 'Something went wrong';
         },
       );
   },

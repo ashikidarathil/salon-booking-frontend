@@ -17,6 +17,14 @@ const defaultConfig: SweetAlertOptions = {
   allowOutsideClick: () => !Swal.isLoading(),
 };
 
+// Helper to fix aria-hidden accessibility issue with modals
+const removeAriaHiddenFromRoot = () => {
+  const root = document.getElementById('root');
+  if (root) {
+    root.removeAttribute('aria-hidden');
+  }
+};
+
 export const showSuccess = (title: string, text?: string, timer = 3000, color?: string) => {
   return Swal.fire({
     ...defaultConfig,
@@ -29,6 +37,7 @@ export const showSuccess = (title: string, text?: string, timer = 3000, color?: 
     confirmButtonColor: color,
     didOpen: () => {
       ensureZIndex();
+      removeAriaHiddenFromRoot();
     },
   } as SweetAlertOptions);
 };
@@ -43,6 +52,7 @@ export const showError = (title: string, text?: string, color?: string) => {
     confirmButtonColor: color,
     didOpen: () => {
       ensureZIndex();
+      removeAriaHiddenFromRoot();
     },
   } as SweetAlertOptions);
 };
@@ -50,40 +60,45 @@ export const showError = (title: string, text?: string, color?: string) => {
 export const showConfirm = async (
   title: string,
   text: string,
-  confirmText = 'Yes',
-  cancelText = 'Cancel',
-  color?: string,
-) => {
+  confirmButtonText = 'Yes',
+  cancelButtonText = 'Cancel',
+  confirmButtonColor?: string,
+): Promise<boolean> => {
   const result = await Swal.fire({
     ...defaultConfig,
     icon: 'warning',
     title,
     text,
     showCancelButton: true,
-    confirmButtonText: confirmText,
-    cancelButtonText: cancelText,
-    confirmButtonColor: color,
-    cancelButtonColor: '#6B7280',
+    confirmButtonText,
+    cancelButtonText,
+    confirmButtonColor: confirmButtonColor || '#10b981',
+    cancelButtonColor: '#6b7280',
     allowOutsideClick: false,
     allowEscapeKey: false,
     didOpen: () => {
       ensureZIndex();
+      removeAriaHiddenFromRoot();
     },
   } as SweetAlertOptions);
 
   return result.isConfirmed;
 };
 
-export const showLoading = (title = 'Loading...') => {
-  Swal.fire({
+export const showLoading = (title: string) => {
+  return Swal.fire({
     title,
     allowOutsideClick: false,
     allowEscapeKey: false,
-    didOpen: () => {
-      ensureZIndex();
+    showConfirmButton: false,
+    willOpen: () => {
       Swal.showLoading();
     },
-  } as SweetAlertOptions);
+    didOpen: () => {
+      ensureZIndex();
+      removeAriaHiddenFromRoot();
+    },
+  });
 };
 
 export const closeLoading = () => {
@@ -106,7 +121,6 @@ export const showToast = (
     iconColor: color,
   } as SweetAlertOptions);
 };
-
 
 const ensureZIndex = () => {
   requestAnimationFrame(() => {

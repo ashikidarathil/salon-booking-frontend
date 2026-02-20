@@ -52,6 +52,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Category } from '@/features/category/category.types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/category/categorySlice';
 import { Edit, Power, Ban, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 5;
@@ -65,7 +67,7 @@ type CategoryFormData = z.infer<typeof categorySchema>;
 
 export default function CategoriesPage() {
   const dispatch = useAppDispatch();
-  const { categories, loading, pagination } = useAppSelector((state) => state.category);
+  const { categories, loading, error, pagination } = useAppSelector((state) => state.category);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>('ALL');
@@ -82,7 +84,7 @@ export default function CategoriesPage() {
     resolver: zodResolver(categorySchema),
   });
 
-  useEffect(() => {
+  const loadCategories = () => {
     dispatch(
       fetchPaginatedCategories({
         page: currentPage,
@@ -91,6 +93,10 @@ export default function CategoriesPage() {
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
       }),
     );
+  };
+
+  useEffect(() => {
+    loadCategories();
   }, [dispatch, currentPage, searchTerm, statusFilter]);
 
   const onSubmit = async (data: CategoryFormData) => {
@@ -283,206 +289,202 @@ export default function CategoriesPage() {
         </Dialog>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-4">
-        <div className="flex-1 max-w-md">
-          <Input
-            placeholder="Search by name or description..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
+      <LoadingGate
+        loading={loading}
+        error={error}
+        data={categories}
+        resetError={() => {
+          dispatch(clearError());
+          loadCategories();
+        }}
+        emptyMessage={searchTerm ? 'No matches' : 'Add your first category above'}
+        emptyIcon="hugeicons:service"
+      >
+        {/* Search */}
+        <div className="flex gap-4">
+          <div className="flex-1 max-w-md">
+            <Input
+              placeholder="Search by name or description..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-w-[140px] justify-between gap-2">
+                {statusFilter === 'ALL' && (
+                  <>
+                    <span>All Categories</span>
+                  </>
+                )}
+                {statusFilter === 'ACTIVE' && (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span>Active</span>
+                  </>
+                )}
+                {statusFilter === 'INACTIVE' && (
+                  <>
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    <span>Inactive</span>
+                  </>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-white focus:outline-none">
+              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setStatusFilter('ALL');
+                  setCurrentPage(1);
+                }}
+                className={statusFilter === 'ALL' ? 'bg-accent' : ''}
+              >
+                All Categories
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setStatusFilter('ACTIVE');
+                  setCurrentPage(1);
+                }}
+                className={statusFilter === 'ACTIVE' ? 'bg-accent' : ''}
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
+                Active
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setStatusFilter('INACTIVE');
+                  setCurrentPage(1);
+                }}
+                className={statusFilter === 'INACTIVE' ? 'bg-accent' : ''}
+              >
+                <XCircle className="w-4 h-4 mr-2 text-red-600" />
+                Inactive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[140px] justify-between gap-2">
-              {statusFilter === 'ALL' && (
-                <>
-                  <span>All Categories</span>
-                </>
-              )}
-              {statusFilter === 'ACTIVE' && (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  <span>Active</span>
-                </>
-              )}
-              {statusFilter === 'INACTIVE' && (
-                <>
-                  <XCircle className="w-4 h-4 text-red-600" />
-                  <span>Inactive</span>
-                </>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-white">
-            <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                setStatusFilter('ALL');
-                setCurrentPage(1);
-              }}
-              className={statusFilter === 'ALL' ? 'bg-accent' : ''}
-            >
-              All Categories
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setStatusFilter('ACTIVE');
-                setCurrentPage(1);
-              }}
-              className={statusFilter === 'ACTIVE' ? 'bg-accent' : ''}
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-              Active
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setStatusFilter('INACTIVE');
-                setCurrentPage(1);
-              }}
-              className={statusFilter === 'INACTIVE' ? 'bg-accent' : ''}
-            >
-              <XCircle className="w-4 h-4 mr-2 text-red-600" />
-              Inactive
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        {/* Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Categories ({pagination.totalItems})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Deleted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((cat) => (
+                    <TableRow key={cat.id}>
+                      <TableCell className="font-medium">
+                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                      </TableCell>
+                      <TableCell>{cat.description || '—'}</TableCell>
+                      <TableCell>{getStatusBadge(cat.status)}</TableCell>
+                      <TableCell>
+                        {cat.isDeleted ? (
+                          <Badge variant="destructive">Yes</Badge>
+                        ) : (
+                          <Badge variant="outline">No</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="hidden md:flex items-center justify-end gap-1.5">
+                          <TooltipProvider>
+                            {/* Edit */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-8 h-8"
+                                  onClick={() => handleEdit(cat)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="theme-admin">
+                                Edit Category
+                              </TooltipContent>
+                            </Tooltip>
 
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Categories ({pagination.totalItems})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-32 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 border-t-4 border-b-4 rounded-full animate-spin border-primary"></div>
-              <p className="text-2xl">Loading categories...</p>
-            </div>
-          ) : categories.length === 0 ? (
-            <div className="py-32 text-center">
-              <h2 className="text-3xl font-bold">No Categories Found</h2>
-              <p className="text-xl text-muted-foreground">
-                {searchTerm ? 'No matches' : 'Add your first category above'}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Deleted</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((cat) => (
-                      <TableRow key={cat.id}>
-                        <TableCell className="font-medium">
-                          {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
-                        </TableCell>
-                        <TableCell>{cat.description || '—'}</TableCell>
-                        <TableCell>{getStatusBadge(cat.status)}</TableCell>
-                        <TableCell>
+                            {/* Toggle Activate/Deactivate */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-8 h-8 "
+                                  onClick={() => handleToggleStatus(cat.id, cat.status)}
+                                >
+                                  {cat.status === 'ACTIVE' ? (
+                                    <Ban className="w-4 h-4 text-red-600" />
+                                  ) : (
+                                    <Power className="w-4 h-4 text-green-600" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="theme-admin">
+                                {cat.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} Category
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          {/* Delete / Restore – always visible on desktop */}
                           {cat.isDeleted ? (
-                            <Badge variant="destructive">Yes</Badge>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="ml-2 text-white bg-green-600 hover:bg-green-700 hover:text-white"
+                              onClick={() => handleRestore(cat.id)}
+                            >
+                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                              Restore
+                            </Button>
                           ) : (
-                            <Badge variant="outline">No</Badge>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="ml-2 text-white bg-red-600 hover:bg-red-700 hover:text-white"
+                              onClick={() => handleSoftDelete(cat.id)}
+                            >
+                              <Ban className="mr-1.5 h-3.5 w-3.5" />
+                              Delete
+                            </Button>
                           )}
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="hidden md:flex items-center justify-end gap-1.5">
-                            <TooltipProvider>
-                              {/* Edit */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="w-8 h-8"
-                                    onClick={() => handleEdit(cat)}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="theme-admin">
-                                  Edit Category
-                                </TooltipContent>
-                              </Tooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-                              {/* Toggle Activate/Deactivate */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="w-8 h-8 "
-                                    onClick={() => handleToggleStatus(cat.id, cat.status)}
-                                  >
-                                    {cat.status === 'ACTIVE' ? (
-                                      <Ban className="w-4 h-4 text-red-600" />
-                                    ) : (
-                                      <Power className="w-4 h-4 text-green-600" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="theme-admin">
-                                  {cat.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} Category
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-
-                            {/* Delete / Restore – always visible on desktop */}
-                            {cat.isDeleted ? (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="ml-2 text-white bg-green-600 hover:bg-green-700 hover:text-white"
-                                onClick={() => handleRestore(cat.id)}
-                              >
-                                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                                Restore
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="ml-2 text-white bg-red-600 hover:bg-red-700 hover:text-white"
-                                onClick={() => handleSoftDelete(cat.id)}
-                              >
-                                <Ban className="mr-1.5 h-3.5 w-3.5" />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="p-4 border-t">
-                <Pagination
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            <div className="p-4 border-t">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </LoadingGate>
     </div>
   );
 }

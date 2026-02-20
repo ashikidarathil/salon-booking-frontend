@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Icon } from '@iconify/react';
 import { AlertCircle } from 'lucide-react';
@@ -15,6 +16,8 @@ import {
   changePassword,
 } from '@/features/profile/profileThunks';
 import { showSuccess, showError, showLoading, closeLoading } from '@/common/utils/swal.utils';
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/profile/profileSlice';
 
 interface FieldErrors {
   name?: string;
@@ -23,11 +26,13 @@ interface FieldErrors {
   currentPassword?: string;
   newPassword?: string;
   confirmPassword?: string;
+  bio?: string;
 }
 
 export default function StylistProfilePage() {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, loading: authLoading } = useAppSelector((state) => state.auth);
+  const { profileError, updatingProfile } = useAppSelector((state) => state.profile);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -38,12 +43,14 @@ export default function StylistProfilePage() {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+    bio: user?.bio || '',
   });
 
   const [initialValues, setInitialValues] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
+    bio: user?.bio || '',
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,21 +66,27 @@ export default function StylistProfilePage() {
     return (
       form.name !== initialValues.name ||
       form.email !== initialValues.email ||
-      form.phone !== initialValues.phone
+      form.phone !== initialValues.phone ||
+      form.bio !== initialValues.bio
     );
-  }, [form.name, form.email, form.phone, initialValues]);
+  }, [form.name, form.email, form.phone, form.bio, initialValues]);
 
   const passwordFieldsFilled = useMemo(() => {
     return !!(form.currentPassword || form.newPassword || form.confirmPassword);
   }, [form.currentPassword, form.newPassword, form.confirmPassword]);
 
-  const canSave = profileChanged || (passwordFieldsFilled && !errors.newPassword && !errors.confirmPassword && !errors.currentPassword);
+  const canSave =
+    profileChanged ||
+    (passwordFieldsFilled &&
+      !errors.newPassword &&
+      !errors.confirmPassword &&
+      !errors.currentPassword);
 
   const handleChange = (field: keyof typeof form, value: string) => {
     const newValue = field === 'phone' ? value.replace(/\s/g, '') : value;
-    
+
     setForm((prev) => ({ ...prev, [field]: newValue }));
-    
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -89,7 +102,10 @@ export default function StylistProfilePage() {
         } else if (!/(?=.*\d)/.test(value)) {
           setErrors((prev) => ({ ...prev, newPassword: 'Must contain a number' }));
         } else if (!/(?=.*[@$!%*?&])/.test(value)) {
-          setErrors((prev) => ({ ...prev, newPassword: 'Must contain a special character (@$!%*?&)' }));
+          setErrors((prev) => ({
+            ...prev,
+            newPassword: 'Must contain a special character (@$!%*?&)',
+          }));
         } else {
           setErrors((prev) => ({ ...prev, newPassword: undefined }));
         }
@@ -195,10 +211,11 @@ export default function StylistProfilePage() {
     if (profileChanged) {
       showLoading('Updating profile...');
 
-      const profilePayload: { name: string; email?: string; phone?: string } = {
+      const profilePayload: { name: string; email?: string; phone?: string; bio?: string } = {
         name: form.name,
         email: form.email,
         ...(form.phone.trim() ? { phone: form.phone } : {}),
+        bio: form.bio,
       };
 
       const profileResult = await dispatch(updateProfile(profilePayload));
@@ -213,12 +230,13 @@ export default function StylistProfilePage() {
             name: updatedUser.name,
             email: updatedUser.email || '',
             phone: updatedUser.phone || '',
+            bio: updatedUser.bio || '',
           });
         }
       } else {
         const errorMsg = profileResult.payload as string;
         const error = errorMsg.toLowerCase();
-        
+
         if (error.includes('email')) {
           setErrors((prev) => ({ ...prev, email: errorMsg }));
         } else if (error.includes('phone')) {
@@ -256,7 +274,7 @@ export default function StylistProfilePage() {
       } else {
         const errorMsg = passwordResult.payload as string;
         const error = errorMsg.toLowerCase();
-        
+
         if (error.includes('same as current')) {
           setErrors((prev) => ({ ...prev, newPassword: errorMsg }));
         } else if (error.includes('current password')) {
@@ -272,13 +290,13 @@ export default function StylistProfilePage() {
       }
     }
 
-      if (profileUpdated && passwordChanged) {
-        await showSuccess('Success!', 'Profile and password updated successfully');
-      } else if (profileUpdated) {
-        await showSuccess('Success!', 'Profile updated successfully');
-      } else if (passwordChanged) {
-        await showSuccess('Success!', 'Password changed successfully');
-      }
+    if (profileUpdated && passwordChanged) {
+      await showSuccess('Success!', 'Profile and password updated successfully');
+    } else if (profileUpdated) {
+      await showSuccess('Success!', 'Profile updated successfully');
+    } else if (passwordChanged) {
+      await showSuccess('Success!', 'Password changed successfully');
+    }
   };
 
   const handleReset = () => {
@@ -289,242 +307,266 @@ export default function StylistProfilePage() {
       currentPassword: '',
       newPassword: '',
       confirmPassword: '',
+      bio: initialValues.bio,
     });
     setErrors({});
   };
 
   return (
-    <div className="p-6 space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold">Stylist Profile</h1>
-        <p className="mt-2 text-muted-foreground">
-          Manage your professional details and account settings
-        </p>
-      </div>
+    <LoadingGate
+      loading={authLoading}
+      error={profileError}
+      data={user}
+      resetError={() => {
+        dispatch(clearError());
+      }}
+    >
+      <div className="space-y-6 md:space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold">Stylist Profile</h1>
+          <p className="mt-2 text-muted-foreground">
+            Manage your professional details and account settings
+          </p>
+        </div>
 
-      <Card className="transition-shadow shadow-sm border-border/50 hover:shadow-md">
-        <CardHeader>
-          <CardTitle>Profile Picture</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-6">
-          <div className="relative">
-            <Avatar className="w-40 h-40 ring-4 ring-primary/20">
-              <AvatarImage src={user?.profilePicture || undefined} />
-              <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
-                {user?.name?.[0]?.toUpperCase() || 'S'}
-              </AvatarFallback>
-            </Avatar>
-            {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-                <Icon icon="eos-icons:loading" className="w-12 h-12 text-white animate-spin" />
-              </div>
-            )}
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageSelect}
-            className="hidden"
-          />
-
-          <Button onClick={() => fileInputRef.current?.click()} variant="outline">
-            <Icon icon="solar:camera-bold" className="w-4 h-4 mr-2" />
-            Change Photo
-          </Button>
-        </CardContent>
-      </Card>
-
-      <form onSubmit={handleSave}>
         <Card className="transition-shadow shadow-sm border-border/50 hover:shadow-md">
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
+            <CardTitle>Profile Picture</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="Enter your full name"
-                  className={errors.name ? 'border-red-500' : ''}
-                />
-                {errors.name && (
-                  <p className="flex items-center gap-1 text-xs text-red-600">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.name}
-                  </p>
-                )}
+          <CardContent className="flex flex-col items-center gap-6">
+            <div className="relative">
+              <Avatar className="w-40 h-40 ring-4 ring-primary/20">
+                <AvatarImage src={user?.profilePicture || undefined} />
+                <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
+                  {user?.name?.[0]?.toUpperCase() || 'S'}
+                </AvatarFallback>
+              </Avatar>
+              {uploading && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                  <Icon icon="eos-icons:loading" className="w-12 h-12 text-white animate-spin" />
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline">
+              <Icon icon="solar:camera-bold" className="w-4 h-4 mr-2" />
+              Change Photo
+            </Button>
+          </CardContent>
+        </Card>
+
+        <form onSubmit={handleSave}>
+          <Card className="transition-shadow shadow-sm border-border/50 hover:shadow-md">
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    placeholder="Enter your full name"
+                    className={errors.name ? 'border-red-500' : ''}
+                  />
+                  {errors.name && (
+                    <p className="flex items-center gap-1 text-xs text-red-600">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.name}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    placeholder={!hasEmail ? 'Add your email' : undefined}
+                    className={errors.email ? 'border-red-500' : ''}
+                  />
+                  {errors.email && (
+                    <p className="flex items-center gap-1 text-xs text-red-600">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.email}
+                    </p>
+                  )}
+                  {!hasEmail && !errors.email && (
+                    <p className="flex items-center gap-1 text-xs text-amber-600">
+                      <AlertCircle className="w-3 h-3" />
+                      Add email for better account recovery
+                    </p>
+                  )}
+                </div>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="phone">Phone Number</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  placeholder={!hasEmail ? 'Add your email' : undefined}
-                  className={errors.email ? 'border-red-500' : ''}
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  placeholder={!hasPhone ? 'Add your phone number' : undefined}
+                  className={errors.phone ? 'border-red-500' : ''}
                 />
-                {errors.email && (
+                {errors.phone && (
                   <p className="flex items-center gap-1 text-xs text-red-600">
                     <AlertCircle className="w-3 h-3" />
-                    {errors.email}
+                    {errors.phone}
                   </p>
                 )}
-                {!hasEmail && !errors.email && (
+                {!form.phone && !errors.phone && (
                   <p className="flex items-center gap-1 text-xs text-amber-600">
                     <AlertCircle className="w-3 h-3" />
-                    Add email for better account recovery
+                    Add phone for notifications
                   </p>
                 )}
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={form.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
-                placeholder={!hasPhone ? 'Add your phone number' : undefined}
-                className={errors.phone ? 'border-red-500' : ''}
-              />
-              {errors.phone && (
-                <p className="flex items-center gap-1 text-xs text-red-600">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.phone}
-                </p>
-              )}
-              {!form.phone && !errors.phone && (
-                <p className="flex items-center gap-1 text-xs text-amber-600">
-                  <AlertCircle className="w-3 h-3" />
-                  Add phone for notifications
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Change Password */}
-        <Card className="mt-6 transition-shadow shadow-sm border-border/50 hover:shadow-md">
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Update your password to keep your account secure
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <div className="relative">
-                <Input
-                  id="currentPassword"
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  value={form.currentPassword}
-                  onChange={(e) => handleChange('currentPassword', e.target.value)}
-                  placeholder="Enter current password"
-                  className={errors.currentPassword ? 'border-red-500 pr-10' : 'pr-10'}
+              <div className="space-y-2">
+                <Label htmlFor="bio">Professional Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={form.bio}
+                  onChange={(e) => handleChange('bio', e.target.value)}
+                  placeholder="Tell us about your experience and style..."
+                  className="min-h-[120px]"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                >
-                  <Icon
-                    icon={showCurrentPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
-                    className="w-5 h-5"
-                  />
-                </button>
-              </div>
-              {errors.currentPassword && (
-                <p className="flex items-center gap-1 text-xs text-red-600">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.currentPassword}
+                <p className="text-xs text-muted-foreground">
+                  This bio will be displayed on your public profile.
                 </p>
-              )}
-            </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+          {/* Change Password */}
+          <Card className="mt-6 transition-shadow shadow-sm border-border/50 hover:shadow-md">
+            <CardHeader>
+              <CardTitle>Change Password</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Update your password to keep your account secure
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
+                <Label htmlFor="currentPassword">Current Password</Label>
                 <div className="relative">
                   <Input
-                    id="newPassword"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={form.newPassword}
-                    onChange={(e) => handleChange('newPassword', e.target.value)}
-                    placeholder="Enter new password"
-                    className={errors.newPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                    id="currentPassword"
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={form.currentPassword}
+                    onChange={(e) => handleChange('currentPassword', e.target.value)}
+                    placeholder="Enter current password"
+                    className={errors.currentPassword ? 'border-red-500 pr-10' : 'pr-10'}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
                   >
                     <Icon
-                      icon={showNewPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                      icon={showCurrentPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
                       className="w-5 h-5"
                     />
                   </button>
                 </div>
-                {errors.newPassword && (
+                {errors.currentPassword && (
                   <p className="flex items-center gap-1 text-xs text-red-600">
                     <AlertCircle className="w-3 h-3" />
-                    {errors.newPassword}
+                    {errors.currentPassword}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={form.confirmPassword}
-                    onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                    placeholder="Confirm new password"
-                    className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                  >
-                    <Icon
-                      icon={showConfirmPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
-                      className="w-5 h-5"
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={form.newPassword}
+                      onChange={(e) => handleChange('newPassword', e.target.value)}
+                      placeholder="Enter new password"
+                      className={errors.newPassword ? 'border-red-500 pr-10' : 'pr-10'}
                     />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                    >
+                      <Icon
+                        icon={showNewPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                        className="w-5 h-5"
+                      />
+                    </button>
+                  </div>
+                  {errors.newPassword && (
+                    <p className="flex items-center gap-1 text-xs text-red-600">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.newPassword}
+                    </p>
+                  )}
                 </div>
-                {errors.confirmPassword && (
-                  <p className="flex items-center gap-1 text-xs text-red-600">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        <div className="flex justify-end gap-4 mt-6">
-          <Button type="button" variant="outline" onClick={handleReset}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!canSave}>
-            <Icon icon="solar:diskette-bold" className="w-4 h-4 mr-2" />
-            Save Changes
-          </Button>
-        </div>
-      </form>
-    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={form.confirmPassword}
+                      onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                      placeholder="Confirm new password"
+                      className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                    >
+                      <Icon
+                        icon={showConfirmPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                        className="w-5 h-5"
+                      />
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="flex items-center gap-1 text-xs text-red-600">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.confirmPassword}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end gap-4 mt-6">
+            <Button type="button" variant="outline" onClick={handleReset}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!canSave || updatingProfile}>
+              <Icon icon="solar:diskette-bold" className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </div>
+    </LoadingGate>
   );
 }

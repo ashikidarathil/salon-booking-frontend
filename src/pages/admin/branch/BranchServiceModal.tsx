@@ -44,6 +44,8 @@ import {
 import { Label } from '@/components/ui/label';
 import type { BranchServiceItem } from '@/features/branchService/branchService.types';
 import Pagination from '@/components/pagination/Pagination';
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/branchService/branchService.slice';
 
 interface BranchServiceModalProps {
   branchId: string;
@@ -60,7 +62,7 @@ export default function BranchServiceModal({
   onClose,
 }: BranchServiceModalProps) {
   const dispatch = useAppDispatch();
-  const { services, loading, pagination } = useAppSelector((state) => state.branchService);
+  const { services, loading, error, pagination } = useAppSelector((state) => state.branchService);
 
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,8 +73,8 @@ export default function BranchServiceModal({
   const [editingService, setEditingService] = useState<BranchServiceItem | null>(null);
   const [editPrice, setEditPrice] = useState<string>('0');
   const [editDuration, setEditDuration] = useState<string>('0');
-  useEffect(() => {
-    if (open && branchId) {
+  const loadBranchServices = () => {
+    if (branchId) {
       dispatch(
         fetchBranchServicesPaginated({
           branchId,
@@ -83,6 +85,12 @@ export default function BranchServiceModal({
           isActive: filterActive === 'all' ? undefined : filterActive === 'active',
         }),
       );
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      loadBranchServices();
     }
   }, [open, branchId, dispatch, currentPage, search, filterConfigured, filterActive]);
 
@@ -276,155 +284,158 @@ export default function BranchServiceModal({
             </div>
           </div>
 
-          {/* Table */}
-          {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading services...</div>
-          ) : services.length === 0 ? (
-            <div className="py-8 text-center border rounded-lg text-muted-foreground bg-muted/30">
-              {search || filterConfigured !== 'all' || filterActive !== 'all'
+          <LoadingGate
+            loading={loading}
+            error={error}
+            data={services}
+            resetError={() => {
+              dispatch(clearError());
+              loadBranchServices();
+            }}
+            emptyMessage={
+              search || filterConfigured !== 'all' || filterActive !== 'all'
                 ? 'No services match your filters.'
-                : 'No services available for this branch.'}
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Service Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price (₹)</TableHead>
-                      <TableHead>Duration (min)</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {services.map((svc) => (
-                      <TableRow key={svc.serviceId}>
-                        <TableCell className="font-medium">{svc.name}</TableCell>
-                        <TableCell>{svc.categoryName || '—'}</TableCell>
-                        <TableCell>
-                          {editingService?.serviceId === svc.serviceId ? (
-                            <Input
-                              type="number"
-                              value={editPrice}
-                              onChange={(e) => {
-                                let val = e.target.value;
-                                if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
-                                  val = val.substring(1);
-                                }
-                                setEditPrice(val);
-                              }}
-                              className="w-24"
-                              min="0"
-                              step="0.01"
-                            />
-                          ) : svc.price === null ? (
-                            <span className="text-muted-foreground">—</span>
-                          ) : (
-                            `₹${svc.price.toLocaleString('en-IN')}`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingService?.serviceId === svc.serviceId ? (
-                            <Input
-                              type="number"
-                              value={editDuration}
-                              onChange={(e) => {
-                                let val = e.target.value;
-                                if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
-                                  val = val.substring(1);
-                                }
-                                setEditDuration(val);
-                              }}
-                              className="w-24"
-                              min="1"
-                            />
-                          ) : svc.duration === null ? (
-                            <span className="text-muted-foreground">—</span>
-                          ) : (
-                            `${svc.duration} min`
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {!svc.configured ? (
-                            <Badge
-                              variant="outline"
-                              className="text-yellow-700 border-yellow-200 bg-yellow-50"
+                : 'No services available for this branch.'
+            }
+            emptyIcon="hugeicons:service"
+          >
+            <div className="overflow-x-auto border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Service Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price (₹)</TableHead>
+                    <TableHead>Duration (min)</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {services.map((svc) => (
+                    <TableRow key={svc.serviceId}>
+                      <TableCell className="font-medium">{svc.name}</TableCell>
+                      <TableCell>{svc.categoryName || '—'}</TableCell>
+                      <TableCell>
+                        {editingService?.serviceId === svc.serviceId ? (
+                          <Input
+                            type="number"
+                            value={editPrice}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                                val = val.substring(1);
+                              }
+                              setEditPrice(val);
+                            }}
+                            className="w-24"
+                            min="0"
+                            step="0.01"
+                          />
+                        ) : svc.price === null ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          `₹${svc.price.toLocaleString('en-IN')}`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingService?.serviceId === svc.serviceId ? (
+                          <Input
+                            type="number"
+                            value={editDuration}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
+                                val = val.substring(1);
+                              }
+                              setEditDuration(val);
+                            }}
+                            className="w-24"
+                            min="1"
+                          />
+                        ) : svc.duration === null ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          `${svc.duration} min`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {!svc.configured ? (
+                          <Badge
+                            variant="outline"
+                            className="text-yellow-700 border-yellow-200 bg-yellow-50"
+                          >
+                            Not Configured
+                          </Badge>
+                        ) : (
+                          <Badge variant={svc.isActive ? 'default' : 'destructive'}>
+                            {svc.isActive ? 'Active' : 'Disabled'}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="space-x-2 text-right">
+                        {editingService?.serviceId === svc.serviceId ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSaveEdit(svc.serviceId, svc.name)}
                             >
-                              Not Configured
-                            </Badge>
-                          ) : (
-                            <Badge variant={svc.isActive ? 'default' : 'destructive'}>
-                              {svc.isActive ? 'Active' : 'Disabled'}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="space-x-2 text-right">
-                          {editingService?.serviceId === svc.serviceId ? (
-                            <>
-                              <Button
-                                size="sm"
-                                onClick={() => handleSaveEdit(svc.serviceId, svc.name)}
-                              >
-                                Save
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingService(null)}
-                              >
-                                Cancel
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button variant="outline" size="sm" onClick={() => handleEdit(svc)}>
-                                {svc.configured ? 'Edit' : 'Configure'}
-                              </Button>
-                              <Button
-                                variant={svc.isActive ? 'destructive' : 'default'}
-                                size="sm"
-                                disabled={!svc.configured}
-                                onClick={() =>
-                                  handleToggleClick(
-                                    svc.serviceId,
-                                    svc.isActive,
-                                    svc.name,
-                                    svc.price,
-                                    svc.duration,
-                                  )
-                                }
-                              >
-                                {svc.isActive ? 'Disable' : 'Enable'}
-                              </Button>
-                            </>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                              Save
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingService(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(svc)}>
+                              {svc.configured ? 'Edit' : 'Configure'}
+                            </Button>
+                            <Button
+                              variant={svc.isActive ? 'destructive' : 'default'}
+                              size="sm"
+                              disabled={!svc.configured}
+                              onClick={() =>
+                                handleToggleClick(
+                                  svc.serviceId,
+                                  svc.isActive,
+                                  svc.name,
+                                  svc.price,
+                                  svc.duration,
+                                )
+                              }
+                            >
+                              {svc.isActive ? 'Disable' : 'Enable'}
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* ✅ NEW: Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="pt-4 border-t">
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    onPageChange={setCurrentPage}
-                  />
-                </div>
-              )}
-
-              {/* ✅ NEW: Metadata */}
-              <div className="text-xs text-muted-foreground">
-                Showing {services.length} of {pagination.totalItems} services
+            {/* ✅ NEW: Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="pt-4 border-t">
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </div>
-            </>
-          )}
+            )}
+
+            {/* ✅ NEW: Metadata */}
+            <div className="text-xs text-muted-foreground">
+              Showing {services.length} of {pagination.totalItems} services
+            </div>
+          </LoadingGate>
         </div>
 
         <DialogFooter>

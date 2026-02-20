@@ -39,13 +39,12 @@ const userSlice = createSlice({
         state.error = action.payload as string;
       });
 
-      builder
-      .addCase(toggleBlockUser.fulfilled, (state, action) => {
-        const user = state.users.find((u) => u.id === action.payload.userId);
-        if (user) {
-          user.isBlocked = action.payload.isBlocked;
-        }
-      });
+    builder.addCase(toggleBlockUser.fulfilled, (state, action) => {
+      const user = state.users.find((u) => u.id === action.payload.userId);
+      if (user) {
+        user.isBlocked = action.payload.isBlocked;
+      }
+    });
   },
 });
 

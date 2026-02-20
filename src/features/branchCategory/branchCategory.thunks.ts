@@ -49,15 +49,12 @@ export const fetchBranchCategoriesPaginated = createAsyncThunk<
     isActive?: boolean;
   },
   { rejectValue: string }
->(
-  'branchCategory/fetchBranchCategoriesPaginated',
-  async (params, { rejectWithValue }) => {
-    try {
-      const { branchId, ...rest } = params;
-      const res = await branchCategoryService.listPaginated(branchId, rest);
-      return res.data.data;
-    } catch (err) {
-      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
-    }
-  },
-);
+>('branchCategory/fetchBranchCategoriesPaginated', async (params, { rejectWithValue }) => {
+  try {
+    const { branchId, ...rest } = params;
+    const res = await branchCategoryService.listPaginated(branchId, rest);
+    return res.data.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
+  }
+});

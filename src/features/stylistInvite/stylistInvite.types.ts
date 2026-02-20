@@ -1,11 +1,21 @@
 import { UI_CONSTANTS } from '@/common/constants/ui.constants';
 import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 
+export interface IWeeklyScheduleItem {
+  dayOfWeek: number;
+  isWorkingDay: boolean;
+  shifts: {
+    startTime: string;
+    endTime: string;
+  }[];
+}
+
 export interface StylistListItem {
   id: string;
   userId: string;
   name: string;
   email?: string;
+  phone?: string;
   specialization: string;
   experience: number;
   status: 'ACTIVE' | 'INACTIVE';
@@ -13,7 +23,23 @@ export interface StylistListItem {
   inviteStatus?: (typeof UI_CONSTANTS.STYLIST.STATUS)[keyof typeof UI_CONSTANTS.STYLIST.STATUS];
   inviteExpiresAt?: string;
   inviteLink?: string;
+  position?: 'JUNIOR' | 'SENIOR' | 'TRAINEE';
+  bio?: string;
+  profilePicture?: string;
+  branchName?: string;
+  assignedServices?: string[];
+  rating?: number;
+  reviewCount?: number;
   isBlocked: boolean;
+  weeklySchedule?: IWeeklyScheduleItem[];
+}
+
+export interface FetchPublicStylistsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  branchId?: string;
+  position?: string;
 }
 
 export type CreateInvitePayload = {
@@ -54,6 +80,7 @@ export interface StylistInviteState {
   error: string | null;
   inviteLink: string | null;
   invitePreview: InvitePreview | null;
+  selectedStylist: StylistListItem | null;
   acceptSuccess: boolean;
   pagination: PaginationMetadata;
 }

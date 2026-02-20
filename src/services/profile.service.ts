@@ -10,6 +10,7 @@ export interface UpdateProfilePayload {
   name?: string;
   email?: string;
   phone?: string;
+  bio?: string;
 }
 
 export interface UpdateProfileResponse {
@@ -22,6 +23,7 @@ export interface UpdateProfileResponse {
     phone?: string;
     profilePicture?: string;
     role: string;
+    bio?: string;
   };
 }
 

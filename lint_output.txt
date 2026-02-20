@@ -1,0 +1,50 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/components/booking/SlotBookingDialog.tsx
+  82:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/components/booking/SlotBookingDialog.tsx:82:7
+  80 |       onClose();
+  81 |       dispatch(resetBookingSuccess());
+> 82 |       resetForm();
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  83 |     }
+  84 |   }, [bookingSuccess, serviceName, onClose, dispatch]);
+  85 |  react-hooks/set-state-in-effect
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/CategoriesPage.tsx
+  100:6  warning  React Hook useEffect has a missing dependency: 'loadCategories'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/ServicesPage.tsx
+  157:6  warning  React Hook useEffect has a missing dependency: 'loadServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchCategoryModal.tsx
+  87:6  warning  React Hook useEffect has a missing dependency: 'loadBranchCategories'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchServiceModal.tsx
+  95:6  warning  React Hook useEffect has a missing dependency: 'loadBranchServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchStylistModal.tsx
+  102:6  warning  React Hook useEffect has a missing dependency: 'loadAssignedStylists'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+  108:6  warning  React Hook useEffect has a missing dependency: 'loadUnassignedStylists'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchesPage.tsx
+  105:6  warning  React Hook useEffect has a missing dependency: 'loadBranches'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/stylist/StylistManagementPage.tsx
+  83:6  warning  React Hook useEffect has a missing dependency: 'loadStylists'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/user/UserManagementPage.tsx
+  54:6  warning  React Hook useEffect has a missing dependency: 'loadUsers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 10 problems (1 error, 9 warnings)
+

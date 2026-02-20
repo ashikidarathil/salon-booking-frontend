@@ -9,6 +9,11 @@ import branchReducer from '@/features/branch/branch.slice';
 import stylistBranchReducer from '@/features/stylistBranch/stylistBranch.slice';
 import branchCategoryReducer from '@/features/branchCategory/branchCategory.slice';
 import branchServiceReducer from '@/features/branchService/branchService.slice';
+import slotReducer from '@/features/slot/slot.slice';
+import bookingReducer from '@/features/booking/booking.slice';
+import scheduleReducer from '@/features/schedule/schedule.slice';
+import offDayReducer from '@/features/offDay/offDay.slice';
+import stylistServiceReducer from '@/features/stylistService/stylistService.slice';
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +27,11 @@ export const store = configureStore({
     stylistBranch: stylistBranchReducer,
     branchCategory: branchCategoryReducer,
     branchService: branchServiceReducer,
+    slot: slotReducer,
+    booking: bookingReducer,
+    schedule: scheduleReducer,
+    offDay: offDayReducer,
+    stylistService: stylistServiceReducer,
   },
 });
 

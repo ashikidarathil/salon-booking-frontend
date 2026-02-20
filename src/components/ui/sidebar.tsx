@@ -4,6 +4,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import type { UIProps } from '@/types/ui';
 import { Slot } from '@radix-ui/react-slot';
+import { Icon } from '@iconify/react';
 
 /* ---------------- Provider ---------------- */
 
@@ -17,7 +18,7 @@ export function Sidebar({ children, className }: UIProps) {
   return (
     <aside
       className={cn(
-        'w-64 bg-[var(--color-sidebar)] text-[var(--color-sidebar-foreground)]',
+        'hidden md:block w-64 border-r bg-[var(--color-sidebar)] text-[var(--color-sidebar-foreground)] transition-all duration-300 ease-in-out',
         className,
       )}
     >
@@ -32,7 +33,7 @@ export function SidebarHeader({ children, className }: UIProps) {
   return <div className={cn('border-b p-4', className)}>{children}</div>;
 }
 
-/* ---------------- Content (FIXED) ---------------- */
+/* ---------------- Content ---------------- */
 
 export function SidebarContent({ children, className }: UIProps) {
   return <div className={cn('flex-1 overflow-y-auto', className)}>{children}</div>;
@@ -48,7 +49,7 @@ export function SidebarMenuItem({ children, className }: UIProps) {
   return <li className={cn(className)}>{children}</li>;
 }
 
-/* ---------------- Menu Button (FIXED asChild) ---------------- */
+/* ---------------- Menu Button ---------------- */
 
 type SidebarMenuButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   asChild?: boolean;
@@ -75,7 +76,7 @@ export function SidebarMenuButton({
   );
 }
 
-/* ---------------- Inset (FIXED) ---------------- */
+/* ---------------- Inset ---------------- */
 
 export function SidebarInset({ children, className }: UIProps) {
   return <div className={cn('flex flex-col flex-1', className)}>{children}</div>;
@@ -83,6 +84,19 @@ export function SidebarInset({ children, className }: UIProps) {
 
 /* ---------------- Trigger ---------------- */
 
-export function SidebarTrigger() {
-  return <button className="text-sm font-medium hover:opacity-80">☰</button>;
+type SidebarTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+export function SidebarTrigger({ className, ...props }: SidebarTriggerProps) {
+  return (
+    <button
+      {...props}
+      className={cn(
+        'inline-flex md:hidden items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary',
+        className,
+      )}
+    >
+      <span className="sr-only">Open sidebar</span>
+      <Icon icon="solar:hamburger-menu-bold" className="size-6" />
+    </button>
+  );
 }

@@ -33,7 +33,11 @@ const initialState: ServiceState = {
 const serviceSlice = createSlice({
   name: 'service',
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPaginatedServices.fulfilled, (state, action) => {
@@ -107,4 +111,5 @@ const serviceSlice = createSlice({
   },
 });
 
+export const { clearError } = serviceSlice.actions;
 export default serviceSlice.reducer;

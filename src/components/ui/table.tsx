@@ -1,41 +1,74 @@
 import { cn } from '@/lib/utils';
-import type { UIProps } from '@/types/ui';
 
 export function Table({ children, className }: { children: React.ReactNode; className?: string }) {
   return <table className={cn('w-full caption-bottom text-sm', className)}>{children}</table>;
 }
 
-export function TableHeader({ children }: { children: React.ReactNode }) {
-  return <thead className="[&_tr]:border-b">{children}</thead>;
+export function TableHeader({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <thead className={cn('[&_tr]:border-b', className)}>{children}</thead>;
 }
 
-export function TableBody({ children }: { children: React.ReactNode }) {
-  return <tbody className="[&_tr:last-child]:border-0">{children}</tbody>;
+export function TableBody({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <tbody className={cn('[&_tr:last-child]:border-0', className)}>{children}</tbody>;
 }
 
-export function TableRow({ children }: { children: React.ReactNode }) {
+export function TableRow({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+    <tr
+      className={cn(
+        'border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
+        className,
+      )}
+    >
       {children}
     </tr>
   );
 }
 
-export function TableHead({ children, className }: UIProps) {
+export function TableHead({
+  children,
+  className,
+  ...props
+}: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
       className={cn(
         'h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
         className,
       )}
+      {...props}
     >
       {children}
     </th>
   );
 }
 
-export function TableCell({ children, className }: UIProps) {
+export function TableCell({
+  children,
+  className,
+  ...props
+}: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={cn('p-4 align-middle [&:has([role=checkbox])]:pr-0', className)}>{children}</td>
+    <td className={cn('p-4 align-middle [&:has([role=checkbox])]:pr-0', className)} {...props}>
+      {children}
+    </td>
   );
 }

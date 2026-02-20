@@ -21,6 +21,10 @@ export function CardTitle({ children, className }: UIProps) {
   );
 }
 
+export function CardDescription({ children, className }: UIProps) {
+  return <p className={cn('text-sm text-muted-foreground', className)}>{children}</p>;
+}
+
 export function CardContent({ children, className }: UIProps) {
   return <div className={cn('p-6 pt-0', className)}>{children}</div>;
 }

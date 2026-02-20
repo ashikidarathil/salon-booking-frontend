@@ -19,6 +19,8 @@ import { Icon } from '@iconify/react';
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
 import Pagination from '@/components/pagination/Pagination';
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/branchService/branchService.slice';
 import {
   Carousel,
   CarouselContent,
@@ -80,26 +82,7 @@ export default function ServicesListingPage() {
     navigate(`/branches/${selectedBranch!.id}/services/${serviceId}`);
   };
 
-  const handleClearFilters = () => {
-    setSearch('');
-    setSelectedCategory('');
-    setCurrentPage(1);
-  };
-
-  if (loading && services.length === 0) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background">
-        <Header />
-        <main className="flex items-center justify-center flex-1">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 border-4 rounded-full border-primary border-t-transparent animate-spin"></div>
-            <p className="text-muted-foreground">Loading services...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const branchServiceError = useAppSelector((state) => state.branchService.error);
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-background text-foreground">
@@ -153,53 +136,92 @@ export default function ServicesListingPage() {
         </section>
 
         <div className="container px-4 py-12 mx-auto space-y-12">
-          {/* Category Carousel */}
-          <div className="relative w-full max-w-4xl px-12 mx-auto">
-            <Carousel
-              opts={{
-                align: 'start',
-                dragFree: true,
-              }}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-2 md:-ml-4">
-                <CarouselItem className="pl-2 md:pl-4 basis-auto">
+          {/* Category Filter */}
+          <div className="relative w-full max-w-4xl mx-auto">
+            <div className="flex items-center gap-3 px-4 pb-2 overflow-x-auto md:hidden scrollbar-hide">
+              <Button
+                variant={!selectedCategory ? 'default' : 'ghost'}
+                className={
+                  !selectedCategory
+                    ? 'rounded-full px-6 shadow-md shadow-primary/20 shrink-0'
+                    : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0'
+                }
+                onClick={() => handleCategoryFilter('all')}
+              >
+                All Services
+              </Button>
+              {categories &&
+                categories.map((cat) => (
                   <Button
-                    variant={!selectedCategory ? 'default' : 'ghost'}
+                    key={cat.id}
+                    variant={selectedCategory === cat.id ? 'default' : 'ghost'}
                     className={
-                      !selectedCategory
-                        ? 'rounded-full px-6 shadow-md shadow-primary/20'
-                        : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                      selectedCategory === cat.id
+                        ? 'rounded-full px-6 shadow-md shadow-primary/20 shrink-0'
+                        : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0'
                     }
-                    onClick={() => handleCategoryFilter('all')}
+                    onClick={() => handleCategoryFilter(cat.id)}
                   >
-                    All Services
+                    {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
                   </Button>
-                </CarouselItem>
-                {categories &&
-                  categories.map((cat) => (
-                    <CarouselItem key={cat.id} className="pl-2 md:pl-4 basis-auto">
-                      <Button
-                        variant={selectedCategory === cat.id ? 'default' : 'ghost'}
-                        className={
-                          selectedCategory === cat.id
-                            ? 'rounded-full px-6 shadow-md shadow-primary/20'
-                            : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
-                        }
-                        onClick={() => handleCategoryFilter(cat.id)}
-                      >
-                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
-                      </Button>
-                    </CarouselItem>
-                  ))}
-              </CarouselContent>
-              <CarouselPrevious className="hidden md:flex -left-12" />
-              <CarouselNext className="hidden md:flex -right-12" />
-            </Carousel>
+                ))}
+            </div>
+
+            {/* Desktop View: Carousel */}
+            <div className="hidden px-12 md:block">
+              <Carousel
+                opts={{
+                  align: 'start',
+                  dragFree: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-4">
+                  <CarouselItem className="pl-4 basis-auto sm:basis-auto">
+                    <Button
+                      variant={!selectedCategory ? 'default' : 'ghost'}
+                      className={
+                        !selectedCategory
+                          ? 'rounded-full px-6 shadow-md shadow-primary/20'
+                          : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                      }
+                      onClick={() => handleCategoryFilter('all')}
+                    >
+                      All Services
+                    </Button>
+                  </CarouselItem>
+                  {categories &&
+                    categories.map((cat) => (
+                      <CarouselItem key={cat.id} className="pl-4 basis-auto sm:basis-auto">
+                        <Button
+                          variant={selectedCategory === cat.id ? 'default' : 'ghost'}
+                          className={
+                            selectedCategory === cat.id
+                              ? 'rounded-full px-6 shadow-md shadow-primary/20'
+                              : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                          }
+                          onClick={() => handleCategoryFilter(cat.id)}
+                        >
+                          {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                        </Button>
+                      </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <CarouselPrevious className="-left-12" />
+                <CarouselNext className="-right-12" />
+              </Carousel>
+            </div>
           </div>
 
-          {/* Services Grid */}
-          {services && services.length > 0 ? (
+          <LoadingGate
+            loading={loading}
+            error={branchServiceError}
+            data={services}
+            emptyMessage="No services match your search criteria"
+            emptyIcon="solar:bag-smile-bold-duotone"
+            resetError={() => dispatch(clearError())}
+            backPath="/services"
+          >
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {services.map((service) => (
                 <Card
@@ -227,10 +249,13 @@ export default function ServicesListingPage() {
                   {/* Service Details */}
                   <div className="p-6 pt-6">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-bold">{service.name.charAt(0).toUpperCase() + service.name.slice(1)}</h3>
+                      <h3 className="text-lg font-bold">
+                        {service.name.charAt(0).toUpperCase() + service.name.slice(1)}
+                      </h3>
                       {service.categoryName && (
-                        <Badge className="px-2 font-normal border-none rounded-sm bg-primary text-primary hover:bg-primary/70">
-                          {service.categoryName}
+                        <Badge className="px-2 font-normal rounded-sm" variant="outline">
+                          {service.categoryName.charAt(0).toUpperCase() +
+                            service.categoryName.slice(1)}
                         </Badge>
                       )}
                     </div>
@@ -250,7 +275,9 @@ export default function ServicesListingPage() {
 
                     <div className="flex items-center justify-between mt-auto">
                       <span className="text-2xl font-bold text-foreground">
-                        {service.price ? `₹${service.price.toLocaleString('en-IN')}` : 'Price on request'}
+                        {service.price
+                          ? `₹${service.price.toLocaleString('en-IN')}`
+                          : 'Price on request'}
                       </span>
                       <Button
                         className="shadow-md bg-primary hover:bg-primary/90 shadow-primary/20"
@@ -263,28 +290,10 @@ export default function ServicesListingPage() {
                 </Card>
               ))}
             </div>
-          ) : (
-            <div className="py-16 text-center">
-              <div className="flex items-center justify-center mx-auto mb-6 rounded-full size-24 bg-muted/30">
-                <Icon
-                  icon="solar:bag-smile-bold-duotone"
-                  className="size-12 text-muted-foreground/50"
-                />
-              </div>
-              <h3 className="mb-2 text-xl font-bold">No services match your search criteria</h3>
-              <p className="mb-6 text-muted-foreground">
-                Try adjusting your filters or search terms
-              </p>
-              {(search || selectedCategory) && (
-                <Button onClick={handleClearFilters} variant="outline">
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-          )}
+          </LoadingGate>
 
           {/* Pagination */}
-          {pagination && (
+          {pagination && services && services.length > 0 && (
             <Pagination
               currentPage={currentPage}
               totalPages={pagination.totalPages}

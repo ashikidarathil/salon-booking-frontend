@@ -7,6 +7,8 @@ import {
   fetchBranchCategoriesPaginated,
 } from '@/features/branchCategory/branchCategory.thunks';
 import Pagination from '@/components/pagination/Pagination';
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/branchCategory/branchCategory.slice';
 import {
   Dialog,
   DialogContent,
@@ -58,14 +60,16 @@ export default function BranchCategoryModal({
   onClose,
 }: BranchCategoryModalProps) {
   const dispatch = useAppDispatch();
-  const { categories, loading, pagination } = useAppSelector((state) => state.branchCategory);
+  const { categories, loading, error, pagination } = useAppSelector(
+    (state) => state.branchCategory,
+  );
 
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
 
-  useEffect(() => {
-    if (open && branchId) {
+  const loadBranchCategories = () => {
+    if (branchId) {
       dispatch(
         fetchBranchCategoriesPaginated({
           branchId,
@@ -75,6 +79,12 @@ export default function BranchCategoryModal({
           isActive: filterActive === 'all' ? undefined : filterActive === 'active',
         }),
       );
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      loadBranchCategories();
     }
   }, [open, branchId, dispatch, currentPage, search, filterActive]);
 
@@ -184,71 +194,72 @@ export default function BranchCategoryModal({
             </div>
           </div>
 
-          {/* ✅ Table with pagination */}
-          {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading categories...</div>
-          ) : categories.length === 0 ? (
-            <div className="py-8 text-center border rounded-lg text-muted-foreground bg-muted/30">
-              {search || filterActive !== 'all'
+          <LoadingGate
+            loading={loading}
+            error={error}
+            data={categories}
+            resetError={() => {
+              dispatch(clearError());
+              loadBranchCategories();
+            }}
+            emptyMessage={
+              search || filterActive !== 'all'
                 ? 'No categories match your filters.'
-                : 'No categories available for this branch.'}
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Category Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
+                : 'No categories available for this branch.'
+            }
+            emptyIcon="hugeicons:service"
+          >
+            <div className="overflow-x-auto border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Category Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((cat) => (
+                    <TableRow key={cat.categoryId}>
+                      <TableCell className="font-medium">
+                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={cat.isActive ? 'default' : 'destructive'}>
+                          {cat.isActive ? 'Active' : 'Disabled'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant={cat.isActive ? 'destructive' : 'default'}
+                          size="sm"
+                          onClick={() => handleToggleClick(cat.categoryId, cat.isActive, cat.name)}
+                        >
+                          {cat.isActive ? 'Disable' : 'Enable'}
+                        </Button>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((cat) => (
-                      <TableRow key={cat.categoryId}>
-                        <TableCell className="font-medium">
-                          {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={cat.isActive ? 'default' : 'destructive'}>
-                            {cat.isActive ? 'Active' : 'Disabled'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant={cat.isActive ? 'destructive' : 'default'}
-                            size="sm"
-                            onClick={() =>
-                              handleToggleClick(cat.categoryId, cat.isActive, cat.name)
-                            }
-                          >
-                            {cat.isActive ? 'Disable' : 'Enable'}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* ✅ NEW: Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="pt-4 border-t">
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    onPageChange={setCurrentPage}
-                  />
-                </div>
-              )}
-
-              {/* ✅ NEW: Metadata */}
-              <div className="text-xs text-muted-foreground">
-                Showing {categories.length} of {pagination.totalItems} categories
+            {/* ✅ NEW: Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="pt-4 border-t">
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </div>
-            </>
-          )}
+            )}
+
+            {/* ✅ NEW: Metadata */}
+            <div className="text-xs text-muted-foreground">
+              Showing {categories.length} of {pagination.totalItems} categories
+            </div>
+          </LoadingGate>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

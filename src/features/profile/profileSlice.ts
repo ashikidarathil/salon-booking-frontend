@@ -21,6 +21,10 @@ const profileSlice = createSlice({
     clearPasswordError(state) {
       state.passwordError = null;
     },
+    clearError(state) {
+      state.profileError = null;
+      state.passwordError = null;
+    },
     clearProfileSuccess(state) {
       state.profileUpdateSuccess = false;
     },
@@ -60,7 +64,12 @@ const profileSlice = createSlice({
   },
 });
 
-export const { clearProfileError, clearPasswordError, clearProfileSuccess, clearPasswordSuccess } =
-  profileSlice.actions;
+export const {
+  clearProfileError,
+  clearPasswordError,
+  clearProfileSuccess,
+  clearPasswordSuccess,
+  clearError,
+} = profileSlice.actions;
 
 export default profileSlice.reducer;

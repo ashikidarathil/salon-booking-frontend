@@ -35,6 +35,8 @@ import {
   closeLoading,
 } from '@/common/utils/swal.utils';
 import Pagination from '@/components/pagination/Pagination';
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/stylistBranch/stylistBranch.slice';
 
 interface BranchStylistModalProps {
   branchId: string;
@@ -52,8 +54,14 @@ export default function BranchStylistModal({
   onClose,
 }: BranchStylistModalProps) {
   const dispatch = useAppDispatch();
-  const { assignedStylists, unassignedOptions, loading, assignedPagination, unassignedPagination } =
-    useAppSelector((state) => state.stylistBranch);
+  const {
+    assignedStylists,
+    unassignedOptions,
+    loading,
+    error,
+    assignedPagination,
+    unassignedPagination,
+  } = useAppSelector((state) => state.stylistBranch);
 
   const [searchAssigned, setSearchAssigned] = useState('');
   const [currentPageAssigned, setCurrentPageAssigned] = useState(1);
@@ -61,8 +69,8 @@ export default function BranchStylistModal({
   const [searchUnassigned, setSearchUnassigned] = useState('');
   const [currentPageUnassigned, setCurrentPageUnassigned] = useState(1);
 
-  useEffect(() => {
-    if (open && branchId) {
+  const loadAssignedStylists = () => {
+    if (branchId) {
       dispatch(
         fetchBranchStylistsPaginated({
           branchId,
@@ -72,10 +80,10 @@ export default function BranchStylistModal({
         }),
       );
     }
-  }, [open, branchId, dispatch, currentPageAssigned, searchAssigned]);
+  };
 
-  useEffect(() => {
-    if (open && branchId) {
+  const loadUnassignedStylists = () => {
+    if (branchId) {
       dispatch(
         fetchUnassignedStylistsPaginated({
           branchId,
@@ -84,6 +92,18 @@ export default function BranchStylistModal({
           search: searchUnassigned || undefined,
         }),
       );
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      loadAssignedStylists();
+    }
+  }, [open, branchId, dispatch, currentPageAssigned, searchAssigned]);
+
+  useEffect(() => {
+    if (open) {
+      loadUnassignedStylists();
     }
   }, [open, branchId, dispatch, currentPageUnassigned, searchUnassigned]);
 
@@ -214,36 +234,40 @@ export default function BranchStylistModal({
             </p>
 
             {/* Available Stylists Table */}
-            {loading ? (
-              <div className="py-8 text-center text-muted-foreground">
-                Loading available stylists...
-              </div>
-            ) : unassignedOptions.length === 0 ? (
-              <div className="py-8 text-center border rounded-lg text-muted-foreground bg-muted/30">
-                {searchUnassigned
+            <LoadingGate
+              loading={loading}
+              error={error}
+              data={unassignedOptions}
+              resetError={() => {
+                dispatch(clearError());
+                loadUnassignedStylists();
+                loadAssignedStylists();
+              }}
+              emptyMessage={
+                searchUnassigned
                   ? 'No matching stylists found'
-                  : 'No stylists available for assignment'}
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Specialization</TableHead>
-                        <TableHead>Experience</TableHead>
-                        {/* <TableHead>Status</TableHead> */}
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {unassignedOptions.map((stylist) => (
-                        <TableRow key={stylist.stylistId}>
-                          <TableCell className="font-medium">{stylist.name}</TableCell>
-                          <TableCell>{stylist.specialization}</TableCell>
-                          <TableCell>{stylist.experience} yrs</TableCell>
-                          {/* <TableCell>
+                  : 'No stylists available for assignment'
+              }
+              emptyIcon="hugeicons:user-group"
+            >
+              <div className="overflow-x-auto border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Specialization</TableHead>
+                      <TableHead>Experience</TableHead>
+                      {/* <TableHead>Status</TableHead> */}
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {unassignedOptions.map((stylist) => (
+                      <TableRow key={stylist.stylistId}>
+                        <TableCell className="font-medium">{stylist.name}</TableCell>
+                        <TableCell>{stylist.specialization}</TableCell>
+                        <TableCell>{stylist.experience} yrs</TableCell>
+                        {/* <TableCell>
                             <Badge
                               variant={
                                 stylist.stylistStatus === 'ACTIVE' ? 'default' : 'destructive'
@@ -252,33 +276,32 @@ export default function BranchStylistModal({
                               {stylist.stylistStatus}
                             </Badge>
                           </TableCell> */}
-                          <TableCell className="text-right">
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleAssignClick(stylist.stylistId, stylist.name)}
-                            >
-                              Assign
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleAssignClick(stylist.stylistId, stylist.name)}
+                          >
+                            Assign
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-                {/* Pagination for Unassigned */}
-                {unassignedPagination.totalPages > 1 && (
-                  <div className="pt-4 border-t">
-                    <Pagination
-                      currentPage={unassignedPagination.currentPage}
-                      totalPages={unassignedPagination.totalPages}
-                      onPageChange={setCurrentPageUnassigned}
-                    />
-                  </div>
-                )}
-              </>
-            )}
+              {/* Pagination for Unassigned */}
+              {unassignedPagination.totalPages > 1 && (
+                <div className="pt-4 border-t">
+                  <Pagination
+                    currentPage={unassignedPagination.currentPage}
+                    totalPages={unassignedPagination.totalPages}
+                    onPageChange={setCurrentPageUnassigned}
+                  />
+                </div>
+              )}
+            </LoadingGate>
           </div>
 
           {/* ✅ SECTION 2: Assigned Stylists (Already Working at Branch) */}
@@ -297,34 +320,38 @@ export default function BranchStylistModal({
               Total: {assignedPagination.totalItems} stylists assigned to this branch
             </p>
 
-            {loading ? (
-              <div className="py-8 text-center text-muted-foreground">
-                Loading assigned stylists...
-              </div>
-            ) : assignedStylists.length === 0 ? (
-              <div className="py-8 text-center border rounded-lg text-muted-foreground bg-muted/30">
-                {searchAssigned ? 'No matching stylists found' : 'No stylists assigned yet'}
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Specialization</TableHead>
-                        <TableHead>Experience</TableHead>
-                        {/* <TableHead>Status</TableHead> */}
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {assignedStylists.map((stylist) => (
-                        <TableRow key={stylist.stylistId}>
-                          <TableCell className="font-medium">{stylist.name}</TableCell>
-                          <TableCell>{stylist.specialization}</TableCell>
-                          <TableCell>{stylist.experience} yrs</TableCell>
-                          {/* <TableCell>
+            <LoadingGate
+              loading={loading}
+              error={error}
+              data={assignedStylists}
+              resetError={() => {
+                dispatch(clearError());
+                loadAssignedStylists();
+                loadUnassignedStylists();
+              }}
+              emptyMessage={
+                searchAssigned ? 'No matching stylists found' : 'No stylists assigned yet'
+              }
+              emptyIcon="hugeicons:user-group"
+            >
+              <div className="overflow-x-auto border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Specialization</TableHead>
+                      <TableHead>Experience</TableHead>
+                      {/* <TableHead>Status</TableHead> */}
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assignedStylists.map((stylist) => (
+                      <TableRow key={stylist.stylistId}>
+                        <TableCell className="font-medium">{stylist.name}</TableCell>
+                        <TableCell>{stylist.specialization}</TableCell>
+                        <TableCell>{stylist.experience} yrs</TableCell>
+                        {/* <TableCell>
                             <Badge
                               variant={
                                 stylist.stylistStatus === 'ACTIVE' ? 'default' : 'destructive'
@@ -333,33 +360,32 @@ export default function BranchStylistModal({
                               {stylist.stylistStatus}
                             </Badge>
                           </TableCell> */}
-                          <TableCell className="text-right">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleUnassignClick(stylist.stylistId, stylist.name)}
-                            >
-                              Unassign
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleUnassignClick(stylist.stylistId, stylist.name)}
+                          >
+                            Unassign
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-                {/* Pagination for Assigned */}
-                {assignedPagination.totalPages > 1 && (
-                  <div className="pt-4 border-t">
-                    <Pagination
-                      currentPage={assignedPagination.currentPage}
-                      totalPages={assignedPagination.totalPages}
-                      onPageChange={setCurrentPageAssigned}
-                    />
-                  </div>
-                )}
-              </>
-            )}
+              {/* Pagination for Assigned */}
+              {assignedPagination.totalPages > 1 && (
+                <div className="pt-4 border-t">
+                  <Pagination
+                    currentPage={assignedPagination.currentPage}
+                    totalPages={assignedPagination.totalPages}
+                    onPageChange={setCurrentPageAssigned}
+                  />
+                </div>
+              )}
+            </LoadingGate>
           </div>
         </div>
 

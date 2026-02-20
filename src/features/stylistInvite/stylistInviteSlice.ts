@@ -11,6 +11,9 @@ import {
   sendInviteToApplied,
   fetchPaginatedStylists,
   blockUnblockStylist,
+  updateStylistPosition,
+  fetchPublicStylists,
+  fetchPublicStylistById,
 } from './stylistInviteThunks';
 
 const initialState: StylistInviteState = {
@@ -19,6 +22,7 @@ const initialState: StylistInviteState = {
   error: null,
   inviteLink: null,
   invitePreview: null,
+  selectedStylist: null,
   acceptSuccess: false,
   pagination: {
     currentPage: 1,
@@ -36,6 +40,12 @@ const slice = createSlice({
   reducers: {
     clearInviteLink(state) {
       state.inviteLink = null;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+    clearSelectedStylist: (state) => {
+      state.selectedStylist = null;
     },
   },
   extraReducers: (builder) => {
@@ -110,10 +120,30 @@ const slice = createSlice({
           stylist.isBlocked = block;
         }
       })
-
+ 
+      // ===== UPDATE POSITION =====
+      .addCase(updateStylistPosition.fulfilled, (state, action) => {
+        const updatedStylist = action.payload;
+        const index = state.stylists.findIndex((s) => s.id === updatedStylist.id);
+        if (index !== -1) {
+          state.stylists[index] = updatedStylist;
+        }
+      })
+ 
       // ===== SEND INVITE TO APPLIED =====
       .addCase(sendInviteToApplied.fulfilled, (state, action) => {
         state.inviteLink = action.payload.inviteLink;
+      })
+
+      // ===== FETCH PUBLIC STYLISTS =====
+      .addCase(fetchPublicStylists.fulfilled, (state, action) => {
+        state.stylists = action.payload.data;
+        state.pagination = action.payload.pagination;
+      })
+
+      // ===== FETCH PUBLIC STYLIST BY ID =====
+      .addCase(fetchPublicStylistById.fulfilled, (state, action) => {
+        state.selectedStylist = action.payload;
       })
       .addMatcher(isPending, (state) => {
         state.loading = true;
@@ -132,5 +162,5 @@ const slice = createSlice({
   },
 });
 
-export const { clearInviteLink } = slice.actions;
+export const { clearInviteLink, clearError } = slice.actions;
 export default slice.reducer;

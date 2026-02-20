@@ -10,9 +10,11 @@ export interface User {
   authProvider?: 'LOCAL' | 'GOOGLE';
   profilePicture?: string | null;
   role: 'USER' | 'ADMIN' | 'STYLIST';
+  branchId?: string;
   isActive?: boolean;
   isBlocked?: boolean;
   status?: string;
+  bio?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

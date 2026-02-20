@@ -58,12 +58,12 @@ export default function AcceptInvitePage() {
 
   const validatePhone = (value: string): string => {
     if (!value.trim()) {
-      return ''; 
+      return '';
     }
     const cleanPhone = value.replace(/\s/g, '');
-    
+
     const coreNumber = cleanPhone.startsWith('+91') ? cleanPhone.slice(3) : cleanPhone;
-    
+
     if (!/^\d{10}$/.test(coreNumber)) {
       return 'Phone number must contain exactly 10 digits';
     }
@@ -167,7 +167,7 @@ export default function AcceptInvitePage() {
 
     if (!nameError && !phoneError && !passwordError && !confirmPasswordError && token) {
       const cleanPhone = form.phone.trim().replace(/\s/g, '');
-      
+
       dispatch(
         acceptInvite({
           token,

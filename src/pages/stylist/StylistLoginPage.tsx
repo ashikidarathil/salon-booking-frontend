@@ -134,7 +134,7 @@ export default function StylistLoginPage() {
             <label className="block mb-2 text-sm font-medium text-foreground">Password</label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'} 
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 value={password}

@@ -113,10 +113,6 @@ const branchSlice = createSlice({
   },
 });
 
-export const {
-  setBranchSelected,
-  clearBranchSelected,
-  loadSelectedBranchFromStorage,
-  clearError,
-} = branchSlice.actions;
+export const { setBranchSelected, clearBranchSelected, loadSelectedBranchFromStorage, clearError } =
+  branchSlice.actions;
 export default branchSlice.reducer;

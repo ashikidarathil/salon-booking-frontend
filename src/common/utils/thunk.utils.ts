@@ -10,7 +10,7 @@ import { ERROR_MESSAGES } from '../constants/error.messages';
 export const handleThunkError = <T>(
   err: unknown,
   rejectWithValue: (value: string) => T,
-  defaultMessage: string = ERROR_MESSAGES.OPERATION_FAILED
+  defaultMessage: string = ERROR_MESSAGES.OPERATION_FAILED,
 ): T => {
   if (axios.isAxiosError(err)) {
     return rejectWithValue(err.response?.data?.message || defaultMessage);

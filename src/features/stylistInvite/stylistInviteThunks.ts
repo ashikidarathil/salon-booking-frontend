@@ -1,6 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { stylistInviteService } from '@/services/stylistInvite.service';
-import type { StylistListItem, InvitePreview, PaginatedStylistResponse } from './stylistInvite.types';
+import type {
+  StylistListItem,
+  InvitePreview,
+  PaginatedStylistResponse,
+  FetchPublicStylistsParams,
+} from './stylistInvite.types';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import type { SuccessMessageResponse, SuccessResponse } from '@/common/types/api.types';
 import { handleThunkError } from '@/common/utils/thunk.utils';
@@ -154,5 +159,44 @@ export const toggleBlockStylist = createAsyncThunk<
     return { success: true, block, userId };
   } catch (err) {
     return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
+  }
+});
+
+export const updateStylistPosition = createAsyncThunk<
+  StylistListItem,
+  { stylistId: string; position: 'JUNIOR' | 'SENIOR' | 'TRAINEE' },
+  { rejectValue: string }
+>('stylistInvite/updatePosition', async ({ stylistId, position }, { rejectWithValue }) => {
+  try {
+    const res = await stylistInviteService.updatePosition(stylistId, position);
+    return res.data.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
+  }
+});
+
+export const fetchPublicStylists = createAsyncThunk<
+  PaginatedStylistResponse,
+  FetchPublicStylistsParams,
+  { rejectValue: string }
+>('stylistInvite/fetchPublicStylists', async (params, { rejectWithValue }) => {
+  try {
+    const res = await stylistInviteService.getPublicStylists(params);
+    return res.data.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
+  }
+});
+
+export const fetchPublicStylistById = createAsyncThunk<
+  StylistListItem,
+  { stylistId: string },
+  { rejectValue: string }
+>('stylistInvite/fetchPublicStylistById', async ({ stylistId }, { rejectWithValue }) => {
+  try {
+    const res = await stylistInviteService.getPublicStylistById(stylistId);
+    return res.data.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
   }
 });

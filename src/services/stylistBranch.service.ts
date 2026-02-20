@@ -10,8 +10,12 @@ import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 export const stylistBranchService = {
   listBranchStylists(branchId: string) {
     return api.get<ApiResponse<BranchStylist[]>>(
-      API_ROUTES.STYLIST_BRANCH.ADMIN.LIST_BRANCH_STYLISTS(branchId),
+      API_ROUTES.STYLIST_BRANCH.PUBLIC.LIST_BRANCH_STYLISTS(branchId),
     );
+  },
+
+  getStylistBranches(stylistId: string) {
+    return api.get<ApiResponse<BranchStylist[]>>(`/stylists/${stylistId}/branches`);
   },
 
   listUnassignedOptions(branchId: string) {

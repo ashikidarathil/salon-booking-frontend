@@ -34,18 +34,15 @@ export const fetchBranchServicesPaginated = createAsyncThunk<
     isActive?: boolean;
   },
   { rejectValue: string }
->(
-  'branchService/fetchBranchServicesPaginated',
-  async (params, { rejectWithValue }) => {
-    try {
-      const { branchId, ...rest } = params;
-      const res = await branchServiceService.listPaginated(branchId, rest);
-      return res.data.data;
-    } catch (err) {
-      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
-    }
-  },
-);
+>('branchService/fetchBranchServicesPaginated', async (params, { rejectWithValue }) => {
+  try {
+    const { branchId, ...rest } = params;
+    const res = await branchServiceService.listPaginated(branchId, rest);
+    return res.data.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
+  }
+});
 
 export const upsertBranchService = createAsyncThunk<
   BranchServiceItem,
@@ -96,18 +93,15 @@ export const fetchBranchServicesPublicPaginated = createAsyncThunk<
     categoryId?: string;
   },
   { rejectValue: string }
->(
-  'branchService/fetchBranchServicesPublicPaginated',
-  async (params, { rejectWithValue }) => {
-    try {
-      const { branchId, ...rest } = params;
-      const res = await branchServiceService.listPublicPaginated(branchId, rest);
-      return res.data.data;
-    } catch (err) {
-      return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
-    }
-  },
-);
+>('branchService/fetchBranchServicesPublicPaginated', async (params, { rejectWithValue }) => {
+  try {
+    const { branchId, ...rest } = params;
+    const res = await branchServiceService.listPublicPaginated(branchId, rest);
+    return res.data.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
+  }
+});
 
 export const fetchBranchServicePublicDetails = createAsyncThunk<
   BranchServiceItem,

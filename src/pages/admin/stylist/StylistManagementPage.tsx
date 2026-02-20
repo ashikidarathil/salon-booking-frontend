@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { APP_ROUTES } from '@/common/constants/app.routes';
 import {
   approveStylist,
   rejectStylist,
@@ -9,8 +11,10 @@ import {
   sendInviteToApplied,
   fetchPaginatedStylists,
   blockUnblockStylist,
+  updateStylistPosition,
 } from '@/features/stylistInvite/stylistInviteThunks';
-import { clearInviteLink } from '@/features/stylistInvite/stylistInviteSlice';
+import { clearInviteLink, clearError } from '@/features/stylistInvite/stylistInviteSlice';
+import { LoadingGate } from '@/components/common/LoadingGate';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,8 +37,16 @@ import {
   DialogTrigger,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Pagination from '@/components/pagination/Pagination';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Edit, Scissors, Clock, Calendar } from 'lucide-react';
 import {
   showSuccess,
   showError,
@@ -44,6 +56,7 @@ import {
 } from '@/common/utils/swal.utils';
 
 import type { StylistListItem } from '@/features/stylistInvite/stylistInvite.types';
+import StylistServiceModal from './StylistServiceModal';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -51,6 +64,7 @@ const ADMIN_COLOR = '#10B981';
 
 export default function StylistManagementPage() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { stylists, loading, inviteLink, error, pagination } = useAppSelector(
     (state) => state.stylistInvite,
   );
@@ -60,6 +74,9 @@ export default function StylistManagementPage() {
   const [viewInviteDialog, setViewInviteDialog] = useState<StylistListItem | null>(null);
   const [isManualInviteOpen, setIsManualInviteOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [selectedStylistIdForServices, setSelectedStylistIdForServices] = useState<string | null>(
+    null,
+  );
 
   const [manualForm, setManualForm] = useState({
     email: '',
@@ -67,7 +84,7 @@ export default function StylistManagementPage() {
     experience: 0,
   });
 
-  useEffect(() => {
+  const loadStylists = () => {
     dispatch(
       fetchPaginatedStylists({
         page: currentPage,
@@ -75,6 +92,10 @@ export default function StylistManagementPage() {
         search: searchTerm || undefined,
       }),
     );
+  };
+
+  useEffect(() => {
+    loadStylists();
   }, [dispatch, currentPage, searchTerm]);
 
   useEffect(() => {
@@ -130,8 +151,7 @@ export default function StylistManagementPage() {
       `${action} Stylist?`,
       `Are you sure you want to ${action.toLowerCase()} ${name || 'this stylist'}?`,
       `Yes, ${action}`,
-      'Cancel',
-      isBlocked ? ADMIN_COLOR : '#ef4444',
+      'Cancel'
     );
 
     if (!confirmed) return;
@@ -161,8 +181,7 @@ export default function StylistManagementPage() {
       'Send Invitation?',
       `Are you sure you want to send invitation to ${name || 'this stylist'}?`,
       'Yes, Send',
-      'Cancel',
-      ADMIN_COLOR,
+      'Cancel'
     );
 
     if (!confirmed) return;
@@ -199,8 +218,7 @@ export default function StylistManagementPage() {
       'Approve Stylist?',
       `Approve ${name || 'this stylist'} to join the platform?`,
       'Yes, Approve',
-      'Cancel',
-      ADMIN_COLOR,
+      'Cancel'
     );
 
     if (!confirmed) return;
@@ -230,8 +248,7 @@ export default function StylistManagementPage() {
       'Reject Stylist?',
       `Reject ${name || 'this stylist'}? This cannot be undone.`,
       'Yes, Reject',
-      'Cancel',
-      '#ef4444',
+      'Cancel'
     );
 
     if (!confirmed) return;
@@ -253,6 +270,18 @@ export default function StylistManagementPage() {
       );
     } else {
       await showError('Failed', 'Could not reject stylist');
+    }
+  };
+
+  const handleUpdatePosition = async (stylistId: string, position: any) => {
+    showLoading('Updating position...');
+    const result = await dispatch(updateStylistPosition({ stylistId, position }));
+    closeLoading();
+
+    if (result.meta.requestStatus === 'fulfilled') {
+      showSuccess('Updated', 'Stylist position updated successfully');
+    } else {
+      showError('Failed', 'Could not update position');
     }
   };
 
@@ -365,15 +394,89 @@ export default function StylistManagementPage() {
 
     if (flowStatus === 'ACTIVE') {
       return (
-        <Button
-          size="sm"
-          variant={isBlocked ? 'default' : 'destructive'}
-          onClick={() => handleToggleBlock(stylist.id, stylist.name, stylist.isBlocked)}
-          style={isBlocked ? { backgroundColor: ADMIN_COLOR } : {}}
-          className={isBlocked ? 'text-white hover:opacity-90' : ''}
-        >
-          {isBlocked ? 'Unblock' : 'Block'}
-        </Button>
+        <div className="flex items-center justify-end gap-1.5">
+          <TooltipProvider>
+            {/* View/Edit */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8"
+                  onClick={() =>
+                    navigate(APP_ROUTES.ADMIN.STYLIST_DETAILS.replace(':stylistId', stylist.userId))
+                  }
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="theme-admin">
+                View Details
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Services Mapping */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8"
+                  onClick={() => setSelectedStylistIdForServices(stylist.id)}
+                >
+                  <Scissors className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="theme-admin">
+                Manage Services
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Schedule */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8"
+                  disabled // TODO: Implement Schedule navigation/modal
+                >
+                  <Clock className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="theme-admin">
+                Manage Schedule
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Off Days */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8"
+                  onClick={() => navigate(APP_ROUTES.ADMIN.OFF_DAYS)}
+                >
+                  <Calendar className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="theme-admin">
+                Manage Off Days
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <Button
+            size="sm"
+            variant={isBlocked ? 'default' : 'destructive'}
+            onClick={() => handleToggleBlock(stylist.id, stylist.name, stylist.isBlocked)}
+            style={isBlocked ? { backgroundColor: ADMIN_COLOR } : {}}
+            className={isBlocked ? 'text-white hover:opacity-90 ml-2' : 'ml-2'}
+          >
+            {isBlocked ? 'Unblock' : 'Block'}
+          </Button>
+        </div>
       );
     }
 
@@ -492,72 +595,95 @@ export default function StylistManagementPage() {
         />
       </div>
 
-      {/* Stylists Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Stylists ({pagination?.totalItems || 0})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-32 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 border-t-4 border-b-4 rounded-full animate-spin border-primary"></div>
-              <p className="text-2xl">Loading stylists...</p>
-            </div>
-          ) : stylists.length === 0 ? (
-            <div className="py-32 text-center">
-              <h2 className="text-3xl font-bold">No Stylists Found</h2>
-              <p className="text-xl text-muted-foreground">
-                {searchTerm ? 'No matches' : 'No applications or team members yet'}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Specialization</TableHead>
-                      <TableHead>Experience</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Blocked</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+      <LoadingGate
+        loading={loading}
+        error={error}
+        data={stylists}
+        resetError={() => {
+          dispatch(clearError());
+          loadStylists();
+        }}
+        emptyMessage={searchTerm ? 'No matches' : 'No applications or team members yet'}
+        emptyIcon="hugeicons:user-group"
+      >
+        {/* Stylists Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Stylists ({pagination?.totalItems || 0})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Specialization</TableHead>
+                    <TableHead>Experience</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Blocked</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stylists.map((stylist) => (
+                    <TableRow key={stylist.userId}>
+                      <TableCell className="font-medium">
+                        {stylist.name || 'Pending Registration'}
+                      </TableCell>
+                      <TableCell>{stylist.email || '—'}</TableCell>
+                      <TableCell>{stylist.specialization}</TableCell>
+                      <TableCell>{stylist.experience} years</TableCell>
+                      <TableCell>
+                        <Select
+                          value={stylist.position || 'TRAINEE'}
+                          onValueChange={(val) => handleUpdatePosition(stylist.id, val)}
+                          disabled={stylist.status !== 'ACTIVE'}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Position" />
+                          </SelectTrigger>
+                          <SelectContent className="theme-admin">
+                            <SelectItem value="TRAINEE">Trainee</SelectItem>
+                            <SelectItem value="JUNIOR">Junior</SelectItem>
+                            <SelectItem value="SENIOR">Senior</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(stylist)}</TableCell>
+                      <TableCell>
+                        <Badge variant={stylist.isBlocked ? 'destructive' : 'secondary'}>
+                          {stylist.isBlocked ? 'YES' : 'NO'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{getActionButtons(stylist)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stylists.map((stylist) => (
-                      <TableRow key={stylist.userId}>
-                        <TableCell className="font-medium">
-                          {stylist.name || 'Pending Registration'}
-                        </TableCell>
-                        <TableCell>{stylist.email || '—'}</TableCell>
-                        <TableCell>{stylist.specialization}</TableCell>
-                        <TableCell>{stylist.experience} years</TableCell>
-                        <TableCell>{getStatusBadge(stylist)}</TableCell>
-                        <TableCell>
-                          <Badge variant={stylist.isBlocked ? 'destructive' : 'secondary'}>
-                            {stylist.isBlocked ? 'YES' : 'NO'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">{getActionButtons(stylist)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-              <div className="p-4 border-t">
-                <Pagination
-                  currentPage={pagination?.currentPage || 1}
-                  totalPages={pagination?.totalPages || 1}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            <div className="p-4 border-t">
+              <Pagination
+                currentPage={pagination?.currentPage || 1}
+                totalPages={pagination?.totalPages || 1}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </LoadingGate>
+
+      {/* Stylist Service Mapping Modal */}
+      {selectedStylistIdForServices && (
+        <StylistServiceModal
+          stylistId={selectedStylistIdForServices}
+          stylistName={stylists.find((s) => s.id === selectedStylistIdForServices)?.name}
+          open={!!selectedStylistIdForServices}
+          onClose={() => setSelectedStylistIdForServices(null)}
+        />
+      )}
 
       {/* View Invite Link Dialog */}
       <Dialog open={!!viewInviteDialog} onOpenChange={() => setViewInviteDialog(null)}>

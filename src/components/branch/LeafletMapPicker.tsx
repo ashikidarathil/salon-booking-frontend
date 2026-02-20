@@ -72,10 +72,18 @@ function LocationMarker({
     },
   };
 
-  return <Marker ref={markerRef} position={position} draggable={true} eventHandlers={eventHandlers} />;
+  return (
+    <Marker ref={markerRef} position={position} draggable={true} eventHandlers={eventHandlers} />
+  );
 }
 
-function SearchControl({ onSearch, isSearching }: { onSearch: (query: string) => void; isSearching: boolean }) {
+function SearchControl({
+  onSearch,
+  isSearching,
+}: {
+  onSearch: (query: string) => void;
+  isSearching: boolean;
+}) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -106,11 +114,11 @@ function SearchControl({ onSearch, isSearching }: { onSearch: (query: string) =>
 
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
-  
+
   useEffect(() => {
     map.setView(center, map.getZoom());
   }, [center, map]);
-  
+
   return null;
 }
 
@@ -122,7 +130,7 @@ export default function LeafletMapPicker({
   title = 'Select Branch Location',
 }: LeafletMapPickerProps) {
   const [position, setPosition] = useState<[number, number]>(
-    initialLocation ? [initialLocation.latitude, initialLocation.longitude] : [19.076, 72.8777]
+    initialLocation ? [initialLocation.latitude, initialLocation.longitude] : [19.076, 72.8777],
   );
   const [address, setAddress] = useState<string>('');
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -152,7 +160,7 @@ export default function LeafletMapPicker({
           headers: {
             'User-Agent': 'SalonBookingApp/1.0',
           },
-        }
+        },
       );
       const data = await response.json();
       setAddress(data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
@@ -174,7 +182,7 @@ export default function LeafletMapPicker({
           headers: {
             'User-Agent': 'SalonBookingApp/1.0',
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -205,7 +213,7 @@ export default function LeafletMapPicker({
     (lat: number, lng: number) => {
       reverseGeocode(lat, lng);
     },
-    [reverseGeocode]
+    [reverseGeocode],
   );
 
   const handleUseMyLocation = useCallback(() => {
@@ -223,7 +231,7 @@ export default function LeafletMapPicker({
       },
       (error) => {
         console.error('Geolocation error:', error);
-      }
+      },
     );
   }, [reverseGeocode]);
 
@@ -236,21 +244,27 @@ export default function LeafletMapPicker({
     onClose();
   }, [position, address, onLocationSelect, onClose]);
 
-  const handleLatitudeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    if (!Number.isNaN(value) && value >= -90 && value <= 90) {
-      setPosition([value, position[1]]);
-      reverseGeocode(value, position[1]);
-    }
-  }, [position, reverseGeocode]);
+  const handleLatitudeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = parseFloat(e.target.value);
+      if (!Number.isNaN(value) && value >= -90 && value <= 90) {
+        setPosition([value, position[1]]);
+        reverseGeocode(value, position[1]);
+      }
+    },
+    [position, reverseGeocode],
+  );
 
-  const handleLongitudeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    if (!Number.isNaN(value) && value >= -180 && value <= 180) {
-      setPosition([position[0], value]);
-      reverseGeocode(position[0], value);
-    }
-  }, [position, reverseGeocode]);
+  const handleLongitudeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = parseFloat(e.target.value);
+      if (!Number.isNaN(value) && value >= -180 && value <= 180) {
+        setPosition([position[0], value]);
+        reverseGeocode(position[0], value);
+      }
+    },
+    [position, reverseGeocode],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

@@ -38,7 +38,6 @@ export const ERROR_MESSAGES = {
   UPDATE_PROFILE_FAILED: 'Failed to update profile',
   CHANGE_PASSWORD_FAILED: 'Failed to change password',
   PASSWORD_MISMATCH: 'New password and confirm password do not match',
-
 } as const;
 
 export const SUCCESS_MESSAGES = {

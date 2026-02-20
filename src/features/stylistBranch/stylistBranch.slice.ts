@@ -47,6 +47,9 @@ const stylistBranchSlice = createSlice({
       state.unassignedOptions = [];
       state.error = null;
     },
+    clearError: (state) => {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -110,5 +113,5 @@ const stylistBranchSlice = createSlice({
   },
 });
 
-export const { clearStylistBranchState } = stylistBranchSlice.actions;
+export const { clearStylistBranchState, clearError } = stylistBranchSlice.actions;
 export default stylistBranchSlice.reducer;

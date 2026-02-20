@@ -101,4 +101,42 @@ export const stylistInviteService = {
       data,
     );
   },
+  updatePosition(stylistId: string, position: 'JUNIOR' | 'SENIOR' | 'TRAINEE') {
+    return api.patch<ApiResponse<StylistListItem>>(
+      API_ROUTES.STYLIST_INVITE.UPDATE_POSITION.replace(':stylistId', stylistId),
+      { position },
+    );
+  },
+  getPublicStylists(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    branchId?: string;
+    position?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.branchId) queryParams.append('branchId', params.branchId);
+    if (params?.position) queryParams.append('position', params.position);
+
+    return api.get<
+      ApiResponse<{
+        data: StylistListItem[];
+        pagination: {
+          currentPage: number;
+          totalPages: number;
+          totalItems: number;
+          itemsPerPage: number;
+          hasNextPage: boolean;
+          hasPreviousPage: boolean;
+        };
+      }>
+    >(`${API_ROUTES.STYLIST_INVITE.PUBLIC_LIST}?${queryParams.toString()}`);
+  },
+  getPublicStylistById(stylistId: string) {
+    const url = API_ROUTES.STYLIST_INVITE.PUBLIC_BY_ID(stylistId);
+    return api.get<ApiResponse<StylistListItem>>(url);
+  },
 };

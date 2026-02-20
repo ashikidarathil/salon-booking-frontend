@@ -64,6 +64,9 @@ import {
   Eye,
 } from 'lucide-react';
 
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/service/service.slice';
+
 import {
   Select,
   SelectContent,
@@ -85,7 +88,9 @@ type ServiceFormData = z.infer<typeof serviceSchema>;
 
 export default function ServicesPage() {
   const dispatch = useAppDispatch();
-  const { services, loading, imageLoading, pagination } = useAppSelector((state) => state.service);
+  const { services, loading, error, imageLoading, pagination } = useAppSelector(
+    (state) => state.service,
+  );
   const { categories } = useAppSelector((state) => state.category);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,21 +128,22 @@ export default function ServicesPage() {
     formState: { errors },
   } = form;
 
-  /* 
-   * FIXED: Use useWatch to subscribe to form updates efficiently and avoid 
+  /*
+   * FIXED: Use useWatch to subscribe to form updates efficiently and avoid
    * "incompatible library" warnings from React Compiler regarding watch().
    */
-  const whatIncluded = useWatch({ 
-    control: form.control, 
-    name: 'whatIncluded', 
-    defaultValue: [] 
-  }) || [];
+  const whatIncluded =
+    useWatch({
+      control: form.control,
+      name: 'whatIncluded',
+      defaultValue: [],
+    }) || [];
 
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
-  useEffect(() => {
+  const loadServices = () => {
     dispatch(
       fetchPaginatedServices({
         page: currentPage,
@@ -147,6 +153,10 @@ export default function ServicesPage() {
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
       }),
     );
+  };
+
+  useEffect(() => {
+    loadServices();
   }, [dispatch, currentPage, searchTerm, categoryFilter, statusFilter]);
 
   const onSubmit = async (data: ServiceFormData) => {
@@ -413,7 +423,10 @@ export default function ServicesPage() {
     }
   };
 
-  const getStatusBadge = (status: 'ACTIVE' | 'INACTIVE') => {
+  const getStatusBadge = (status: 'ACTIVE' | 'INACTIVE', isDeleted: boolean) => {
+    if (isDeleted) {
+      return <Badge className="bg-yellow-500 text-white">DELETED</Badge>;
+    }
     return (
       <Badge className={status === 'ACTIVE' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
         {status}
@@ -776,134 +789,139 @@ export default function ServicesPage() {
         />
       )}
 
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Services ({pagination.totalItems})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-32 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 border-t-4 border-b-4 rounded-full animate-spin border-primary" />
-              <p className="text-2xl">Loading services...</p>
-            </div>
-          ) : services.length === 0 ? (
-            <div className="py-32 text-center">
-              <h2 className="text-3xl font-bold">No Services Found</h2>
-              <p className="mt-2 text-xl text-muted-foreground">
-                {searchTerm ? 'No matches for your search' : 'Add your first service above'}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Image</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>What's Included</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Deleted</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {services.map((svc) => (
-                      <TableRow key={svc.id}>
-                        <TableCell>
-                          {svc.imageUrl ? (
-                            <div className="relative group">
-                              <img
-                                src={svc.imageUrl}
-                                alt={svc.name}
-                                className="object-cover w-12 h-12 rounded"
-                              />
-                              <div className="absolute top-0 right-0 flex gap-1 transition-opacity opacity-0 group-hover:opacity-100">
-                                {/* Edit Image Button */}
-                                <button
-                                  onClick={() => handleEditImageDialogOpen(svc)}
-                                  className="bg-blue-500 text-white rounded-full p-0.5 hover:bg-blue-600"
-                                  title="Edit Image"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </button>
-                                {/* Delete Image Button */}
-                                <button
-                                  onClick={() => handleDeleteImage(svc.id)}
-                                  className="bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
-                                  title="Delete Image"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="w-8 h-8"
-                                      onClick={() => handleImageDialogOpen(svc)}
-                                    >
-                                      <ImagePlus className="w-4 h-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="theme-admin">
-                                    Upload Image
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {svc.name.charAt(0).toUpperCase() + svc.name.slice(1).toLowerCase()}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {capitalizeFirst(getCategoryName(svc.categoryId))}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {svc.whatIncluded && svc.whatIncluded.length > 0 ? (
-                            <div className="space-y-2">
-                              {/* Show first 2 items only */}
-                              {svc.whatIncluded.slice(0, 2).map((item, idx) => (
-                                <div key={idx} className="flex items-start gap-1">
-                                  <span className="text-gray-400">•</span>
-                                  <span className="text-xs truncate">{item.split(':')[0]}</span>
-                                </div>
-                              ))}
-                              {/* Show More Button */}
-                              {svc.whatIncluded.length > 2 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 p-0 text-xs text-blue-600 hover:text-blue-700"
-                                  onClick={() => handleOpenWhatIncludedModal(svc)}
-                                >
-                                  <Eye className="w-3 h-3 mr-1" />
-                                  Show All ({svc.whatIncluded.length})
-                                </Button>
+      <LoadingGate
+        loading={loading}
+        error={error}
+        data={services}
+        resetError={() => {
+          dispatch(clearError());
+          loadServices();
+        }}
+        emptyMessage={searchTerm ? 'No matches for your search' : 'Add your first service above'}
+        emptyIcon="hugeicons:service"
+      >
+        {/* Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Services ({pagination.totalItems})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>What's Included</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Deleted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {services.map((svc) => (
+                    <TableRow
+                      key={svc.id}
+                      className={svc.isDeleted ? 'bg-red-50/40 opacity-80' : ''}
+                    >
+                      <TableCell>
+                        {svc.imageUrl ? (
+                          <div className="relative group">
+                            <img
+                              src={svc.imageUrl}
+                              alt={svc.name}
+                              className="object-cover w-12 h-12 rounded"
+                            />
+                            <div className="absolute top-0 right-0 flex gap-1 transition-opacity opacity-0 group-hover:opacity-100">
+                              {/* Edit Image Button */}
+                              {!svc.isDeleted && (
+                                <>
+                                  <button
+                                    onClick={() => handleEditImageDialogOpen(svc)}
+                                    className="bg-blue-500 text-white rounded-full p-0.5 hover:bg-blue-600"
+                                    title="Edit Image"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </button>
+                                  {/* Delete Image Button */}
+                                  <button
+                                    onClick={() => handleDeleteImage(svc.id)}
+                                    className="bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                                    title="Delete Image"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(svc.status)}</TableCell>
-                        <TableCell>
-                          {svc.isDeleted ? (
-                            <Badge variant="destructive">Yes</Badge>
-                          ) : (
-                            <Badge variant="outline">No</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="hidden md:flex items-center justify-end gap-1.5">
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center w-12 h-12 bg-gray-200 rounded">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-8 h-8"
+                                    onClick={() => handleImageDialogOpen(svc)}
+                                  >
+                                    <ImagePlus className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="theme-admin">
+                                  Upload Image
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {svc.name.charAt(0).toUpperCase() + svc.name.slice(1).toLowerCase()}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {capitalizeFirst(getCategoryName(svc.categoryId))}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {svc.whatIncluded && svc.whatIncluded.length > 0 ? (
+                          <div className="space-y-2">
+                            {/* Show first 2 items only */}
+                            {svc.whatIncluded.slice(0, 2).map((item, idx) => (
+                              <div key={idx} className="flex items-start gap-1">
+                                <span className="text-gray-400">•</span>
+                                <span className="text-xs truncate">{item.split(':')[0]}</span>
+                              </div>
+                            ))}
+                            {/* Show More Button */}
+                            {svc.whatIncluded.length > 2 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 p-0 text-xs text-blue-600 hover:text-blue-700"
+                                onClick={() => handleOpenWhatIncludedModal(svc)}
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                Show All ({svc.whatIncluded.length})
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(svc.status, svc.isDeleted)}</TableCell>
+                      <TableCell>
+                        {svc.isDeleted ? (
+                          <Badge variant="destructive">Yes</Badge>
+                        ) : (
+                          <Badge variant="outline">No</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="hidden md:flex items-center justify-end gap-1.5">
+                          {!svc.isDeleted && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -957,47 +975,47 @@ export default function ServicesPage() {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
+                          )}
 
-                            {svc.isDeleted ? (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="ml-2 text-white bg-green-600 hover:bg-green-700"
-                                onClick={() => handleRestore(svc.id)}
-                              >
-                                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                                Restore
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="ml-2 text-white bg-red-600 hover:bg-red-700"
-                                onClick={() => handleSoftDelete(svc.id)}
-                              >
-                                <Ban className="mr-1.5 h-3.5 w-3.5" />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                          {svc.isDeleted ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="ml-2 text-white bg-green-600 hover:bg-green-700"
+                              onClick={() => handleRestore(svc.id)}
+                            >
+                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                              Restore
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="ml-2 text-white bg-red-600 hover:bg-red-700"
+                              onClick={() => handleSoftDelete(svc.id)}
+                            >
+                              <Ban className="mr-1.5 h-3.5 w-3.5" />
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-              <div className="p-4 border-t">
-                <Pagination
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            <div className="p-4 border-t">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </LoadingGate>
     </div>
   );
 }

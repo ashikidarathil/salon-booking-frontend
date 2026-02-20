@@ -3,7 +3,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { useNavigate } from 'react-router-dom';
-import { fetchNearestBranches, fetchPublicPaginatedBranches } from '@/features/branch/branch.thunks';
+import {
+  fetchNearestBranches,
+  fetchPublicPaginatedBranches,
+} from '@/features/branch/branch.thunks';
 import { setBranchSelected } from '@/features/branch/branch.slice';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,13 +16,17 @@ import { showSuccess } from '@/common/utils/swal.utils';
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
 import Pagination from '@/components/pagination/Pagination';
+import { LoadingGate } from '@/components/common/LoadingGate';
+import { clearError } from '@/features/branch/branch.slice';
 import type { Branch, NearestBranch } from '@/features/branch/branch.types';
 
 export default function BranchesListingPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { nearestBranches, branches, loading, pagination } = useAppSelector((state) => state.branch);
+  const { nearestBranches, branches, loading, pagination } = useAppSelector(
+    (state) => state.branch,
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
   const [hasLocation, setHasLocation] = useState(false);
@@ -68,10 +75,7 @@ export default function BranchesListingPage() {
   }, [dispatch, currentPage, search, hasLocation]);
 
   const filteredBranches = useMemo(() => {
-
-    const branchesToFilter = hasLocation && nearestBranches.length > 0 
-      ? nearestBranches 
-      : branches;
+    const branchesToFilter = hasLocation && nearestBranches.length > 0 ? nearestBranches : branches;
 
     if (!search.trim()) {
       return branchesToFilter;
@@ -103,22 +107,7 @@ export default function BranchesListingPage() {
     }, 500);
   };
 
-  if (loading && filteredBranches.length === 0) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background">
-        <Header />
-        <main className="flex items-center justify-center flex-1">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 border-4 rounded-full border-primary border-t-transparent animate-spin"></div>
-            <p className="text-muted-foreground">
-              {hasLocation ? 'Finding nearest branches...' : 'Loading branches...'}
-            </p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const branchError = useAppSelector((state) => state.branch.error);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -159,8 +148,17 @@ export default function BranchesListingPage() {
             </div>
           </div>
 
-          {/* Branches Grid */}
-          {filteredBranches && filteredBranches.length > 0 ? (
+          <LoadingGate
+            loading={loading}
+            error={branchError}
+            data={filteredBranches}
+            resetError={() => dispatch(clearError())}
+            backPath="/"
+            emptyMessage={
+              search ? 'No branches found matching your search' : 'No branches available'
+            }
+            emptyIcon="solar:map-point-bold"
+          >
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredBranches.map((branch: Branch, index: number) => (
                 <Card
@@ -210,25 +208,7 @@ export default function BranchesListingPage() {
                 </Card>
               ))}
             </div>
-          ) : (
-            <div className="py-16 text-center">
-              <Icon
-                icon="solar:map-point-bold"
-                className="mx-auto mb-4 size-20 text-muted-foreground/30"
-              />
-              <p className="mb-2 text-lg text-muted-foreground">
-                {search ? 'No branches found matching your search' : 'No branches available'}
-              </p>
-              {search && (
-                <Button variant="outline" onClick={() => {
-                  setSearch('');
-                  setCurrentPage(1);
-                }} className="mt-4">
-                  Clear Search
-                </Button>
-              )}
-            </div>
-          )}
+          </LoadingGate>
 
           {/* Results Count */}
           {filteredBranches.length > 0 && (

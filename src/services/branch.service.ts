@@ -70,7 +70,7 @@ export const branchService = {
       }>
     >(`${API_ROUTES.BRANCH.ADMIN_PAGINATED}?${queryParams.toString()}`);
   },
-  
+
   listPublicPaginated(params?: { page?: number; limit?: number; search?: string }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());

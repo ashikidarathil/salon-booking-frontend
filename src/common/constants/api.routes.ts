@@ -36,7 +36,19 @@ export const API_ROUTES = {
     SEND_INVITE_TO_APPLIED: '/admin/stylists/:userId/send-invite',
     TOGGLE_BLOCK: '/admin/stylists/:userId/block',
     TOGGLE_BLOCK_NEW: '/admin/stylists/:stylistId/block',
+    UPDATE_POSITION: '/admin/stylists/:stylistId/position',
     APPLY_STYLIST: '/apply-stylist',
+    PUBLIC_LIST: '/stylists',
+    PUBLIC_BY_ID: (id: string) => `/stylists/${id}`,
+  },
+
+  STYLIST_SERVICE: {
+    ADMIN: {
+      LIST: (stylistId: string) => `/admin/stylists/${stylistId}/services`,
+      LIST_PAGINATED: (stylistId: string) => `/admin/stylists/${stylistId}/services/paginated`,
+      TOGGLE_STATUS: (stylistId: string, serviceId: string) =>
+        `/admin/stylists/${stylistId}/services/${serviceId}/status`,
+    },
   },
 
   // User management routes
@@ -94,6 +106,9 @@ export const API_ROUTES = {
       UNASSIGN: (branchId: string) => `/admin/branches/${branchId}/stylists/unassign`,
       CHANGE_BRANCH: (branchId: string) => `/admin/branches/${branchId}/stylists/change`,
     },
+    PUBLIC: {
+      LIST_BRANCH_STYLISTS: (branchId: string) => `/branches/${branchId}/stylists`,
+    },
   },
 
   BRANCH_CATEGORY: {
@@ -117,5 +132,22 @@ export const API_ROUTES = {
       LIST_PAGINATED: (branchId: string) => `/branches/${branchId}/services/paginated`,
       BY_ID: (branchId: string, serviceId: string) => `/branches/${branchId}/services/${serviceId}`,
     },
+  },
+  SCHEDULE: {
+    WEEKLY: (day: number) => `/schedules/weekly/${day}`,
+    BY_STYLIST_WEEKLY: (stylistId: string) => `/schedules/stylists/${stylistId}/weekly`,
+    DAILY: '/schedules/daily',
+    BY_STYLIST_DAILY: (stylistId: string) => `/schedules/stylists/${stylistId}/daily`,
+    DAILY_BY_ID: (id: string) => `/schedules/daily/${id}`,
+    BREAKS: '/schedules/breaks',
+    BY_STYLIST_BREAKS: (stylistId: string) => `/schedules/stylists/${stylistId}/breaks`,
+    BREAK_BY_ID: (id: string) => `/schedules/breaks/${id}`,
+  },
+  OFF_DAY: {
+    BASE: '/off-days',
+    MY: '/off-days/my',
+    BY_STYLIST: (stylistId: string) => `/off-days/stylists/${stylistId}`,
+    STATUS: (id: string) => `/off-days/${id}/status`,
+    BY_ID: (id: string) => `/off-days/${id}`,
   },
 } as const;
