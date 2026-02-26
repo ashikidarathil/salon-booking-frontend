@@ -1,4 +1,4 @@
-import { createSlice, isPending, isRejected } from '@reduxjs/toolkit';
+import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 import type { OffDay } from './offDay.types';
 import {
   requestOffDay,
@@ -52,12 +52,10 @@ const offDaySlice = createSlice({
         state.loading = false;
       })
       .addCase(updateOffDayStatus.fulfilled, (state, action) => {
-        // Update in allOffDays
         const index = state.allOffDays.findIndex((o) => o.id === action.payload.id);
         if (index !== -1) {
           state.allOffDays[index] = action.payload;
         }
-        // Update in myOffDays if it's there
         const myIndex = state.myOffDays.findIndex((o) => o.id === action.payload.id);
         if (myIndex !== -1) {
           state.myOffDays[myIndex] = action.payload;
@@ -69,14 +67,34 @@ const offDaySlice = createSlice({
         state.allOffDays = state.allOffDays.filter((o) => o.id !== action.payload);
         state.loading = false;
       })
-      .addMatcher(isPending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addMatcher(isRejected, (state, action) => {
-        state.loading = false;
-        state.error = (action.payload as string) || 'Something went wrong';
-      });
+      .addMatcher(
+        isAnyOf(
+          requestOffDay.pending,
+          fetchMyOffDays.pending,
+          fetchStylistOffDays.pending,
+          fetchAllOffDays.pending,
+          updateOffDayStatus.pending,
+          deleteOffDay.pending,
+        ),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        },
+      )
+      .addMatcher(
+        isAnyOf(
+          requestOffDay.rejected,
+          fetchMyOffDays.rejected,
+          fetchStylistOffDays.rejected,
+          fetchAllOffDays.rejected,
+          updateOffDayStatus.rejected,
+          deleteOffDay.rejected,
+        ),
+        (state, action) => {
+          state.loading = false;
+          state.error = (action.payload as string) || 'Something went wrong';
+        },
+      );
   },
 });
 

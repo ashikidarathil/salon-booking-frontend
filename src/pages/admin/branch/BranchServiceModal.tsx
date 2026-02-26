@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   upsertBranchService,
@@ -73,7 +73,7 @@ export default function BranchServiceModal({
   const [editingService, setEditingService] = useState<BranchServiceItem | null>(null);
   const [editPrice, setEditPrice] = useState<string>('0');
   const [editDuration, setEditDuration] = useState<string>('0');
-  const loadBranchServices = () => {
+  const loadBranchServices = useCallback(() => {
     if (branchId) {
       dispatch(
         fetchBranchServicesPaginated({
@@ -86,13 +86,13 @@ export default function BranchServiceModal({
         }),
       );
     }
-  };
+  }, [branchId, dispatch, currentPage, search, filterConfigured, filterActive]);
 
   useEffect(() => {
     if (open) {
       loadBranchServices();
     }
-  }, [open, branchId, dispatch, currentPage, search, filterConfigured, filterActive]);
+  }, [open, loadBranchServices]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);

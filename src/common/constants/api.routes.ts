@@ -49,6 +49,10 @@ export const API_ROUTES = {
       TOGGLE_STATUS: (stylistId: string, serviceId: string) =>
         `/admin/stylists/${stylistId}/services/${serviceId}/status`,
     },
+    PUBLIC: {
+      STYLISTS_BY_SERVICE: (serviceId: string) => `/public/services/${serviceId}/stylists`,
+      LIST_BY_STYLIST: (stylistId: string) => `/stylists/${stylistId}/services`,
+    },
   },
 
   // User management routes
@@ -149,5 +153,42 @@ export const API_ROUTES = {
     BY_STYLIST: (stylistId: string) => `/off-days/stylists/${stylistId}`,
     STATUS: (id: string) => `/off-days/${id}/status`,
     BY_ID: (id: string) => `/off-days/${id}`,
+  },
+  SLOT: {
+    PUBLIC: {
+      CHAIN_AVAILABILITY: '/availability',
+    },
+    ADMIN: '/slots/admin',
+    STYLIST: '/slots/stylist',
+    BLOCK: (id: string) => `/slots/${id}/block`,
+    UNBLOCK: (id: string) => `/slots/${id}/unblock`,
+    CREATE_SPECIAL: '/slots/special',
+    LIST_SPECIAL: '/slots/special/list',
+    DELETE_SPECIAL: (id: string) => `/slots/special/${id}`,
+  },
+  BOOKING: {
+    BASE: '/bookings',
+    MY: '/bookings/my',
+    BY_ID: (id: string) => `/bookings/${id}`,
+    CANCEL: (id: string) => `/bookings/${id}/cancel`,
+    RESCHEDULE: (id: string) => `/bookings/${id}/reschedule`,
+    EXTEND: (id: string) => `/bookings/${id}/extend`,
+    STATUS: (id: string) => `/bookings/${id}/status`,
+    ADMIN: {
+      LIST: '/admin/bookings',
+      TODAY: '/admin/bookings/today',
+    },
+    STYLIST: {
+      LIST: '/stylist/bookings',
+      TODAY: '/stylist/bookings/today',
+    },
+  },
+  WISHLIST: {
+    TOGGLE: '/wishlist/toggle',
+    ME: '/wishlist/me',
+  },
+  HOLIDAY: {
+    BASE: '/holidays',
+    BY_ID: (id: string) => `/holidays/${id}`,
   },
 } as const;

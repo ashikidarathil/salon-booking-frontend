@@ -4,23 +4,34 @@ export enum OffDayStatus {
   REJECTED = 'REJECTED',
 }
 
+export enum OffDayType {
+  SICK_LEAVE = 'SICK_LEAVE',
+  VACATION = 'VACATION',
+  PERSONAL = 'PERSONAL',
+  EMERGENCY = 'EMERGENCY',
+}
+
 export interface OffDay {
   id: string;
   stylistId: string;
   stylistName?: string;
-  branchId?: string;
+  branchId: string;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
+  type: OffDayType;
   reason: string;
   status: OffDayStatus;
   adminRemarks?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface RequestOffDayDto {
   startDate: string;
   endDate: string;
   reason: string;
+  branchId: string;
+  type: OffDayType;
 }
 
 export interface UpdateOffDayStatusDto {

@@ -14,6 +14,9 @@ import bookingReducer from '@/features/booking/booking.slice';
 import scheduleReducer from '@/features/schedule/schedule.slice';
 import offDayReducer from '@/features/offDay/offDay.slice';
 import stylistServiceReducer from '@/features/stylistService/stylistService.slice';
+import wishlistReducer from '@/features/wishlist/wishlistSlice';
+import cartReducer from '@/features/cart/cart.slice';
+import holidayReducer from '@/features/holiday/holiday.slice';
 
 export const store = configureStore({
   reducer: {
@@ -32,6 +35,9 @@ export const store = configureStore({
     schedule: scheduleReducer,
     offDay: offDayReducer,
     stylistService: stylistServiceReducer,
+    wishlist: wishlistReducer,
+    cart: cartReducer,
+    holiday: holidayReducer,
   },
 });
 

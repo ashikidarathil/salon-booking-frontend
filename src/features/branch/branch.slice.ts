@@ -14,10 +14,22 @@ import {
   fetchPublicPaginatedBranches,
 } from './branch.thunks';
 
+const loadSavedBranch = (): Branch | null => {
+  const saved = localStorage.getItem('selectedBranch');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse selected branch from storage', e);
+    }
+  }
+  return null;
+};
+
 const initialState: BranchState = {
   branches: [],
   nearestBranches: [],
-  selectedBranch: null,
+  selectedBranch: loadSavedBranch(),
   loading: false,
   error: null,
   pagination: {

@@ -14,12 +14,15 @@ import ServicesListingPage from '@/pages/user/ServicesListingPage';
 import ServiceDetailsPage from '@/pages/user/service/ServiceDetailsPage';
 import StylistsListingPage from '@/pages/user/stylist/StylistsListingPage';
 import StylistDetailsPage from '@/pages/user/stylist/StylistDetailsPage';
+import CartPage from '@/pages/user/CartPage';
+import BookingsPage from '@/pages/user/BookingsPage';
+import BookingDetailPage from '@/pages/user/BookingDetailPage';
 import NotFoundPage from '@/pages/error/NotFoundPage';
+import { RoleNotFound } from '@/components/common/RoleNotFound';
 
 // Admin Pages
 import AdminLoginPage from '@/pages/admin/AdminLogin';
 import StylistManagementPage from '@/pages/admin/stylist/StylistManagementPage';
-import StylistDetailPage from '@/pages/admin/stylist/StylistDetailPage';
 import SlotManagementPage from '@/pages/admin/SlotManagementPage';
 import UserManagementPage from '@/pages/admin/user/UserManagementPage';
 import CategoriesPage from '@/pages/admin/CategoriesPage';
@@ -27,6 +30,10 @@ import ServicesPage from '@/pages/admin/ServicesPage';
 import BranchesPage from '@/pages/admin/branch/BranchesPage';
 import OffDayManagementPage from '@/pages/admin/stylist/OffDayManagementPage';
 import DashboardContent from '@/pages/admin/DashboardContent';
+import AdminBookingsPage from '@/pages/admin/AdminBookingsPage';
+import AdminBookingDetailPage from '@/pages/admin/AdminBookingDetailPage';
+
+import HolidayManagementPage from '@/pages/admin/holiday/HolidayManagementPage';
 
 // Stylist Pages
 import AcceptInvitePage from '@/pages/stylist/AcceptInvitePage';
@@ -36,6 +43,8 @@ import StylistProfilePage from '@/pages/stylist/StylistProfilePage';
 import StylistSchedulePage from '@/pages/stylist/StylistSchedulePage';
 import OffDayPage from '@/pages/stylist/OffDayPage';
 import StylistSlotManagementPage from '@/pages/stylist/StylistSlotManagementPage';
+import StylistAppointmentsPage from '@/pages/stylist/StylistAppointmentsPage';
+import StylistBookingDetailPage from '@/pages/stylist/StylistBookingDetailPage';
 
 // Layouts
 import { SalonAdminLayout } from '@/layouts/admin/SalonAdminLayout';
@@ -46,6 +55,7 @@ import ProfileLayout from '@/layouts/userProfile/ProfileLayout';
 import HomePage from '@/pages/user/HomePage';
 import ContactPage from '@/pages/user/ContactPage';
 import ProfileContent from '@/pages/user/ProfileContent';
+import FavoritesPage from '@/pages/user/FavoritesPage';
 
 // HOC
 import ProtectedRoute from '@/hoc/ProtectedRoute';
@@ -68,6 +78,7 @@ export default function AppRoutes() {
       <Route path={APP_ROUTES.PUBLIC.NEW_PASSWORD} element={<NewPasswordPage />} />
       <Route path={APP_ROUTES.USER.STYLISTS} element={<StylistsListingPage />} />
       <Route path={APP_ROUTES.USER.STYLIST_DETAILS} element={<StylistDetailsPage />} />
+      <Route path="/cart" element={<CartPage />} />
 
       {/* Admin Login */}
       <Route path={APP_ROUTES.ADMIN.LOGIN} element={<AdminLoginPage />} />
@@ -81,6 +92,9 @@ export default function AppRoutes() {
         <Route path={APP_ROUTES.USER.DASHBOARD} element={<HomePage />} />
         <Route path={APP_ROUTES.USER.PROFILE} element={<ProfileLayout />}>
           <Route index element={<ProfileContent />} />
+          <Route path="favorites" element={<FavoritesPage />} />
+          <Route path="bookings" element={<BookingsPage />} />
+          <Route path="bookings/:id" element={<BookingDetailPage />} />
         </Route>
       </Route>
 
@@ -88,13 +102,16 @@ export default function AppRoutes() {
         <Route path={APP_ROUTES.ADMIN.DASHBOARD} element={<SalonAdminLayout />}>
           <Route index element={<DashboardContent />} />
           <Route path="stylists" element={<StylistManagementPage />} />
-          <Route path="stylists/:stylistId" element={<StylistDetailPage />} />
           <Route path="users" element={<UserManagementPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="services" element={<ServicesPage />} />
           <Route path="branches" element={<BranchesPage />} />
           <Route path="slots" element={<SlotManagementPage />} />
+          <Route path="bookings" element={<AdminBookingsPage />} />
+          <Route path="bookings/:id" element={<AdminBookingDetailPage />} />
           <Route path="off-days" element={<OffDayManagementPage />} />
+          <Route path="holidays" element={<HolidayManagementPage />} />
+          <Route path="*" element={<RoleNotFound role="ADMIN" />} />
         </Route>
       </Route>
 
@@ -105,6 +122,9 @@ export default function AppRoutes() {
           <Route path="schedule" element={<StylistSchedulePage />} />
           <Route path="slots" element={<StylistSlotManagementPage />} />
           <Route path="off-days" element={<OffDayPage />} />
+          <Route path="appointments" element={<StylistAppointmentsPage />} />
+          <Route path="appointments/:id" element={<StylistBookingDetailPage />} />
+          <Route path="*" element={<RoleNotFound role="STYLIST" />} />
         </Route>
       </Route>
 

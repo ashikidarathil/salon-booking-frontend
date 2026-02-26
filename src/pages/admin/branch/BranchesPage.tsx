@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   createBranch,
@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Edit, Users, Tags, Scissors, Ban, RotateCcw } from 'lucide-react';
+import { Edit, Users, Tags, Scissors, Ban, RotateCcw, Clock } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/pagination/Pagination';
 import {
@@ -48,6 +48,7 @@ import type { Branch, MapLocation } from '@/features/branch/branch.types';
 import BranchStylistModal from './BranchStylistModal';
 import BranchCategoryModal from './BranchCategoryModal';
 import BranchServiceModal from './BranchServiceModal';
+import BranchBreakModal from './BranchBreakModal';
 import { MapPin } from 'lucide-react';
 import LeafletMapPicker from '@/components/branch/LeafletMapPicker';
 
@@ -77,6 +78,7 @@ export default function BranchesPage() {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [selectedCategoryBranchId, setSelectedCategoryBranchId] = useState<string | null>(null);
   const [selectedServiceBranchId, setSelectedServiceBranchId] = useState<string | null>(null);
+  const [selectedBreakBranchId, setSelectedBreakBranchId] = useState<string | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | undefined>();
 
@@ -90,7 +92,7 @@ export default function BranchesPage() {
     resolver: zodResolver(branchSchema),
   });
 
-  const loadBranches = () => {
+  const loadBranches = useCallback(() => {
     dispatch(
       fetchPaginatedBranches({
         page: currentPage,
@@ -98,11 +100,11 @@ export default function BranchesPage() {
         search: searchTerm || undefined,
       }),
     );
-  };
+  }, [dispatch, currentPage, searchTerm]);
 
   useEffect(() => {
     loadBranches();
-  }, [dispatch, currentPage, searchTerm]);
+  }, [loadBranches]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -450,6 +452,23 @@ export default function BranchesPage() {
                                 Manage Services
                               </TooltipContent>
                             </Tooltip>
+
+                            {/* Breaks */}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-8 h-8"
+                                  onClick={() => setSelectedBreakBranchId(branch.id)}
+                                >
+                                  <Clock className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="theme-admin">
+                                Manage Global Breaks
+                              </TooltipContent>
+                            </Tooltip>
                           </TooltipProvider>
 
                           {branch.isDeleted ? (
@@ -524,6 +543,17 @@ export default function BranchesPage() {
           branchName={branches.find((b) => b.id === selectedServiceBranchId)?.name}
           open={!!selectedServiceBranchId}
           onClose={() => setSelectedServiceBranchId(null)}
+        />
+      )}
+
+      {selectedBreakBranchId && (
+        <BranchBreakModal
+          key={selectedBreakBranchId}
+          branchId={selectedBreakBranchId}
+          branchName={branches.find((b) => b.id === selectedBreakBranchId)?.name}
+          defaultBreaks={branches.find((b) => b.id === selectedBreakBranchId)?.defaultBreaks}
+          open={!!selectedBreakBranchId}
+          onClose={() => setSelectedBreakBranchId(null)}
         />
       )}
     </div>

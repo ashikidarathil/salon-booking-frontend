@@ -1,6 +1,7 @@
 export interface Shift {
-  startTime: string; // HH:mm
-  endTime: string; // HH:mm
+  id?: string;
+  startTime: string;
+  endTime: string;
 }
 
 export interface StylistBreak {
@@ -12,8 +13,6 @@ export interface StylistBreak {
   startTime: string;
   endTime: string;
   description?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreateStylistBreakDto {
@@ -27,19 +26,15 @@ export interface CreateStylistBreakDto {
 }
 
 export interface WeeklySchedule {
-  id: string;
-  stylistId: string;
-  branchId: string;
-  dayOfWeek: number; // 0-6
+  id?: string;
+  dayOfWeek: number;
   isWorkingDay: boolean;
   shifts: Shift[];
 }
 
 export interface DailyOverride {
   id: string;
-  stylistId: string;
-  branchId: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   isWorkingDay: boolean;
   shifts: Shift[];
   reason?: string;

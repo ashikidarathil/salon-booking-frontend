@@ -32,6 +32,7 @@ export function Header() {
 
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { selectedBranch, branches } = useAppSelector((state) => state.branch);
+  const cartItems = useAppSelector((state) => state.cart.items);
 
   const [branchPopoverOpen, setBranchPopoverOpen] = useState(false);
 
@@ -200,6 +201,31 @@ export function Header() {
 
           {/* Desktop Auth Section */}
           <div className="hidden lg:flex items-center gap-2">
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(APP_ROUTES.USER.FAVORITES)}
+                className="h-10 w-10 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Icon icon="solar:heart-bold-duotone" className="size-6" />
+              </Button>
+            )}
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/cart')}
+                className="h-10 w-10 text-muted-foreground hover:text-primary transition-colors relative"
+              >
+                <Icon icon="solar:cart-large-2-bold-duotone" className="size-6" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full size-4 flex items-center justify-center border-2 border-white">
+                    {cartItems.length}
+                  </span>
+                )}
+              </Button>
+            )}
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -274,6 +300,13 @@ export function Header() {
                     </div>
                   </div>
                   <nav className="flex flex-col gap-4">
+                    <Link
+                      to={APP_ROUTES.USER.FAVORITES}
+                      className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+                    >
+                      <Icon icon="solar:heart-bold-duotone" className="size-5 text-primary" />
+                      My Favorites
+                    </Link>
                     <Link
                       to={APP_ROUTES.USER.PROFILE}
                       className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"

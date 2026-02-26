@@ -1,0 +1,263 @@
+import { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { fetchBookingDetails, updateBookingStatus } from '@/features/booking/booking.thunks';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Icon } from '@iconify/react';
+import { format } from 'date-fns';
+import { showApiError, showSuccess, showCancellationConfirm } from '@/common/utils/swal.utils';
+import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
+
+const getStatusColor = (status: BookingStatus) => {
+  switch (status) {
+    case BookingStatus.CONFIRMED:
+      return 'bg-green-100 text-green-700 border-green-200';
+    case BookingStatus.IN_PROGRESS:
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case BookingStatus.PENDING:
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case BookingStatus.CANCELLED:
+      return 'bg-red-100 text-red-700 border-red-200';
+    case BookingStatus.COMPLETED:
+      return 'bg-purple-100 text-purple-700 border-purple-200';
+    case BookingStatus.NO_SHOW:
+      return 'bg-gray-200 text-gray-600 border-gray-300';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
+export default function AdminBookingDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { currentBooking, loading } = useAppSelector((state) => state.booking);
+
+  useEffect(() => {
+    if (id) dispatch(fetchBookingDetails(id));
+  }, [id, dispatch]);
+
+  const handleStatusUpdate = async (status: BookingStatus, label: string) => {
+    if (!currentBooking) return;
+    const result = await dispatch(updateBookingStatus({ bookingId: currentBooking.id, status }));
+    if (updateBookingStatus.fulfilled.match(result)) {
+      showSuccess('Updated!', `Booking marked as ${label}`);
+    } else {
+      showApiError(BOOKING_MESSAGES.STATUS_UPDATE_FAILED, `Failed to update status`);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!currentBooking) return;
+    const reason = await showCancellationConfirm();
+    if (reason) {
+      const result = await dispatch(
+        updateBookingStatus({ bookingId: currentBooking.id, status: BookingStatus.CANCELLED }),
+      );
+      if (updateBookingStatus.fulfilled.match(result))
+        showSuccess('Cancelled!', BOOKING_MESSAGES.CANCEL_SUCCESS);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Icon icon="solar:loading-bold-duotone" className="size-10 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!currentBooking) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Icon icon="solar:calendar-minimalistic-broken" className="size-16 opacity-40" />
+        <p className="text-lg font-medium text-muted-foreground">Booking not found</p>
+        <Button onClick={() => navigate('/admin/bookings')} variant="outline">
+          Back to All Bookings
+        </Button>
+      </div>
+    );
+  }
+
+  const b = currentBooking;
+
+  return (
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Icon icon="solar:arrow-left-linear" className="size-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold font-heading">Manage Booking</h1>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>#{b.id.toUpperCase()}</span>
+            <span>·</span>
+            <span>Customer ID: {b.userId}</span>
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          <Badge className={getStatusColor(b.status as BookingStatus)}>
+            {b.status.replace('_', ' ')}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Main Details */}
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Icon icon="solar:clipboard-list-bold-duotone" className="size-5 text-primary" />
+                Appointment Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  Date
+                </p>
+                <p className="font-medium">{format(new Date(b.date), 'PPP')}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  Time
+                </p>
+                <p className="font-medium">
+                  {b.startTime} - {b.endTime}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  Branch ID
+                </p>
+                <p className="font-medium break-all">{b.branchId}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  Total Price
+                </p>
+                <p className="font-bold text-primary text-lg">
+                  ₹{b.totalPrice.toLocaleString('en-IN')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Icon icon="solar:scissors-square-bold-duotone" className="size-5 text-primary" />
+                Services & Stylists
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {b.items.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border"
+                >
+                  <div>
+                    <p className="font-medium">{item.serviceName || 'Service'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Stylist: {item.stylistName} ({item.stylistId})
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.startTime} - {item.endTime}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">₹{item.price.toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-muted-foreground">{item.duration} min</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar Actions */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {b.status === BookingStatus.CONFIRMED && (
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  onClick={() => handleStatusUpdate(BookingStatus.IN_PROGRESS, 'In Progress')}
+                >
+                  <Icon icon="solar:play-circle-linear" className="mr-2" /> Start Appointment
+                </Button>
+              )}
+              {b.status === BookingStatus.IN_PROGRESS && (
+                <Button
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  onClick={() => handleStatusUpdate(BookingStatus.COMPLETED, 'Completed')}
+                >
+                  <Icon icon="solar:check-circle-linear" className="mr-2" /> Complete
+                </Button>
+              )}
+              {(b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.IN_PROGRESS) && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full text-gray-600"
+                    onClick={() => handleStatusUpdate(BookingStatus.NO_SHOW, 'No Show')}
+                  >
+                    <Icon icon="solar:ghost-linear" className="mr-2" /> Mark No Show
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full text-red-600 hover:bg-red-50"
+                    onClick={handleCancel}
+                  >
+                    <Icon icon="solar:close-circle-linear" className="mr-2" /> Cancel Booking
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Meta Info</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Payment</span>
+                <Badge variant="outline">{b.paymentStatus}</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Rescheduled</span>
+                <span>{b.rescheduleCount || 0} times</span>
+              </div>
+              {b.cancelledAt && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground font-semibold">CANCELLED DETAILS</p>
+                  <p className="text-xs text-red-600 mt-1">By: {b.cancelledBy}</p>
+                  <p className="text-xs text-muted-foreground italic mt-1 pb-1">
+                    "{b.cancelledReason}"
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {format(new Date(b.cancelledAt), 'Pp')}
+                  </p>
+                </div>
+              )}
+              {b.extensionReason && (
+                <div className="pt-2 border-t text-xs">
+                  <p className="text-muted-foreground font-semibold">EXTENSION REASON</p>
+                  <p className="mt-1 italic">"{b.extensionReason}"</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

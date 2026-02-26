@@ -1,203 +1,169 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LoadingGate } from '@/components/common/LoadingGate';
-import { BookingExtensionDialog } from '@/components/booking/BookingExtensionDialog';
-import type { BookingItem } from '@/features/booking/booking.types';
+import { fetchStylistBookings } from '@/features/booking/booking.thunks';
+import { Icon } from '@iconify/react';
+import { format } from 'date-fns';
 
 export default function StylistDashboard() {
-  const [isExtensionOpen, setIsExtensionOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<BookingItem | null>(null);
+  const dispatch = useAppDispatch();
+  const { myBookings, loading, error } = useAppSelector((state) => state.booking);
 
-  // Mock data adapted to BookingItem interface for the extension dialog to work
-  const todaysAppointments = [
-    {
-      id: 'mock-1',
-      branchId: '65cf12345678901234567890', // Dummy branchId
-      stylistId: 'myself',
-      time: '10:00 AM',
-      customer: 'Sarah Johnson',
-      service: 'Hair Cut + Color',
-      serviceId: 's1',
-      amount: '$150',
-      status: 'Confirmed',
-      startTime: '10:00',
-      endTime: '11:00',
-      date: new Date().toISOString(),
-    },
-    {
-      id: 'mock-2',
-      branchId: '65cf12345678901234567890',
-      stylistId: 'myself',
-      time: '12:30 PM',
-      customer: 'Mike Chen',
-      service: 'Beard Trim',
-      serviceId: 's2',
-      amount: '$45',
-      status: 'Confirmed',
-      startTime: '12:30',
-      endTime: '13:00',
-      date: new Date().toISOString(),
-    },
-    {
-      id: 'mock-3',
-      branchId: '65cf12345678901234567890',
-      stylistId: 'myself',
-      time: '02:00 PM',
-      customer: 'Linda Park',
-      service: 'Balayage',
-      serviceId: 's3',
-      amount: '$280',
-      status: 'Pending',
-      startTime: '14:00',
-      endTime: '16:00',
-      date: new Date().toISOString(),
-    },
-  ];
+  useEffect(() => {
+    dispatch(fetchStylistBookings({}));
+  }, [dispatch]);
 
-  const handleOpenExtension = (appt: any) => {
-    setSelectedBooking(appt as BookingItem);
-    setIsExtensionOpen(true);
+  const getStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'COMPLETED':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const stats = {
+    today: myBookings.length,
+    pending: myBookings.filter((b) => b.status === 'PENDING').length,
+    confirmed: myBookings.filter((b) => b.status === 'CONFIRMED').length,
+    cancelled: myBookings.filter((b) => b.status === 'CANCELLED').length,
   };
 
   return (
-    <LoadingGate loading={false} error={null} data={true}>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold">Your Appointments</h1>
-          <p className="mt-2 text-muted-foreground">Manage your upcoming and recent bookings</p>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold font-heading">Stylist Dashboard</h1>
+        <p className="mt-2 text-muted-foreground">Manage your upcoming and recent bookings</p>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Today's Appointments
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">8</p>
-              <p className="text-sm text-muted-foreground">4 completed, 4 upcoming</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">This Week</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">24</p>
-              <p className="text-sm text-muted-foreground">18 confirmed, 6 pending</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Auto-matched
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">3</p>
-              <p className="text-sm text-muted-foreground">From waitlist</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Cancellations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-red-600">2</p>
-              <p className="text-sm text-muted-foreground">This week</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Upcoming Appointments */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Upcoming Appointments</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Total Bookings
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {todaysAppointments.map((appt, i) => (
+            <p className="text-3xl font-bold">{stats.today}</p>
+            <p className="text-xs text-muted-foreground mt-1">Overall appointments</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Confirmed
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-green-600">{stats.confirmed}</p>
+            <p className="text-xs text-muted-foreground mt-1">Ready to serve</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Pending
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
+            <p className="text-xs text-muted-foreground mt-1">Needs attention</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-red-100 bg-red-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-red-600">
+              Cancelled
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-red-600">{stats.cancelled}</p>
+            <p className="text-xs text-muted-foreground mt-1">Cancellations</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Upcoming Appointments */}
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-xl font-bold">Upcoming Appointments</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => dispatch(fetchStylistBookings({}))}>
+            <Icon icon="solar:restart-bold" className="mr-2 size-4" />
+            Refresh
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <LoadingGate
+            loading={loading}
+            error={error}
+            data={myBookings}
+            emptyMessage="No appointments found."
+          >
+            <div className="space-y-4">
+              {myBookings.map((booking) => (
                 <div
-                  key={i}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 transition-shadow border rounded-lg bg-card hover:shadow-md gap-4"
+                  key={booking.id}
+                  className="flex flex-col md:flex-row items-center justify-between p-5 border rounded-xl bg-card hover:shadow-md transition-all gap-4 border-border/60"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-muted">
-                      <span className="text-xl font-bold text-muted-foreground">
-                        {appt.customer
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </span>
+                  <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary">
+                      <Icon icon="solar:user-bold-duotone" className="size-6" />
                     </div>
                     <div className="min-w-0">
-                      <p className="flex items-center flex-wrap gap-2 font-medium">
-                        <span className="truncate">{appt.customer}</span>
-                        {appt.status === 'Pending' && <Badge variant="secondary">Pending</Badge>}
-                        {appt.status === 'Confirmed' && <Badge>Confirmed</Badge>}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {appt.service} • {appt.amount}
-                      </p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="font-bold text-lg">
+                          Booking #{booking.id.slice(-6).toUpperCase()}
+                        </span>
+                        <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
+                      </div>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Icon icon="solar:calendar-linear" className="size-4" />
+                          <span>{format(new Date(booking.date), 'MMM dd, yyyy')}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Icon icon="solar:clock-circle-linear" className="size-4" />
+                          <span>
+                            {booking.startTime} - {booking.endTime}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-4">
-                    <p className="font-medium whitespace-nowrap">{appt.time}</p>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
-                      >
-                        Complete
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
-                      >
-                        Call
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
-                      >
-                        View
-                      </Button>
-                      {appt.status === 'Confirmed' && (
-                        <Button
-                          size="sm"
-                          className="bg-primary hover:bg-primary/90 h-8 px-2 sm:px-3 text-[10px] sm:text-xs"
-                          onClick={() => handleOpenExtension(appt)}
-                        >
-                          Add Service / Extend
-                        </Button>
-                      )}
+
+                  <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                    <div className="flex flex-col items-end mr-4">
+                      <p className="text-xs text-muted-foreground font-medium uppercase">
+                        Total Amount
+                      </p>
+                      <p className="font-bold text-primary">₹{booking.totalPrice}</p>
                     </div>
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Icon icon="solar:document-text-linear" className="size-4" />
+                      Details
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-
-        <BookingExtensionDialog
-          isOpen={isExtensionOpen}
-          onClose={() => setIsExtensionOpen(false)}
-          booking={selectedBooking}
-        />
-      </div>
-    </LoadingGate>
+          </LoadingGate>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

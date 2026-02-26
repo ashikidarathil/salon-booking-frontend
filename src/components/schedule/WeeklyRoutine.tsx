@@ -4,15 +4,25 @@ import { fetchWeeklySchedule, updateWeeklySchedule } from '@/features/schedule/s
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Icon } from '@iconify/react';
 import { stylistBranchService } from '@/services/stylistBranch.service';
+import { showSuccess, showError, showLoading } from '@/common/utils/swal.utils';
+import { cn } from '@/lib/utils';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-import type { WeeklySchedule } from '../schedule.types';
+import type { WeeklySchedule } from '@/features/schedule/schedule.types';
+import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
 
-export default function WeeklyRoutine({ stylistId: propStylistId, branchId: propBranchId }: { stylistId?: string; branchId?: string }) {
+export default function WeeklyRoutine({
+  stylistId: propStylistId,
+  branchId: propBranchId,
+}: {
+  stylistId?: string;
+  branchId?: string;
+}) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { weeklySchedule, loading } = useAppSelector((state) => state.schedule);
@@ -22,36 +32,20 @@ export default function WeeklyRoutine({ stylistId: propStylistId, branchId: prop
   const effectiveStylistId = propStylistId || user?.id;
   const effectiveBranchId = propBranchId || user?.branchId || fetchedBranchId;
 
-  console.log('🔍 WeeklyRoutine Debug:', {
-    propStylistId,
-    propBranchId,
-    userId: user?.id,
-    userBranchId: user?.branchId,
-    fetchedBranchId,
-    effectiveStylistId,
-    effectiveBranchId,
-    loading,
-    userRole: user?.role,
-  });
-
   // Fetch stylist's branch if not provided and user is a stylist
   useEffect(() => {
     const fetchStylistBranch = async () => {
       if (!propBranchId && !user?.branchId && effectiveStylistId && user?.role === 'STYLIST') {
         try {
-          console.log('🔍 Fetching stylist branch assignment...');
           const response = await stylistBranchService.getStylistBranches(effectiveStylistId);
           const branches = response.data.data;
           if (branches.length > 0) {
-            const activeBranch = branches.find((b: any) => b.isActive);
+            const activeBranch = branches.find((b: BranchStylist) => b.mappingId);
             const branchId = activeBranch?.branchId || branches[0].branchId;
-            console.log('✅ Found branch:', branchId);
             setFetchedBranchId(branchId);
-          } else {
-            console.warn('⚠️ No branch assignments found for stylist');
           }
         } catch (error) {
-          console.error('❌ Failed to fetch stylist branch:', error);
+          console.error('Failed to fetch stylist branch:', error);
         }
       }
     };
@@ -60,13 +54,7 @@ export default function WeeklyRoutine({ stylistId: propStylistId, branchId: prop
 
   useEffect(() => {
     if (effectiveStylistId && effectiveBranchId) {
-      console.log('📡 Fetching weekly schedule for:', { effectiveStylistId, effectiveBranchId });
       dispatch(fetchWeeklySchedule({ stylistId: effectiveStylistId, branchId: effectiveBranchId }));
-    } else {
-      console.warn('⚠️ Cannot fetch schedule - missing:', {
-        stylistId: effectiveStylistId,
-        branchId: effectiveBranchId,
-      });
     }
   }, [dispatch, effectiveStylistId, effectiveBranchId]);
 
@@ -79,23 +67,50 @@ export default function WeeklyRoutine({ stylistId: propStylistId, branchId: prop
         },
         {} as Record<number, WeeklySchedule>,
       );
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditedSchedule(scheduleMap);
     }
   }, [weeklySchedule]);
 
-  const handleToggleWorkDay = (day: number) => {
+  const handleToggleWorkDay = async (day: number) => {
     const currentDay = editedSchedule[day] || { dayOfWeek: day, isWorkingDay: false, shifts: [] };
     const newIsWorkingDay = !currentDay.isWorkingDay;
-    
+
     // When toggling ON, ensure there's a default shift
-    const newShifts = newIsWorkingDay && currentDay.shifts.length === 0
-      ? [{ startTime: '09:00', endTime: '18:00' }]
-      : currentDay.shifts;
-    
+    const newShifts =
+      newIsWorkingDay && currentDay.shifts.length === 0
+        ? [{ startTime: '09:00', endTime: '18:00' }]
+        : currentDay.shifts;
+
+    const updatedDay = { ...currentDay, isWorkingDay: newIsWorkingDay, shifts: newShifts };
+
+    // Update local state immediately for snappy UI
     setEditedSchedule({
       ...editedSchedule,
-      [day]: { ...currentDay, isWorkingDay: newIsWorkingDay, shifts: newShifts },
+      [day]: updatedDay,
     });
+
+    // AUTO-SAVE on toggle
+    if (effectiveStylistId && effectiveBranchId) {
+      showLoading('Updating schedule...');
+      try {
+        await dispatch(
+          updateWeeklySchedule({
+            dayOfWeek: day,
+            data: {
+              stylistId: effectiveStylistId,
+              branchId: effectiveBranchId,
+              isWorkingDay: newIsWorkingDay,
+              shifts: newShifts,
+            },
+          }),
+        ).unwrap();
+        showSuccess('Success', `${DAYS[day]} status updated`);
+      } catch (error: unknown) {
+        showError('Error', (error as string) || 'Failed to update schedule');
+        setEditedSchedule(editedSchedule);
+      }
+    }
   };
 
   const handleTimeChange = (day: number, field: 'startTime' | 'endTime', value: string) => {
@@ -116,26 +131,10 @@ export default function WeeklyRoutine({ stylistId: propStylistId, branchId: prop
 
   const handleSave = async (day: number) => {
     const data = editedSchedule[day];
-    console.log('💾 Save button clicked for day:', day, {
-      data,
-      effectiveStylistId,
-      effectiveBranchId,
-      loading,
-    });
+    if (!data || !effectiveStylistId || !effectiveBranchId) return;
 
-    if (!data) {
-      console.error('❌ No data for this day');
-      return;
-    }
-
-    if (!effectiveStylistId || !effectiveBranchId) {
-      console.error('❌ Missing stylist or branch ID:', { effectiveStylistId, effectiveBranchId });
-      toast.error('Error: Missing branch or stylist information');
-      return;
-    }
-
+    showLoading('Saving shift times...');
     try {
-      console.log('📤 Dispatching updateWeeklySchedule...');
       await dispatch(
         updateWeeklySchedule({
           dayOfWeek: day,
@@ -147,75 +146,164 @@ export default function WeeklyRoutine({ stylistId: propStylistId, branchId: prop
           },
         }),
       ).unwrap();
-      console.log('✅ Schedule updated successfully');
-      toast.success(`${DAYS[day]} schedule updated`);
+      showSuccess('Success', `${DAYS[day]} hours updated`);
     } catch (error: unknown) {
-      console.error('❌ Failed to update schedule:', error);
-      toast.error((error as string) || 'Failed to update schedule');
+      showError('Error', (error as string) || 'Failed to update schedule');
     }
   };
 
   return (
-    <div className="space-y-4">
-      {DAYS.map((dayName, index) => {
-        const schedule = editedSchedule[index] || {
-          dayOfWeek: index,
-          isWorkingDay: false,
-          shifts: [],
-        };
-        const shift = schedule.shifts?.[0] || { startTime: '09:00', endTime: '18:00' };
+    <div className="space-y-6">
+      {/* Header Card matching DailyAdjustments style */}
+      <Card className="border-none shadow-lg overflow-hidden">
+        <CardHeader className="pb-6 bg-primary/5 border-b">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <CardTitle className="text-xl font-semibold flex items-center gap-2 text-primary tracking-tight">
+                <Icon icon="solar:calendar-linear" className="size-7" />
+                Weekly Routine
+              </CardTitle>
+              <CardDescription className="text-xs font-medium opacity-60">
+                Define your standard working hours for each day of the week.
+              </CardDescription>
+            </div>
+            <div className="hidden md:block">
+              <Badge
+                variant="outline"
+                className="h-7 px-3 rounded-full border-primary/20 text-primary font-medium text-[9px] tracking-wide"
+              >
+                RECURRING SCHEDULE
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
-        return (
-          <Card key={dayName} className="overflow-hidden">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4 min-w-[140px]">
-                  <Switch
-                    checked={schedule.isWorkingDay}
-                    onCheckedChange={() => handleToggleWorkDay(index)}
-                  />
-                  <span
-                    className={`font-medium ${!schedule.isWorkingDay ? 'text-muted-foreground' : ''}`}
-                  >
-                    {dayName}
-                  </span>
+      <div className="grid grid-cols-1 gap-4">
+        {DAYS.map((dayName, index) => {
+          const schedule = editedSchedule[index] || {
+            dayOfWeek: index,
+            isWorkingDay: false,
+            shifts: [],
+          };
+          const shift = schedule.shifts?.[0] || { startTime: '09:00', endTime: '18:00' };
+
+          return (
+            <Card
+              key={dayName}
+              className={cn(
+                'overflow-hidden border border-slate-100 shadow-sm transition-all duration-300 rounded-2xl',
+                schedule.isWorkingDay ? 'bg-white' : 'bg-muted/30 opacity-80',
+              )}
+            >
+              <CardContent className="p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                  {/* Day Toggle Section */}
+                  <div className="flex items-center gap-5 min-w-[180px]">
+                    <Switch
+                      checked={schedule.isWorkingDay}
+                      onCheckedChange={() => handleToggleWorkDay(index)}
+                      className="data-[state=checked]:bg-green-500 scale-110"
+                    />
+                    <div className="flex flex-col">
+                      <span
+                        className={cn(
+                          'text-base font-semibold tracking-tight leading-none',
+                          !schedule.isWorkingDay ? 'text-muted-foreground' : 'text-slate-800',
+                        )}
+                      >
+                        {dayName}
+                      </span>
+                      <span className="text-[9px] font-medium text-muted-foreground mt-1">
+                        {schedule.isWorkingDay ? 'Working' : 'Not Working'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Time Input Section */}
+                  <div className="flex-1 flex items-center justify-center">
+                    {schedule.isWorkingDay ? (
+                      <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                        <div className="relative">
+                          <Icon
+                            icon="solar:clock-circle-linear"
+                            className="absolute left-3 top-2.5 size-4 text-muted-foreground"
+                          />
+                          <Input
+                            type="time"
+                            value={shift.startTime}
+                            onChange={(e) => handleTimeChange(index, 'startTime', e.target.value)}
+                            className="pl-9 w-32 h-9 rounded-xl font-medium border-muted/50 focus:ring-primary/20 bg-muted/10 text-sm"
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase">
+                          To
+                        </span>
+                        <div className="relative">
+                          <Icon
+                            icon="solar:clock-circle-linear"
+                            className="absolute left-3 top-2.5 size-4 text-muted-foreground"
+                          />
+                          <Input
+                            type="time"
+                            value={shift.endTime}
+                            onChange={(e) => handleTimeChange(index, 'endTime', e.target.value)}
+                            className="pl-9 w-32 h-9 rounded-xl font-medium border-muted/50 focus:ring-primary/20 bg-muted/10 text-sm"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 text-muted-foreground/40 italic">
+                        <Icon icon="solar:sleeping-bold" className="size-5" />
+                        <span className="text-sm font-medium uppercase tracking-widest">
+                          Taking a break
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Section */}
+                  <div className="flex justify-end sm:min-w-[100px]">
+                    <Button
+                      size="sm"
+                      variant={schedule.isWorkingDay ? 'default' : 'outline'}
+                      className={cn(
+                        'rounded-xl font-medium text-xs h-9 px-4 transition-all active:scale-95 group',
+                        schedule.isWorkingDay
+                          ? 'shadow-sm active:shadow-none'
+                          : 'opacity-30 pointer-events-none',
+                      )}
+                      onClick={() => handleSave(index)}
+                      disabled={loading || !schedule.isWorkingDay}
+                    >
+                      <Icon
+                        icon="solar:diskette-linear"
+                        className="size-4 mr-2 group-hover:scale-110 transition-transform"
+                      />
+                      Save Hours
+                    </Button>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-                {schedule.isWorkingDay ? (
-                  <div className="flex items-center gap-2 flex-1 sm:justify-center">
-                    <Input
-                      type="time"
-                      value={shift.startTime}
-                      onChange={(e) => handleTimeChange(index, 'startTime', e.target.value)}
-                      className="w-32"
-                    />
-                    <span className="text-muted-foreground">to</span>
-                    <Input
-                      type="time"
-                      value={shift.endTime}
-                      onChange={(e) => handleTimeChange(index, 'endTime', e.target.value)}
-                      className="w-32"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex-1 sm:text-center text-muted-foreground italic text-sm">
-                    Off Day
-                  </div>
-                )}
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleSave(index)}
-                  disabled={loading}
-                >
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+      <div className="p-6 bg-amber-50 rounded-[2.5rem] border border-amber-100 flex items-start gap-4 mx-2">
+        <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
+          <Icon icon="solar:info-square-bold" className="size-6" />
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-amber-800 uppercase tracking-widest mb-1">
+            Schedule Priority
+          </p>
+          <p className="text-sm font-medium text-amber-700/80 leading-relaxed">
+            These hours are your <strong>recurring base schedule</strong>. Any adjustments made in
+            the "Daily Adjustments" section will override these settings for specific dates.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

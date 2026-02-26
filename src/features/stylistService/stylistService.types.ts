@@ -7,18 +7,20 @@ export interface StylistServiceItem {
   createdAt?: string;
 }
 
+export interface StylistServicePagination {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface StylistServiceState {
   services: StylistServiceItem[];
   loading: boolean;
   error: string | null;
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
+  pagination: StylistServicePagination;
 }
 
 export interface ToggleStylistServicePayload {

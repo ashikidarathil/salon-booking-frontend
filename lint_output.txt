@@ -3,8 +3,22 @@
 > eslint .
 
 
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/components/booking/SlotBookingDialog.tsx
-  82:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/holiday/HolidayManagementPage.tsx
+  76:25  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/holiday/HolidayManagementPage.tsx:76:25
+  74 |   });
+  75 |
+> 76 |   const isAllBranches = watch('isAllBranches');
+     |                         ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  77 |
+  78 |   useEffect(() => {
+  79 |     dispatch(fetchHolidays());  react-hooks/incompatible-library
+
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/user/CartPage.tsx
+  86:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
 
 Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
 * Update external systems with the latest state from React.
@@ -12,39 +26,37 @@ Effects are intended to synchronize state between React and external systems suc
 
 Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
 
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/components/booking/SlotBookingDialog.tsx:82:7
-  80 |       onClose();
-  81 |       dispatch(resetBookingSuccess());
-> 82 |       resetForm();
-     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
-  83 |     }
-  84 |   }, [bookingSuccess, serviceName, onClose, dispatch]);
-  85 |  react-hooks/set-state-in-effect
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/user/CartPage.tsx:86:7
+  84 |   useEffect(() => {
+  85 |     if (items.length > 0 && allBranchStylists.length > 0) {
+> 86 |       fetchStylists();
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  87 |     }
+  88 |   }, [fetchStylists, items.length, allBranchStylists.length]);
+  89 |  react-hooks/set-state-in-effect
 
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/CategoriesPage.tsx
-  100:6  warning  React Hook useEffect has a missing dependency: 'loadCategories'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/user/stylist/StylistsListingPage.tsx
+  55:36  error  Compilation Skipped: Existing memoization could not be preserved
 
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/ServicesPage.tsx
-  157:6  warning  React Hook useEffect has a missing dependency: 'loadServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `selectedBranch`, but the source dependencies were [dispatch, currentPage, search, selectedBranch?.id, positionFilter]. Inferred less specific property than source.
 
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchCategoryModal.tsx
-  87:6  warning  React Hook useEffect has a missing dependency: 'loadBranchCategories'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/user/stylist/StylistsListingPage.tsx:55:36
+  53 |   }, [navigate]);
+  54 |
+> 55 |   const loadStylists = useCallback(() => {
+     |                                    ^^^^^^^
+> 56 |     if (!selectedBranch?.id) return;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 57 |
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 66 |     );
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 67 |   }, [dispatch, currentPage, search, selectedBranch?.id, positionFilter]);
+     | ^^^^ Could not preserve existing manual memoization
+  68 |
+  69 |   useEffect(() => {
+  70 |     if (selectedBranch?.id) {  react-hooks/preserve-manual-memoization
 
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchServiceModal.tsx
-  95:6  warning  React Hook useEffect has a missing dependency: 'loadBranchServices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchStylistModal.tsx
-  102:6  warning  React Hook useEffect has a missing dependency: 'loadAssignedStylists'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
-  108:6  warning  React Hook useEffect has a missing dependency: 'loadUnassignedStylists'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/branch/BranchesPage.tsx
-  105:6  warning  React Hook useEffect has a missing dependency: 'loadBranches'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/stylist/StylistManagementPage.tsx
-  83:6  warning  React Hook useEffect has a missing dependency: 'loadStylists'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-/Users/ashikmuhammed/Desktop/Saloon Booking Managment/frontend/src/pages/admin/user/UserManagementPage.tsx
-  54:6  warning  React Hook useEffect has a missing dependency: 'loadUsers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-✖ 10 problems (1 error, 9 warnings)
+✖ 3 problems (2 errors, 1 warning)
 

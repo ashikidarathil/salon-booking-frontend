@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   createCategory,
@@ -84,7 +84,7 @@ export default function CategoriesPage() {
     resolver: zodResolver(categorySchema),
   });
 
-  const loadCategories = () => {
+  const loadCategories = useCallback(() => {
     dispatch(
       fetchPaginatedCategories({
         page: currentPage,
@@ -93,11 +93,11 @@ export default function CategoriesPage() {
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
       }),
     );
-  };
+  }, [dispatch, currentPage, searchTerm, statusFilter]);
 
   useEffect(() => {
     loadCategories();
-  }, [dispatch, currentPage, searchTerm, statusFilter]);
+  }, [loadCategories]);
 
   const onSubmit = async (data: CategoryFormData) => {
     showLoading(editingCategory ? 'Updating category...' : 'Creating category...');

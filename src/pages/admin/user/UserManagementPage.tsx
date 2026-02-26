@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchUsers, toggleBlockUser } from '@/features/user/userThunks';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -37,7 +37,7 @@ export default function UserManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 5;
 
-  const loadUsers = () => {
+  const loadUsers = useCallback(() => {
     dispatch(
       fetchUsers({
         page: currentPage,
@@ -47,11 +47,11 @@ export default function UserManagementPage() {
         sortOrder: 'desc',
       }),
     );
-  };
+  }, [dispatch, currentPage, limit, searchTerm]);
 
   useEffect(() => {
     loadUsers();
-  }, [dispatch, currentPage, limit, searchTerm]);
+  }, [loadUsers]);
 
   const handleToggleBlock = async (userId: string, name: string, isBlocked: boolean) => {
     const action = isBlocked ? 'Unblock' : 'Block';

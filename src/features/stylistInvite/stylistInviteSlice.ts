@@ -120,7 +120,7 @@ const slice = createSlice({
           stylist.isBlocked = block;
         }
       })
- 
+
       // ===== UPDATE POSITION =====
       .addCase(updateStylistPosition.fulfilled, (state, action) => {
         const updatedStylist = action.payload;
@@ -129,7 +129,7 @@ const slice = createSlice({
           state.stylists[index] = updatedStylist;
         }
       })
- 
+
       // ===== SEND INVITE TO APPLIED =====
       .addCase(sendInviteToApplied.fulfilled, (state, action) => {
         state.inviteLink = action.payload.inviteLink;

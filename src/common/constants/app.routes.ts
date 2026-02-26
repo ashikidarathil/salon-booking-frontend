@@ -26,6 +26,7 @@ export const APP_ROUTES = {
     BRANCHES: '/admin/branches',
     STYLIST_DETAILS: '/admin/stylists/:stylistId',
     SLOTS: '/admin/slots',
+    HOLIDAYS: '/admin/holidays',
   },
 
   // Stylist routes
@@ -37,6 +38,7 @@ export const APP_ROUTES = {
     PROFILE: '/stylist/profile',
     INVITE: '/stylist/invite/:token',
     SLOTS: '/stylist/slots',
+    APPOINTMENTS: '/stylist/appointments',
   },
 
   // User routes
@@ -45,5 +47,8 @@ export const APP_ROUTES = {
     PROFILE: '/profile',
     STYLISTS: '/stylists',
     STYLIST_DETAILS: '/stylists/:stylistId',
+    FAVORITES: '/profile/favorites',
+    BOOKINGS: '/profile/bookings',
+    BOOKING_DETAIL: (id: string) => `/my-bookings/${id}`,
   },
 } as const;

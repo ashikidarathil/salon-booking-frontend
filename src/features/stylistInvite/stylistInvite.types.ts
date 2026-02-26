@@ -10,6 +10,8 @@ export interface IWeeklyScheduleItem {
   }[];
 }
 
+export type StylistPosition = 'JUNIOR' | 'SENIOR' | 'TRAINEE';
+
 export interface StylistListItem {
   id: string;
   userId: string;
@@ -23,11 +25,18 @@ export interface StylistListItem {
   inviteStatus?: (typeof UI_CONSTANTS.STYLIST.STATUS)[keyof typeof UI_CONSTANTS.STYLIST.STATUS];
   inviteExpiresAt?: string;
   inviteLink?: string;
-  position?: 'JUNIOR' | 'SENIOR' | 'TRAINEE';
+  position?: StylistPosition;
   bio?: string;
   profilePicture?: string;
   branchName?: string;
   assignedServices?: string[];
+  assignedServiceDetails?: {
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+    imageUrl?: string;
+  }[];
   rating?: number;
   reviewCount?: number;
   isBlocked: boolean;

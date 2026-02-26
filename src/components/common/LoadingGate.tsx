@@ -12,6 +12,7 @@ interface LoadingGateProps {
   emptyIcon?: string;
   resetError?: () => void;
   backPath?: string;
+  role?: 'ADMIN' | 'STYLIST' | 'USER';
 }
 
 export function LoadingGate({
@@ -21,10 +22,29 @@ export function LoadingGate({
   children,
   loadingMessage = 'Loading content...',
   emptyMessage = 'No data found',
-  emptyIcon = 'solar:box-minimalistic-bold',
+  emptyIcon,
   resetError,
   backPath,
+  role = 'USER',
 }: LoadingGateProps) {
+  // Config based on role
+  const roleConfig = {
+    ADMIN: {
+      emptyIcon: 'solar:folder-error-bold-duotone',
+      emptyColor: 'bg-primary/5 text-primary/40',
+    },
+    STYLIST: {
+      emptyIcon: 'solar:clipboard-list-bold-duotone',
+      emptyColor: 'bg-primary/5 text-primary/40',
+    },
+    USER: {
+      emptyIcon: 'solar:box-minimalistic-bold',
+      emptyColor: 'bg-muted/30 text-muted-foreground/50',
+    },
+  }[role];
+
+  const finalEmptyIcon = emptyIcon || roleConfig.emptyIcon;
+
   // 1. Loading State (prioritize if data is missing)
   if (loading && (!data || (Array.isArray(data) && data.length === 0))) {
     return (
@@ -45,8 +65,10 @@ export function LoadingGate({
   if (isEmpty && !loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
-        <div className="flex items-center justify-center w-20 h-20 mb-6 rounded-full bg-muted/30">
-          <Icon icon={emptyIcon} className="text-muted-foreground/50 size-10" />
+        <div
+          className={`flex items-center justify-center w-20 h-20 mb-6 rounded-full ${roleConfig.emptyColor}`}
+        >
+          <Icon icon={finalEmptyIcon} className="size-10" />
         </div>
         <h3 className="mb-2 text-xl font-bold">{emptyMessage}</h3>
         <p className="text-muted-foreground">Adjust your filters or check back later.</p>

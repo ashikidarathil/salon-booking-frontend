@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   assignStylist,
@@ -69,7 +69,7 @@ export default function BranchStylistModal({
   const [searchUnassigned, setSearchUnassigned] = useState('');
   const [currentPageUnassigned, setCurrentPageUnassigned] = useState(1);
 
-  const loadAssignedStylists = () => {
+  const loadAssignedStylists = useCallback(() => {
     if (branchId) {
       dispatch(
         fetchBranchStylistsPaginated({
@@ -80,9 +80,9 @@ export default function BranchStylistModal({
         }),
       );
     }
-  };
+  }, [branchId, dispatch, currentPageAssigned, searchAssigned]);
 
-  const loadUnassignedStylists = () => {
+  const loadUnassignedStylists = useCallback(() => {
     if (branchId) {
       dispatch(
         fetchUnassignedStylistsPaginated({
@@ -93,19 +93,19 @@ export default function BranchStylistModal({
         }),
       );
     }
-  };
+  }, [branchId, dispatch, currentPageUnassigned, searchUnassigned]);
 
   useEffect(() => {
     if (open) {
       loadAssignedStylists();
     }
-  }, [open, branchId, dispatch, currentPageAssigned, searchAssigned]);
+  }, [open, loadAssignedStylists]);
 
   useEffect(() => {
     if (open) {
       loadUnassignedStylists();
     }
-  }, [open, branchId, dispatch, currentPageUnassigned, searchUnassigned]);
+  }, [open, loadUnassignedStylists]);
 
   const handleSearchAssignedChange = (value: string) => {
     setSearchAssigned(value);

@@ -10,6 +10,8 @@ export interface BranchStylist {
   experience: number;
   stylistStatus: 'ACTIVE' | 'INACTIVE';
   assignedAt: string;
+  profilePicture?: string;
+  isActive?: boolean;
 }
 
 export interface UnassignedStylist {

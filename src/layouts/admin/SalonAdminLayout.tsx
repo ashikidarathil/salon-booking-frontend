@@ -100,6 +100,13 @@ export function SalonAdminLayout() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate(APP_ROUTES.ADMIN.HOLIDAYS)}>
+                  <Icon icon="solar:calendar-minimalistic-broken" className="size-4" />
+                  <span>Holidays</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate('/admin/settings')}>
                   <Icon icon="solar:settings-bold" className="size-4" />
                   <span>Settings</span>

@@ -1,9 +1,21 @@
-import { createSlice } from '@reduxjs/toolkit';
-import type { BookingState } from './booking.types';
-import { createBooking, fetchMyBookings, fetchBookingDetails, extendBooking } from './booking.thunks';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import {
+  createBooking,
+  fetchMyBookings,
+  fetchBookingDetails,
+  rescheduleBooking,
+  cancelBooking,
+  fetchAdminBookings,
+  fetchStylistBookings,
+  updateBookingStatus,
+  fetchTodayBookings,
+  fetchStylistTodayBookings,
+} from './booking.thunks';
+import type { BookingState, BookingItem } from './booking.types';
 
 const initialState: BookingState = {
   myBookings: [],
+  todayBookings: [],
   currentBooking: null,
   loading: false,
   error: null,
@@ -34,7 +46,7 @@ const bookingSlice = createSlice({
         state.error = null;
         state.bookingSuccess = false;
       })
-      .addCase(createBooking.fulfilled, (state, action) => {
+      .addCase(createBooking.fulfilled, (state, action: PayloadAction<BookingItem>) => {
         state.loading = false;
         state.currentBooking = action.payload;
         state.bookingSuccess = true;
@@ -48,7 +60,7 @@ const bookingSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchMyBookings.fulfilled, (state, action) => {
+      .addCase(fetchMyBookings.fulfilled, (state, action: PayloadAction<BookingItem[]>) => {
         state.loading = false;
         state.myBookings = action.payload;
       })
@@ -61,7 +73,7 @@ const bookingSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchBookingDetails.fulfilled, (state, action) => {
+      .addCase(fetchBookingDetails.fulfilled, (state, action: PayloadAction<BookingItem>) => {
         state.loading = false;
         state.currentBooking = action.payload;
       })
@@ -69,24 +81,100 @@ const bookingSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Extend Booking
-      .addCase(extendBooking.pending, (state) => {
+      // Reschedule Booking
+      .addCase(rescheduleBooking.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(extendBooking.fulfilled, (state, action) => {
+      .addCase(rescheduleBooking.fulfilled, (state, action: PayloadAction<BookingItem>) => {
         state.loading = false;
         state.currentBooking = action.payload;
-        // Update the booking in myBookings list if it exists
         const index = state.myBookings.findIndex((b) => b.id === action.payload.id);
         if (index !== -1) {
           state.myBookings[index] = action.payload;
         }
       })
-      .addCase(extendBooking.rejected, (state, action) => {
+      .addCase(rescheduleBooking.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
+      })
+      // Cancel Booking
+      .addCase(cancelBooking.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(cancelBooking.fulfilled, (state, action: PayloadAction<BookingItem>) => {
+        state.loading = false;
+        state.currentBooking = action.payload;
+        const index = state.myBookings.findIndex((b) => b.id === action.payload.id);
+        if (index !== -1) {
+          state.myBookings[index] = action.payload;
+        }
+      })
+      .addCase(cancelBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Update Status
+      .addCase(updateBookingStatus.fulfilled, (state, action: PayloadAction<BookingItem>) => {
+        state.loading = false;
+        state.currentBooking = action.payload;
+        const idx = state.myBookings.findIndex((b) => b.id === action.payload.id);
+        if (idx !== -1) state.myBookings[idx] = action.payload;
+        const tidx = state.todayBookings.findIndex((b) => b.id === action.payload.id);
+        if (tidx !== -1) state.todayBookings[tidx] = action.payload;
+      })
+      .addCase(updateBookingStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Admin/Stylist List/Today Bookings
+      .addMatcher(
+        (action) =>
+          [
+            fetchAdminBookings.pending.type,
+            fetchStylistBookings.pending.type,
+            fetchTodayBookings.pending.type,
+            fetchStylistTodayBookings.pending.type,
+          ].includes(action.type),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        },
+      )
+      .addMatcher(
+        (action) =>
+          [fetchAdminBookings.fulfilled.type, fetchStylistBookings.fulfilled.type].includes(
+            action.type,
+          ),
+        (state, action: PayloadAction<BookingItem[]>) => {
+          state.loading = false;
+          state.myBookings = action.payload;
+        },
+      )
+      .addMatcher(
+        (action) =>
+          [fetchTodayBookings.fulfilled.type, fetchStylistTodayBookings.fulfilled.type].includes(
+            action.type,
+          ),
+        (state, action: PayloadAction<BookingItem[]>) => {
+          state.loading = false;
+          state.todayBookings = action.payload;
+        },
+      )
+      .addMatcher(
+        (action) =>
+          [
+            fetchAdminBookings.rejected.type,
+            fetchStylistBookings.rejected.type,
+            fetchTodayBookings.rejected.type,
+            fetchStylistTodayBookings.rejected.type,
+          ].includes(action.type),
+        (state, action: PayloadAction<string>) => {
+          state.loading = false;
+          state.error = action.payload;
+        },
+      );
   },
 });
 

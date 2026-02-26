@@ -57,6 +57,20 @@ export const showError = (title: string, text?: string, color?: string) => {
   } as SweetAlertOptions);
 };
 
+export const showApiError = (error: unknown, defaultTitle = 'Error') => {
+  let message = 'An unexpected error occurred';
+
+  if (error && typeof error === 'object') {
+    // Handle Axios error structure
+    const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
+    message = axiosError.response?.data?.message || axiosError.message || message;
+  } else if (typeof error === 'string') {
+    message = error;
+  }
+
+  return showError(defaultTitle, message);
+};
+
 export const showConfirm = async (
   title: string,
   text: string,
@@ -83,6 +97,79 @@ export const showConfirm = async (
   } as SweetAlertOptions);
 
   return result.isConfirmed;
+};
+
+export const showBlockConfirm = async (
+  title = 'Block Slot?',
+  text = 'Please provide a reason for blocking this slot.',
+): Promise<string | null> => {
+  const result = await Swal.fire({
+    ...defaultConfig,
+    icon: 'warning',
+    title,
+    text,
+    input: 'textarea',
+    inputPlaceholder: 'e.g. Personal emergency, Branch maintenance...',
+    inputAttributes: {
+      'aria-label': 'Reason for blocking',
+    },
+    showCancelButton: true,
+    confirmButtonText: 'Block Slot',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#ef4444', // Red-500
+    cancelButtonColor: '#6b7280',
+    allowOutsideClick: false,
+    preConfirm: (value) => {
+      if (!value || !value.trim()) {
+        Swal.showValidationMessage('Reason is required to block a slot');
+      }
+      return value;
+    },
+    didOpen: () => {
+      ensureZIndex();
+      removeAriaHiddenFromRoot();
+    },
+  } as SweetAlertOptions);
+
+  return result.isConfirmed ? result.value : null;
+};
+
+export const showUnblockConfirm = async (
+  title = 'Unblock Slot?',
+  text = 'Are you sure you want to unblock this slot and make it available for booking?',
+): Promise<boolean> => {
+  return showConfirm(title, text, 'Yes, Unblock', 'Cancel', '#10b981'); // Emerald-500
+};
+
+export const showCancellationConfirm = async (
+  title = 'Cancel Booking?',
+  text = 'Are you sure you want to cancel this booking? Please provide a reason.',
+): Promise<string | null> => {
+  const result = await Swal.fire({
+    ...defaultConfig,
+    icon: 'warning',
+    title,
+    text,
+    input: 'textarea',
+    inputPlaceholder: 'Reason for cancellation...',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, cancel it!',
+    cancelButtonText: 'No, keep it',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    preConfirm: (value) => {
+      if (!value || !value.trim()) {
+        Swal.showValidationMessage('Reason is required');
+      }
+      return value;
+    },
+    didOpen: () => {
+      ensureZIndex();
+      removeAriaHiddenFromRoot();
+    },
+  } as SweetAlertOptions);
+
+  return result.isConfirmed ? result.value : null;
 };
 
 export const showLoading = (title: string) => {

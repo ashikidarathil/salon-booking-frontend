@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
+'use client';
+
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,401 +9,321 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
 import { Icon } from '@iconify/react';
-import { fetchBranchStylists } from '@/features/stylistBranch/stylistBranch.thunks';
-import { fetchAvailableSlots, lockSlot } from '@/features/slot/slot.thunks';
-import { resetBookingSuccess } from '@/features/booking/booking.slice';
-import { createBooking as submitBookingThunk } from '@/features/booking/booking.thunks';
-import { showSuccess } from '@/common/utils/swal.utils';
-import { cn } from '@/lib/utils';
-import {
-  format,
-  addMonths,
-  subMonths,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  addDays,
-  isSameDay,
-  isBefore,
-  startOfToday,
-} from 'date-fns';
-import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
+import { format, isBefore, startOfDay } from 'date-fns';
+import { showApiError } from '@/common/utils/swal.utils';
 import type { SlotItem } from '@/features/slot/slot.types';
+import { slotService } from '@/services/slot.service';
+import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
+
+interface SelectedService {
+  serviceId: string;
+  name: string;
+  price: number;
+  duration: number;
+}
 
 interface SlotBookingDialogProps {
   isOpen: boolean;
   onClose: () => void;
   branchId: string;
-  serviceId: string;
-  serviceName: string;
-  duration: number;
-  price: number;
+  selectedServices: SelectedService[];
+  initialStylistId?: string;
+  isCartMode?: boolean;
+  availableStylists?: BranchStylist[];
+  onSelect: (data: {
+    stylistId: string;
+    stylistName: string;
+    date: string;
+    startTime: string;
+    slotId: string;
+  }) => void;
 }
 
-export const SlotBookingDialog: React.FC<SlotBookingDialogProps> = ({
+export function SlotBookingDialog({
   isOpen,
   onClose,
   branchId,
-  serviceId,
-  serviceName,
-  duration,
-  price,
-}) => {
-  const dispatch = useAppDispatch();
-  const { assignedStylists, loading: stylistsLoading } = useAppSelector(
-    (state) => state.stylistBranch,
-  );
-  const { availableSlots, loading: slotsLoading } = useAppSelector((state) => state.slot);
-  const { bookingSuccess, loading: bookingLoading } = useAppSelector((state) => state.booking);
+  selectedServices,
+  initialStylistId,
+  availableStylists = [],
+  onSelect,
+}: SlotBookingDialogProps) {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedStylistId, setSelectedStylistId] = useState<string>(initialStylistId || '');
+  const [slots, setSlots] = useState<SlotItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState<string>('');
 
-  const [step, setStep] = useState(1);
-  const [selectedStylist, setSelectedStylist] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
-
+  // Auto-select first stylist if only one is available or if initialStylistId is provided
   useEffect(() => {
-    if (isOpen && branchId) {
-      dispatch(fetchBranchStylists(branchId));
+    if (initialStylistId) {
+      setSelectedStylistId(initialStylistId);
+    } else if (availableStylists.length === 1) {
+      setSelectedStylistId(availableStylists[0].userId);
     }
-  }, [isOpen, branchId, dispatch]);
+  }, [initialStylistId, availableStylists]);
 
+  // Fetch slots when date or stylist changes
   useEffect(() => {
-    if (step === 3 && selectedStylist && selectedDate) {
-      dispatch(
-        fetchAvailableSlots({
+    const fetchSlots = async () => {
+      if (!selectedStylistId || !selectedDate || !branchId) return;
+
+      setLoading(true);
+      try {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+
+        const response = await slotService.listAvailableSlots({
           branchId,
-          date: format(selectedDate, 'yyyy-MM-dd'),
-          stylistId: selectedStylist,
-          serviceId,
-        }),
-      );
-    }
-  }, [step, selectedStylist, selectedDate, branchId, dispatch]);
+          stylistId: selectedStylistId,
+          date: dateStr,
+          duration: totalDuration,
+        });
 
-  const resetForm = () => {
-    setStep(1);
-    setSelectedStylist(null);
-    setSelectedDate(startOfToday());
-    setSelectedSlot(null);
-  };
-
-  useEffect(() => {
-    if (bookingSuccess) {
-      showSuccess('Booking Confirmed!', `Your appointment for ${serviceName} has been booked.`);
-      onClose();
-      dispatch(resetBookingSuccess());
-      // Defer reset to avoid synchronous state update in effect
-      setTimeout(() => resetForm(), 0);
-    }
-  }, [bookingSuccess, serviceName, onClose, dispatch]);
-
-  const handleDateSelect = (date: Date) => {
-    if (isBefore(date, startOfToday())) return;
-    setSelectedDate(date);
-    setStep(3);
-  };
-
-  const handleBookingSubmit = async () => {
-    if (!selectedSlot) return;
-
-    const lockResult = await dispatch(lockSlot(selectedSlot));
-    if (lockResult.meta.requestStatus === 'fulfilled') {
-      await dispatch(submitBookingThunk({ slotId: selectedSlot, serviceId }));
-    }
-  };
-
-  const renderStylists = () => (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {assignedStylists.map((stylist: BranchStylist) => (
-        <div
-          key={stylist.userId}
-          onClick={() => {
-            setSelectedStylist(stylist.userId);
-            setStep(2);
-          }}
-          className={cn(
-            'flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all hover:border-primary hover:bg-primary/5',
-            selectedStylist === stylist.userId
-              ? 'border-primary bg-primary/5 shadow-sm'
-              : 'border-border',
-          )}
-        >
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/20 text-accent">
-            <Icon icon="solar:user-bold" className="size-6" />
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">{stylist.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {stylist.specialization || 'Professional Stylist'}
-            </p>
-          </div>
-        </div>
-      ))}
-      {assignedStylists.length === 0 && !stylistsLoading && (
-        <div className="col-span-2 py-8 text-center text-muted-foreground">
-          No stylists available for this branch.
-        </div>
-      )}
-    </div>
-  );
-
-  const renderCalendar = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-
-    const dateFormat = 'd';
-    const rows = [];
-    let days = [];
-    let day = startDate;
-    let formattedDate = '';
-
-    while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        formattedDate = format(day, dateFormat);
-        const cloneDay = day;
-        const isDisabled = isBefore(day, startOfToday());
-        const isSelected = isSameDay(day, selectedDate);
-        const isCurrentMonth = isSameDay(startOfMonth(day), monthStart);
-
-        days.push(
-          <div
-            key={day.toString()}
-            className={cn(
-              'relative flex items-center justify-center h-10 w-full rounded-md text-sm transition-all cursor-pointer',
-              !isCurrentMonth && 'text-muted-foreground/30',
-              isDisabled && 'cursor-not-allowed opacity-30',
-              isSelected && 'bg-primary text-white font-bold shadow-md',
-              !isDisabled && !isSelected && 'hover:bg-primary/10 hover:text-primary',
-            )}
-            onClick={() => !isDisabled && handleDateSelect(cloneDay)}
-          >
-            {formattedDate}
-          </div>,
-        );
-        day = addDays(day, 1);
+        if (response.data.success) {
+          setSlots(response.data.data);
+        } else {
+          setSlots([]);
+        }
+      } catch (error: unknown) {
+        console.error('Failed to fetch slots:', error);
+        setSlots([]);
+        const message = error instanceof Error ? error.message : 'Failed to fetch slots';
+        showApiError(message);
+      } finally {
+        setLoading(false);
       }
-      rows.push(
-        <div className="grid grid-cols-7 gap-1 mb-1" key={day.toString()}>
-          {days}
-        </div>,
-      );
-      days = [];
+    };
+
+    if (isOpen) {
+      fetchSlots();
     }
+  }, [selectedStylistId, selectedDate, branchId, isOpen, selectedServices]);
 
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const handleConfirm = () => {
+    const selectedSlot = slots.find((s) => s.id === selectedSlotId);
+    const stylist = availableStylists.find((s) => s.userId === selectedStylistId);
 
-    return (
-      <div className="p-2 border rounded-xl bg-card">
-        <div className="flex items-center justify-between mb-4 px-2">
-          <h3 className="font-bold text-lg">{format(currentMonth, 'MMMM yyyy')}</h3>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            >
-              <Icon icon="lucide:chevron-left" className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            >
-              <Icon icon="lucide:chevron-right" className="size-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {weekDays.map((d) => (
-            <div
-              key={d}
-              className="text-center text-xs font-semibold text-muted-foreground uppercase py-1"
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-        <div>{rows}</div>
-      </div>
-    );
-  };
+    const resolvedStylistId = stylist?.userId || selectedStylistId;
+    const resolvedStylistName = stylist?.name || '';
 
-  const renderSlots = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">
-          {format(selectedDate, 'EEEE, dd MMMM')}
-        </p>
-        <Badge variant="outline" className="text-xs">
-          {availableSlots.length} Slots Available
-        </Badge>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {availableSlots.map((slot: SlotItem) => (
-          <Button
-            key={slot.id}
-            variant={selectedSlot === slot.id ? 'default' : 'outline'}
-            className={cn(
-              'h-12 text-sm font-medium transition-all',
-              selectedSlot === slot.id
-                ? 'shadow-md ring-2 ring-primary ring-offset-2'
-                : 'hover:border-primary hover:text-primary',
-            )}
-            onClick={() => setSelectedSlot(slot.id)}
-          >
-            {slot.startTime}
-          </Button>
-        ))}
-      </div>
-
-      {availableSlots.length === 0 && !slotsLoading && (
-        <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground bg-muted/30 rounded-xl border border-dashed">
-          <Icon icon="solar:calendar-minimalistic-bold" className="size-12 mb-2 opacity-20" />
-          <p>No available slots for this date.</p>
-          <Button variant="link" onClick={() => setStep(2)}>
-            Choose another date
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderConfirmation = () => {
-    const slot = availableSlots.find((s: SlotItem) => s.id === selectedSlot);
-    const stylist = assignedStylists.find((s: BranchStylist) => s.userId === selectedStylist);
-
-    return (
-      <div className="space-y-6">
-        <div className="p-6 space-y-4 border rounded-xl bg-accent/5">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">
-                Service
-              </p>
-              <h4 className="text-xl font-bold text-foreground">{serviceName}</h4>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">
-                Price
-              </p>
-              <h4 className="text-xl font-bold text-primary">₹{price}</h4>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-border/50 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
-                Stylist
-              </p>
-              <div className="flex items-center gap-2">
-                <Icon icon="solar:user-bold" className="text-primary size-4" />
-                <p className="font-semibold">{stylist?.name}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
-                Duration
-              </p>
-              <div className="flex items-center gap-2">
-                <Icon icon="solar:clock-circle-bold" className="text-primary size-4" />
-                <p className="font-semibold">{duration} mins {Math.ceil(duration / 15) * 15 > duration && <span className="text-[10px] text-accent font-normal">(Includes Buffer)</span>}</p>
-              </div>
-            </div>
-            <div className="col-span-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
-                Date & Time
-              </p>
-              <div className="flex items-center gap-2">
-                <Icon icon="solar:calendar-date-bold" className="text-primary size-4" />
-                <p className="font-semibold">
-                  {format(selectedDate, 'MMM dd, yyyy')} at {slot?.startTime}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <Button
-            size="lg"
-            className="w-full text-white shadow-lg h-12 text-lg font-bold bg-primary hover:bg-primary/90"
-            onClick={handleBookingSubmit}
-            disabled={bookingLoading}
-          >
-            {bookingLoading ? (
-              <Icon icon="eos-icons:loading" className="mr-2 size-5 animate-spin" />
-            ) : null}
-            Confirm Booking
-          </Button>
-          <Button variant="ghost" onClick={() => setStep(3)}>
-            Back to slots
-          </Button>
-        </div>
-      </div>
-    );
+    if (selectedSlot && resolvedStylistId) {
+      onSelect({
+        stylistId: resolvedStylistId,
+        stylistName: resolvedStylistName,
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        startTime: selectedSlot.startTime,
+        slotId: selectedSlot.id,
+      });
+      onClose();
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] overflow-hidden p-0 rounded-2xl border-none shadow-2xl">
-        <div className="relative p-6 bg-gradient-to-br from-primary/10 via-background to-background">
-          <DialogHeader className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                Step {step} of 4
-              </Badge>
-              <span className="text-xs text-muted-foreground font-medium">
-                {step === 1 && 'Choose Stylist'}
-                {step === 2 && 'Select Date'}
-                {step === 3 && 'Pick Time'}
-                {step === 4 && 'Confirm Booking'}
-              </span>
-            </div>
-            <DialogTitle className="text-3xl font-bold font-heading">
-              {step === 1 && 'Select Your Stylist'}
-              {step === 2 && 'Choose a Date'}
-              {step === 3 && 'Available Slots'}
-              {step === 4 && 'Review & Confirm'}
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Book an appointment for {serviceName} by selecting a stylist, date, and time slot.
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className="max-w-[95vw] lg:max-w-3xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-none">
+        <div className="flex flex-col md:flex-row min-h-[500px]">
+          {/* Left Side: Calendar and Stylist Selection */}
+          <div className="flex-1 p-6 border-r border-border/50">
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-2xl font-bold font-heading">
+                Book Appointment
+              </DialogTitle>
+              <DialogDescription>Select your preferred date and stylist</DialogDescription>
+            </DialogHeader>
 
-          <div className="max-h-[60vh] overflow-y-auto px-1">
-            {step === 1 && renderStylists()}
-            {step === 2 && renderCalendar()}
-            {step === 3 && renderSlots()}
-            {step === 4 && renderConfirmation()}
+            <div className="space-y-6">
+              <div className="bg-muted/30 p-4 rounded-xl border border-border/40">
+                <p className="text-xs font-bold uppercase text-muted-foreground mb-3 flex items-center gap-2">
+                  <Icon icon="solar:calendar-bold" className="text-primary" />
+                  Choose Date
+                </p>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  className="rounded-md border-none"
+                  disabled={(date) => isBefore(date, startOfDay(new Date()))}
+                />
+              </div>
+
+              <div className="bg-muted/30 p-4 rounded-xl border border-border/40">
+                <p className="text-xs font-bold uppercase text-muted-foreground mb-3 flex items-center gap-2">
+                  <Icon icon="solar:user-bold" className="text-primary" />
+                  Select Stylist
+                </p>
+                <div className="grid grid-cols-1 gap-2 max-h-[150px] overflow-y-auto pr-1">
+                  {availableStylists.length > 0 ? (
+                    availableStylists.map((stylist) => (
+                      <button
+                        key={stylist.userId}
+                        onClick={() => setSelectedStylistId(stylist.userId)}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                          selectedStylistId === stylist.userId
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                            : 'border-border/60 hover:border-primary/40 bg-background'
+                        }`}
+                      >
+                        <div className="size-8 rounded-full bg-muted overflow-hidden">
+                          {stylist.profilePicture ? (
+                            <img
+                              src={stylist.profilePicture}
+                              alt={stylist.name}
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <Icon
+                              icon="solar:user-bold"
+                              className="size-5 m-auto mt-1.5 text-muted-foreground/40"
+                            />
+                          )}
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate">{stylist.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {stylist.specialization}
+                          </p>
+                        </div>
+                        {selectedStylistId === stylist.userId && (
+                          <Icon icon="solar:check-circle-bold" className="size-5 text-primary" />
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 text-center bg-muted/20 rounded-xl border border-dashed border-border/60">
+                      <Icon
+                        icon="solar:users-group-two-rounded-broken"
+                        className="size-8 text-muted-foreground/40 mb-2"
+                      />
+                      <p className="text-xs text-muted-foreground px-4">
+                        No stylists assigned for the selected services at this branch.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {step > 1 && step < 4 && (
-            <div className="mt-8 flex items-center justify-between border-t pt-6">
-              <Button variant="ghost" size="sm" onClick={() => setStep(step - 1)} className="gap-2">
-                <Icon icon="lucide:arrow-left" className="size-4" />
-                Back
-              </Button>
-              {step === 3 && selectedSlot && (
-                <Button
-                  size="sm"
-                  onClick={() => setStep(4)}
-                  className="bg-primary text-white shadow-md"
-                >
-                  Review & Confirm
-                  <Icon icon="lucide:arrow-right" className="ml-2 size-4" />
-                </Button>
+          {/* Right Side: Slot Selection */}
+          <div className="md:w-80 bg-muted/10 p-6 flex flex-col">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Icon icon="solar:clock-circle-bold" className="text-primary" />
+              Available Slots
+            </h3>
+
+            <div className="flex-1 min-h-[200px] mb-6">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground italic">
+                  <Icon icon="eos-icons:loading" className="size-8 animate-spin" />
+                  <p className="text-sm">Finding slots...</p>
+                </div>
+              ) : slots.length > 0 ? (
+                <>
+                  {slots.some((s) =>
+                    ['OFF_DAY', 'NON_WORKING', 'NO_SCHEDULE', 'HOLIDAY'].includes(s.status),
+                  ) ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center px-4 gap-3 bg-red-50/30 rounded-2xl border border-red-100/50 py-8">
+                      <Icon
+                        icon="solar:calendar-minimalistic-broken"
+                        className="size-12 text-red-400"
+                      />
+                      <div>
+                        <p className="font-bold text-red-600">
+                          {slots.find((s) => s.status === 'HOLIDAY')
+                            ? 'Salon Holiday'
+                            : slots.find((s) => s.status === 'OFF_DAY')
+                              ? 'On Leave'
+                              : 'Not Available'}
+                        </p>
+                        <p className="text-xs text-red-500/80 mt-1">
+                          {slots.find((s) => s.status === 'HOLIDAY')
+                            ? slots.find((s) => s.status === 'HOLIDAY')?.note ||
+                              'The salon is closed today for a holiday.'
+                            : 'Stylist is not available on this date.'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto pr-1">
+                      {slots
+                        .filter(
+                          (slot) =>
+                            (slot.startTime !== '00:00' || slot.status === 'AVAILABLE') &&
+                            slot.status !== 'HOLIDAY',
+                        )
+                        .map((slot) => (
+                          <button
+                            key={slot.id}
+                            onClick={() => setSelectedSlotId(slot.id)}
+                            className={`p-2.5 rounded-lg border text-sm font-medium transition-all ${
+                              selectedSlotId === slot.id
+                                ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                                : 'bg-background hover:border-primary/40 border-border/60'
+                            }`}
+                          >
+                            {slot.startTime}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center px-4 gap-3">
+                  <Icon
+                    icon="solar:calendar-block-bold-duotone"
+                    className="size-12 text-muted-foreground/30"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    No slots available for this date and stylist.
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60 italic">
+                    Try another date or stylist.
+                  </p>
+                </div>
               )}
             </div>
-          )}
+
+            <div className="mt-auto space-y-4 pt-6 border-t border-border/40">
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                  <span>Services</span>
+                  <span>{selectedServices.length} Items</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold">
+                  <span>Total</span>
+                  <span className="text-primary truncate">
+                    ₹
+                    {(() => {
+                      const selSlot = slots.find((s) => s.id === selectedSlotId);
+                      const servicesTotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
+                      if (!selSlot || !selSlot.price || selSlot.price <= 0) return servicesTotal;
+                      return selSlot.price;
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                className="w-full h-12 font-bold shadow-lg shadow-primary/20"
+                disabled={!selectedSlotId || !selectedStylistId || loading}
+                onClick={handleConfirm}
+              >
+                Confirm Selection
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-xs text-muted-foreground"
+                onClick={onClose}
+              >
+                Maybe Later
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}

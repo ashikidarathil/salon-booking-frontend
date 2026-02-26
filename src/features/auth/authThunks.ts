@@ -85,7 +85,9 @@ export const googleLogin = createAsyncThunk<User, { idToken: string }, { rejectV
   async (payload, { rejectWithValue }) => {
     try {
       const res = await authService.googleLogin(payload);
-      return res.data.data.user;
+      const user = res.data.data.user;
+      sessionStorage.setItem('user_role', user.role);
+      return user;
     } catch (err) {
       return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.OPERATION_FAILED);
     }
@@ -160,7 +162,9 @@ export const fetchMe = createAsyncThunk<User, void, { rejectValue: string }>(
         return rejectWithValue(ERROR_MESSAGES.DATA_LOAD_FAILED);
       }
 
-      return response.data.data.user;
+      const user = response.data.data.user;
+      sessionStorage.setItem('user_role', user.role);
+      return user;
     } catch (error) {
       return handleThunkError(error, rejectWithValue, ERROR_MESSAGES.DATA_LOAD_FAILED);
     }

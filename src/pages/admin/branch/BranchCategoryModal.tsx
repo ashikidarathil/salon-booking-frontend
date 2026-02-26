@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   toggleBranchCategory,
@@ -68,7 +68,7 @@ export default function BranchCategoryModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
 
-  const loadBranchCategories = () => {
+  const loadBranchCategories = useCallback(() => {
     if (branchId) {
       dispatch(
         fetchBranchCategoriesPaginated({
@@ -80,13 +80,13 @@ export default function BranchCategoryModal({
         }),
       );
     }
-  };
+  }, [branchId, dispatch, currentPage, search, filterActive]);
 
   useEffect(() => {
     if (open) {
       loadBranchCategories();
     }
-  }, [open, branchId, dispatch, currentPage, search, filterActive]);
+  }, [open, loadBranchCategories]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);

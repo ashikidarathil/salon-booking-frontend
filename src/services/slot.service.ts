@@ -1,49 +1,55 @@
 import { api } from '@/services/api/api';
-import type { AxiosResponse } from 'axios';
+import { API_ROUTES } from '@/common/constants/api.routes';
+import type { SlotItem, ListSlotsParams } from '@/features/slot/slot.types';
+import type { ApiResponse } from '@/common/types/api.types';
 
-export interface Slot {
-  id: string;
-  branchId: string;
-  stylistId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'LOCKED';
-  stylistName?: string;
-  stylistEmail?: string;
-}
+export const slotService = {
+  listAvailableSlots: async (params: ListSlotsParams) => {
+    return api.get<ApiResponse<SlotItem[]>>(API_ROUTES.SLOT.PUBLIC.CHAIN_AVAILABILITY, { params });
+  },
 
-export interface ListSlotsParams {
-  branchId: string;
-  date: string;
-  stylistId?: string;
-  serviceId?: string;
-}
+  adminListSlots: async (params: ListSlotsParams) => {
+    return api.get<ApiResponse<SlotItem[]>>(API_ROUTES.SLOT.ADMIN, {
+      params: { ...params, includeAll: true },
+    });
+  },
 
-class SlotService {
-  async listAvailableSlots(params: ListSlotsParams): Promise<AxiosResponse<{ data: Slot[] }>> {
-    return api.get('/availability', { params });
-  }
+  getStylistSlots: async (params: { branchId: string; date: string; stylistId?: string }) => {
+    return api.get<ApiResponse<SlotItem[]>>(API_ROUTES.SLOT.STYLIST, {
+      params: { ...params, includeAll: true },
+    });
+  },
 
-  async adminListSlots(params: ListSlotsParams): Promise<AxiosResponse<{ data: Slot[] }>> {
-    return api.get('/availability', { params });
-  }
+  blockSlot: async (slotId: string, reason?: string) => {
+    return api.patch<ApiResponse<SlotItem>>(API_ROUTES.SLOT.BLOCK(slotId), { reason });
+  },
 
-  async getStylistSlots(params: { branchId: string; date: string; stylistId?: string }): Promise<AxiosResponse<{ data: Slot[] }>> {
-    return api.get('/availability', { params });
-  }
+  unblockSlot: async (slotId: string) => {
+    return api.patch<ApiResponse<SlotItem>>(API_ROUTES.SLOT.UNBLOCK(slotId));
+  },
 
-  async blockSlot(slotId: string, reason?: string): Promise<AxiosResponse<{ data: Slot }>> {
-    return api.patch(`/slots/${slotId}/block`, { reason });
-  }
+  createSpecialSlot: async (dto: {
+    stylistId: string;
+    branchId: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    note?: string;
+    serviceId?: string;
+  }) => {
+    return api.post<ApiResponse<SlotItem>>(API_ROUTES.SLOT.CREATE_SPECIAL, dto);
+  },
 
-  async unblockSlot(slotId: string): Promise<AxiosResponse<{ data: Slot }>> {
-    return api.patch(`/slots/${slotId}/unblock`);
-  }
+  listSpecialSlots: async (params: {
+    branchId?: string;
+    stylistId?: string;
+    date?: string;
+    status?: string;
+  }) => {
+    return api.get<ApiResponse<SlotItem[]>>(API_ROUTES.SLOT.LIST_SPECIAL, { params });
+  },
 
-  async lockSlot(slotId: string): Promise<AxiosResponse<{ data: Slot }>> {
-    return api.post(`/slots/${slotId}/lock`);
-  }
-}
-
-export const slotService = new SlotService();
+  cancelSpecialSlot: async (id: string) => {
+    return api.delete<ApiResponse<SlotItem>>(API_ROUTES.SLOT.DELETE_SPECIAL(id));
+  },
+};

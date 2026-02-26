@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Icon } from '@iconify/react';
-import { showError } from '@/common/utils/swal.utils';
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
 import { LoadingGate } from '@/components/common/LoadingGate';
@@ -24,9 +23,10 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import type { BranchServiceItem } from '@/features/branchService/branchService.types';
-import { SlotBookingDialog } from '@/components/booking/SlotBookingDialog';
 import { fetchBranchStylists } from '@/features/stylistBranch/stylistBranch.thunks';
 import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
+import { addToCart } from '@/features/cart/cart.slice';
+import { cn } from '@/lib/utils';
 
 export default function ServiceDetailsPage() {
   const dispatch = useAppDispatch();
@@ -36,13 +36,14 @@ export default function ServiceDetailsPage() {
     serviceId: string;
   }>();
 
-  const { currentService, loading, error } = useAppSelector((state) => state.branchService);
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { currentService, loading, error } = useAppSelector((state) => state.branchService);
   const { assignedStylists } = useAppSelector((state) => state.stylistBranch);
 
   const [imageError, setImageError] = useState(false);
   const [relatedServices, setRelatedServices] = useState<BranchServiceItem[]>([]);
-  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+
+  const cart = useAppSelector((state) => state.cart);
 
   useEffect(() => {
     const savedBranch = localStorage.getItem('selectedBranch');
@@ -91,12 +92,47 @@ export default function ServiceDetailsPage() {
 
   const handleBookAppointment = () => {
     if (!isAuthenticated) {
-      showError('Login Required', 'Please login to book an appointment');
+      localStorage.setItem('returnPath', window.location.pathname);
       navigate('/login');
       return;
     }
+    if (currentService) {
+      dispatch(
+        addToCart({
+          item: {
+            serviceId: currentService.serviceId,
+            name: currentService.name,
+            price: currentService.price,
+            duration: currentService.duration,
+            imageUrl: currentService.imageUrl,
+          },
+          branchId: branchId!,
+        }),
+      );
+    }
+    navigate('/cart');
+  };
 
-    setIsBookingDialogOpen(true);
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      localStorage.setItem('returnPath', window.location.pathname);
+      navigate('/login');
+      return;
+    }
+    if (currentService) {
+      dispatch(
+        addToCart({
+          item: {
+            serviceId: currentService.serviceId,
+            name: currentService.name,
+            price: currentService.price,
+            duration: currentService.duration,
+            imageUrl: currentService.imageUrl,
+          },
+          branchId: branchId!,
+        }),
+      );
+    }
   };
 
   return (
@@ -182,9 +218,22 @@ export default function ServiceDetailsPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-lg border-border hover:bg-secondary h-11 w-11"
+                    onClick={handleAddToCart}
+                    className={cn(
+                      'rounded-lg border-border hover:bg-secondary h-11 w-11',
+                      cart.items.some((i) => i.serviceId === serviceId)
+                        ? 'bg-primary/10 border-primary text-primary'
+                        : '',
+                    )}
                   >
-                    <Icon icon="solar:cart-large-2-bold" className="size-5" />
+                    <Icon
+                      icon={
+                        cart.items.some((i) => i.serviceId === serviceId)
+                          ? 'solar:cart-large-2-bold'
+                          : 'solar:cart-large-2-linear'
+                      }
+                      className="size-5"
+                    />
                   </Button>
                 </div>
               </div>
@@ -360,18 +409,6 @@ export default function ServiceDetailsPage() {
             )}
           </div>
         </LoadingGate>
-
-        {branchId && serviceId && currentService && (
-          <SlotBookingDialog
-            isOpen={isBookingDialogOpen}
-            onClose={() => setIsBookingDialogOpen(false)}
-            branchId={branchId}
-            serviceId={serviceId}
-            serviceName={currentService.name}
-            duration={currentService.duration}
-            price={currentService.price}
-          />
-        )}
       </main>
       <Footer />
     </div>

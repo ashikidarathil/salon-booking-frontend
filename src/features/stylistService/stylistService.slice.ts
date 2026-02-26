@@ -1,4 +1,4 @@
-import { createSlice, isPending, isRejected } from '@reduxjs/toolkit';
+import { createSlice, isAnyOf } from '@reduxjs/toolkit';
 import type { StylistServiceState } from './stylistService.types';
 import { fetchStylistServicesPaginated, toggleStylistServiceStatus } from './stylistService.thunks';
 
@@ -29,6 +29,7 @@ const stylistServiceSlice = createSlice({
       .addCase(fetchStylistServicesPaginated.fulfilled, (state, action) => {
         state.services = action.payload.data;
         state.pagination = action.payload.pagination;
+        state.loading = false;
       })
       .addCase(toggleStylistServiceStatus.fulfilled, (state, action) => {
         const { serviceId, isActive } = action.payload;
@@ -36,19 +37,20 @@ const stylistServiceSlice = createSlice({
         if (service) {
           service.isActive = isActive;
         }
-      })
-      .addMatcher(isPending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addMatcher(isRejected, (state, action) => {
         state.loading = false;
-        state.error = (action.payload as string) || 'Something went wrong';
       })
       .addMatcher(
-        (action) => action.type.endsWith('/fulfilled'),
+        isAnyOf(fetchStylistServicesPaginated.pending, toggleStylistServiceStatus.pending),
         (state) => {
+          state.loading = true;
+          state.error = null;
+        },
+      )
+      .addMatcher(
+        isAnyOf(fetchStylistServicesPaginated.rejected, toggleStylistServiceStatus.rejected),
+        (state, action) => {
           state.loading = false;
+          state.error = (action.payload as string) || 'Something went wrong';
         },
       );
   },

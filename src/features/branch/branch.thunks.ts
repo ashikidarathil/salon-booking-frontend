@@ -31,7 +31,15 @@ export const createBranch = createAsyncThunk<
 
 export const updateBranch = createAsyncThunk<
   Branch,
-  { id: string; data: Partial<{ name: string; address: string; phone?: string }> },
+  {
+    id: string;
+    data: Partial<{
+      name: string;
+      address: string;
+      phone?: string;
+      defaultBreaks?: Array<{ startTime: string; endTime: string; description: string }>;
+    }>;
+  },
   { rejectValue: string }
 >('branch/updateBranch', async ({ id, data }, { rejectWithValue }) => {
   try {

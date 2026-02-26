@@ -15,7 +15,15 @@ export const branchService = {
     );
   },
 
-  update(id: string, data: Partial<{ name: string; address: string; phone?: string }>) {
+  update(
+    id: string,
+    data: Partial<{
+      name: string;
+      address: string;
+      phone?: string;
+      defaultBreaks?: Array<{ startTime: string; endTime: string; description: string }>;
+    }>,
+  ) {
     const url = API_ROUTES.BRANCH.BY_ID(id);
     return api.patch<ApiResponse<Branch>>(url, data);
   },

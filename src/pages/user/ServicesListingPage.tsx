@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
+import { cn } from '@/lib/utils';
 import Pagination from '@/components/pagination/Pagination';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/branchService/branchService.slice';
@@ -28,11 +29,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { addToCart, removeFromCart } from '@/features/cart/cart.slice';
 
 export default function ServicesListingPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const { selectedBranch } = useAppSelector((state) => state.branch);
   const { services, pagination, loading } = useAppSelector((state) => state.branchService);
   const { categories } = useAppSelector((state) => state.category);
@@ -40,6 +43,8 @@ export default function ServicesListingPage() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+
+  const cart = useAppSelector((state) => state.cart);
 
   useEffect(() => {
     const savedBranch = localStorage.getItem('selectedBranch');
@@ -89,7 +94,7 @@ export default function ServicesListingPage() {
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-16 overflow-hidden text-center bg-accent md:py-20 ">
+        <section className="relative py-16 overflow-hidden text-center  bg-gradient-to-b from-primary/10 via-primary/5 to-background md:py-20 ">
           <div className="absolute top-0 w-full h-full -translate-x-1/2 pointer-events-none left-1/2 bg-gradient-to-b from-white/50 to-transparent" />
           <div className="container relative z-10 flex flex-col items-center px-4 mx-auto">
             <h1 className="mb-4 text-4xl font-bold md:text-5xl text-foreground font-heading">
@@ -279,12 +284,50 @@ export default function ServicesListingPage() {
                           ? `₹${service.price.toLocaleString('en-IN')}`
                           : 'Price on request'}
                       </span>
-                      <Button
-                        className="shadow-md bg-primary hover:bg-primary/90 shadow-primary/20"
-                        onClick={() => handleViewDetails(service.serviceId)}
-                      >
-                        View Details
-                      </Button>
+                      <div className="flex items-center gap-2 mt-auto">
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'flex-1',
+                            cart.items.some((i) => i.serviceId === service.serviceId)
+                              ? 'bg-primary/10 border-primary text-primary'
+                              : '',
+                          )}
+                          onClick={() => {
+                            if (!isAuthenticated) {
+                              localStorage.setItem('returnPath', window.location.pathname);
+                              navigate('/login');
+                              return;
+                            }
+                            if (cart.items.some((i) => i.serviceId === service.serviceId)) {
+                              dispatch(removeFromCart(service.serviceId));
+                            } else {
+                              dispatch(
+                                addToCart({
+                                  item: {
+                                    serviceId: service.serviceId,
+                                    name: service.name,
+                                    price: service.price,
+                                    duration: service.duration,
+                                    imageUrl: service.imageUrl,
+                                  },
+                                  branchId: selectedBranch!.id,
+                                }),
+                              );
+                            }
+                          }}
+                        >
+                          {cart.items.some((i) => i.serviceId === service.serviceId)
+                            ? 'Added'
+                            : 'Add to Cart'}
+                        </Button>
+                        <Button
+                          className="shadow-md bg-primary hover:bg-primary/90 shadow-primary/20"
+                          onClick={() => handleViewDetails(service.serviceId)}
+                        >
+                          Details
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Card>

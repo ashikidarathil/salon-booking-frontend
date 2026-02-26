@@ -8,6 +8,11 @@ export interface Branch {
   latitude: number;
   longitude: number;
   isDeleted: boolean;
+  defaultBreaks?: Array<{
+    startTime: string;
+    endTime: string;
+    description: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

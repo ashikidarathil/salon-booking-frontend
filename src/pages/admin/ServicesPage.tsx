@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   fetchPaginatedServices,
@@ -143,7 +143,7 @@ export default function ServicesPage() {
     dispatch(fetchCategories());
   }, [dispatch]);
 
-  const loadServices = () => {
+  const loadServices = useCallback(() => {
     dispatch(
       fetchPaginatedServices({
         page: currentPage,
@@ -153,11 +153,11 @@ export default function ServicesPage() {
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
       }),
     );
-  };
+  }, [dispatch, currentPage, searchTerm, categoryFilter, statusFilter]);
 
   useEffect(() => {
     loadServices();
-  }, [dispatch, currentPage, searchTerm, categoryFilter, statusFilter]);
+  }, [loadServices]);
 
   const onSubmit = async (data: ServiceFormData) => {
     showLoading(editingService ? 'Updating service...' : 'Creating service...');

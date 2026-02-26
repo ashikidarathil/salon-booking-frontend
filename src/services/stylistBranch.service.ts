@@ -5,6 +5,7 @@ import type {
   BranchStylist,
   UnassignedStylist,
 } from '@/features/stylistBranch/stylistBranch.types';
+import type { StylistService } from '@/features/booking/booking.types';
 import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 
 export const stylistBranchService = {
@@ -95,6 +96,18 @@ export const stylistBranchService = {
       }>
     >(
       `${API_ROUTES.STYLIST_BRANCH.ADMIN.OPTIONS_UNASSIGNED_PAGINATED(branchId)}?${queryParams.toString()}`,
+    );
+  },
+  getStylistsByService(serviceId: string) {
+    return api.get<ApiResponse<BranchStylist[]>>(
+      API_ROUTES.STYLIST_SERVICE.PUBLIC.STYLISTS_BY_SERVICE(serviceId),
+    );
+  },
+
+  getStylistServices(stylistId: string, branchId?: string) {
+    const params = branchId ? `?branchId=${branchId}` : '';
+    return api.get<ApiResponse<StylistService[]>>(
+      API_ROUTES.STYLIST_SERVICE.PUBLIC.LIST_BY_STYLIST(stylistId) + params,
     );
   },
 };

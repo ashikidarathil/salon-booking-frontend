@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchPublicStylists } from '@/features/stylistInvite/stylistInviteThunks';
+import { fetchMyFavorites } from '@/features/wishlist/wishlistSlice';
+import { useWishlist } from '@/hooks/useWishlist';
 import { APP_ROUTES } from '@/common/constants/app.routes';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { Button } from '@/components/ui/button';
@@ -40,6 +42,8 @@ export default function StylistsListingPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [positionFilter, setPositionFilter] = useState('all');
 
+  const { isFavorite, handleToggleFavorite, isAuthenticated } = useWishlist();
+
   useEffect(() => {
     const savedBranch = localStorage.getItem('selectedBranch');
     if (!savedBranch) {
@@ -60,13 +64,19 @@ export default function StylistsListingPage() {
         position: positionFilter === 'all' ? undefined : positionFilter,
       }),
     );
-  }, [dispatch, currentPage, search, selectedBranch?.id, positionFilter]);
+  }, [dispatch, currentPage, search, selectedBranch, positionFilter]);
 
   useEffect(() => {
     if (selectedBranch?.id) {
       loadStylists();
     }
-  }, [loadStylists, selectedBranch?.id, positionFilter, search]);
+  }, [loadStylists, selectedBranch, positionFilter, search]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchMyFavorites());
+    }
+  }, [dispatch, isAuthenticated]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -186,8 +196,18 @@ export default function StylistsListingPage() {
                         </Badge>
                       </div>
                     )}
-                    <button className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-full text-muted-foreground hover:text-destructive hover:bg-white transition-colors">
-                      <Icon icon="solar:heart-linear" className="size-5" />
+                    <button
+                      className={`absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm rounded-full transition-colors ${
+                        isFavorite(stylist.id)
+                          ? 'text-destructive bg-white shadow-sm'
+                          : 'text-muted-foreground hover:text-destructive hover:bg-white'
+                      }`}
+                      onClick={(e) => handleToggleFavorite(e, stylist.id)}
+                    >
+                      <Icon
+                        icon={isFavorite(stylist.id) ? 'solar:heart-bold' : 'solar:heart-linear'}
+                        className="size-5"
+                      />
                     </button>
                   </div>
 
