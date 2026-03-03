@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
 import { LoadingGate } from '@/components/common/LoadingGate';
-import { format, differenceInHours, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { showApiError, showSuccess, showCancellationConfirm } from '@/common/utils/swal.utils';
 import Swal from 'sweetalert2';
 import { SlotBookingDialog } from '@/components/booking/SlotBookingDialog';
@@ -67,10 +67,21 @@ export default function BookingsPage() {
 
   const checkLeadTime = (bookingDate: string, startTime: string) => {
     try {
-      const appointmentDate = parseISO(bookingDate);
+      // 1. Parse booking date (e.g., "2026-02-28T00:00:00.000Z")
+      const appointmentDate = new Date(bookingDate);
       const [hours, minutes] = startTime.split(':').map(Number);
+      
+      // 2. Set the appointment time (HH:mm)
       appointmentDate.setHours(hours, minutes, 0, 0);
-      return differenceInHours(appointmentDate, new Date()) >= BOOKING_RULES.LEAD_TIME_HOURS;
+
+      // 3. Current time
+      const now = new Date();
+
+      // 4. Calculate difference in hours
+      const diffMs = appointmentDate.getTime() - now.getTime();
+      const diffHrs = diffMs / (1000 * 60 * 60);
+
+      return diffHrs >= BOOKING_RULES.LEAD_TIME_HOURS;
     } catch {
       return false;
     }

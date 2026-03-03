@@ -9,6 +9,7 @@ import { Icon } from '@iconify/react';
 import { format } from 'date-fns';
 import { showApiError, showSuccess, showCancellationConfirm } from '@/common/utils/swal.utils';
 import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
+import { LoadingGate } from '@/components/common/LoadingGate';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -31,7 +32,7 @@ export default function StylistBookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { currentBooking, loading } = useAppSelector((state) => state.booking);
+  const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
 
   useEffect(() => {
     if (id) dispatch(fetchBookingDetails(id));
@@ -59,15 +60,7 @@ export default function StylistBookingDetailPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Icon icon="solar:loading-bold-duotone" className="size-10 text-primary animate-spin" />
-      </div>
-    );
-  }
-
-  if (!currentBooking) {
+  if (!currentBooking && !loading && !error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Icon icon="solar:calendar-minimalistic-broken" className="size-16 opacity-40" />
@@ -82,20 +75,28 @@ export default function StylistBookingDetailPage() {
   const b = currentBooking;
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <Icon icon="solar:arrow-left-linear" className="size-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold font-heading">Appointment Details</h1>
-          <p className="text-muted-foreground text-sm">#{b.id.slice(-8).toUpperCase()}</p>
+    <LoadingGate
+      loading={loading}
+      error={error}
+      data={currentBooking}
+      resetError={() => id && dispatch(fetchBookingDetails(id))}
+      backPath="/stylist/appointments"
+      role="STYLIST"
+    >
+      <div className="p-6 space-y-6 max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <Icon icon="solar:arrow-left-linear" className="size-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold font-heading">Appointment Details</h1>
+            <p className="text-muted-foreground text-sm">#{b?.id.slice(-8).toUpperCase()}</p>
+          </div>
+          <div className="ml-auto flex items-center gap-3">
+            <Badge className={getStatusColor(b?.status || '')}>{b?.status.replace('_', ' ')}</Badge>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-3">
-          <Badge className={getStatusColor(b.status)}>{b.status.replace('_', ' ')}</Badge>
-        </div>
-      </div>
 
       <div className="grid gap-6">
         {/* Info Card */}
@@ -105,14 +106,14 @@ export default function StylistBookingDetailPage() {
               <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
                 Date
               </p>
-              <p className="font-bold text-lg">{format(new Date(b.date), 'PPPP')}</p>
+              <p className="font-bold text-lg">{b?.date ? format(new Date(b.date), 'PPPP') : ''}</p>
             </div>
             <div className="space-y-1.5">
               <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
                 Time Window
               </p>
               <p className="font-bold text-lg">
-                {b.startTime} - {b.endTime}
+                {b?.startTime} - {b?.endTime}
               </p>
             </div>
           </CardContent>
@@ -128,7 +129,7 @@ export default function StylistBookingDetailPage() {
           </CardHeader>
           <CardContent className="p-6 pt-0 space-y-4">
             <div className="space-y-3">
-              {b.items.map((item, idx) => (
+              {b?.items.map((item, idx) => (
                 <div
                   key={idx}
                   className="flex items-center justify-between p-3.5 rounded-xl bg-muted/30 border border-border/50"
@@ -152,25 +153,25 @@ export default function StylistBookingDetailPage() {
                 Total Amount
               </span>
               <span className="text-primary font-black text-2xl">
-                ₹{b.totalPrice.toLocaleString('en-IN')}
+                ₹{b?.totalPrice.toLocaleString('en-IN')}
               </span>
             </div>
           </CardContent>
         </Card>
-
+ 
         {/* Notes */}
-        {b.notes && (
+        {b?.notes && (
           <Card className="bg-yellow-50/30 border-yellow-100">
             <CardContent className="p-4">
               <p className="text-[10px] font-bold text-yellow-700 uppercase mb-1">Customer Note</p>
-              <p className="text-sm">"{b.notes}"</p>
+              <p className="text-sm">"{b?.notes}"</p>
             </CardContent>
           </Card>
         )}
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
-          {b.status === BookingStatus.CONFIRMED && (
+          {b?.status === BookingStatus.CONFIRMED && (
             <Button
               className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700"
               onClick={() => handleStatusUpdate(BookingStatus.IN_PROGRESS, 'In Progress')}
@@ -179,7 +180,7 @@ export default function StylistBookingDetailPage() {
               Start Appointment
             </Button>
           )}
-          {b.status === BookingStatus.IN_PROGRESS && (
+          {b?.status === BookingStatus.IN_PROGRESS && (
             <Button
               className="w-full h-12 text-base font-bold bg-purple-600 hover:bg-purple-700"
               onClick={() => handleStatusUpdate(BookingStatus.COMPLETED, 'Completed')}
@@ -188,7 +189,7 @@ export default function StylistBookingDetailPage() {
               Mark as Completed
             </Button>
           )}
-          {(b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.IN_PROGRESS) && (
+          {(b?.status === BookingStatus.CONFIRMED || b?.status === BookingStatus.IN_PROGRESS) && (
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
@@ -211,5 +212,6 @@ export default function StylistBookingDetailPage() {
         </div>
       </div>
     </div>
-  );
+  </LoadingGate>
+);
 }

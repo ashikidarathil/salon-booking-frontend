@@ -17,6 +17,7 @@ const initialState: BookingState = {
   myBookings: [],
   todayBookings: [],
   currentBooking: null,
+  pagination: null,
   loading: false,
   error: null,
   bookingSuccess: false,
@@ -128,6 +129,12 @@ const bookingSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+      // Stylist Paginated Bookings
+      .addCase(fetchStylistBookings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.myBookings = action.payload.data;
+        state.pagination = action.payload.pagination;
+      })
       // Admin/Stylist List/Today Bookings
       .addMatcher(
         (action) =>
@@ -144,12 +151,13 @@ const bookingSlice = createSlice({
       )
       .addMatcher(
         (action) =>
-          [fetchAdminBookings.fulfilled.type, fetchStylistBookings.fulfilled.type].includes(
+          [fetchAdminBookings.fulfilled.type].includes(
             action.type,
           ),
         (state, action: PayloadAction<BookingItem[]>) => {
           state.loading = false;
           state.myBookings = action.payload;
+          state.pagination = null; // Reset pagination for non-paginated lists
         },
       )
       .addMatcher(

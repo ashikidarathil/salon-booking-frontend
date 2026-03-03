@@ -1,22 +1,55 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LoadingGate } from '@/components/common/LoadingGate';
-import { fetchStylistBookings } from '@/features/booking/booking.thunks';
+import { fetchStylistBookings, fetchStylistTodayBookings } from '@/features/booking/booking.thunks';
 import { Icon } from '@iconify/react';
+import { Input } from '@/components/ui/input';
+import Pagination from '@/components/pagination/Pagination';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 export default function StylistDashboard() {
   const dispatch = useAppDispatch();
-  const { myBookings, loading, error } = useAppSelector((state) => state.booking);
+  const navigate = useNavigate();
+  const { myBookings, todayBookings, pagination, loading, error } = useAppSelector((state) => state.booking);
+
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 5;
 
   useEffect(() => {
-    dispatch(fetchStylistBookings({}));
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const fetchBookings = useCallback(() => {
+    dispatch(
+      fetchStylistBookings({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+        date: new Date().toISOString().split('T')[0],
+      })
+    );
+  }, [dispatch, page, limit, debouncedSearch]);
+
+  useEffect(() => {
+    dispatch(fetchStylistTodayBookings());
   }, [dispatch]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {
@@ -34,10 +67,10 @@ export default function StylistDashboard() {
   };
 
   const stats = {
-    today: myBookings.length,
-    pending: myBookings.filter((b) => b.status === 'PENDING').length,
-    confirmed: myBookings.filter((b) => b.status === 'CONFIRMED').length,
-    cancelled: myBookings.filter((b) => b.status === 'CANCELLED').length,
+    today: todayBookings.length,
+    pending: todayBookings.filter((b) => b.status === 'PENDING').length,
+    confirmed: todayBookings.filter((b) => b.status === 'CONFIRMED').length,
+    cancelled: todayBookings.filter((b) => b.status === 'CANCELLED').length,
   };
 
   return (
@@ -100,12 +133,26 @@ export default function StylistDashboard() {
 
       {/* Upcoming Appointments */}
       <Card className="border-border/60 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl font-bold">Upcoming Appointments</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => dispatch(fetchStylistBookings({}))}>
-            <Icon icon="solar:restart-bold" className="mr-2 size-4" />
-            Refresh
-          </Button>
+        <CardHeader className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <CardTitle className="text-xl font-bold">Today's Appointments</CardTitle>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Icon
+                icon="solar:search-linear"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                placeholder="Search by customer name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 w-full text-sm"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={fetchBookings} className="shrink-0">
+              <Icon icon="solar:restart-bold" className="mr-2 size-4" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <LoadingGate
@@ -113,6 +160,9 @@ export default function StylistDashboard() {
             error={error}
             data={myBookings}
             emptyMessage="No appointments found."
+            resetError={() => dispatch(fetchStylistBookings({}))}
+            role="STYLIST"
+            backPath="/stylist"
           >
             <div className="space-y-4">
               {myBookings.map((booking) => (
@@ -131,6 +181,14 @@ export default function StylistDashboard() {
                         </span>
                         <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
                       </div>
+                      <div className="text-sm font-medium mt-1">
+                        {booking.userName || 'Unknown Customer'}
+                      </div>
+                      {booking.status === 'CANCELLED' && (
+                        <div className="text-sm font-medium mt-1 text-red-600 italic">
+                          Reason: {booking.cancelledReason || 'No reason provided'}
+                        </div>
+                      )}
                       <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Icon icon="solar:calendar-linear" className="size-4" />
@@ -153,7 +211,12 @@ export default function StylistDashboard() {
                       </p>
                       <p className="font-bold text-primary">₹{booking.totalPrice}</p>
                     </div>
-                    <Button size="sm" variant="outline" className="gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() => navigate(`/stylist/appointments/${booking.id}`)}
+                    >
                       <Icon icon="solar:document-text-linear" className="size-4" />
                       Details
                     </Button>
@@ -161,6 +224,23 @@ export default function StylistDashboard() {
                 </div>
               ))}
             </div>
+
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex flex-col items-center justify-between pt-6 mt-4 border-t md:flex-row">
+                <p className="mb-4 text-sm text-center text-muted-foreground md:mb-0">
+                  Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} to{' '}
+                  {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of{' '}
+                  {pagination.totalItems} entries
+                </p>
+                <div className="-mt-8">
+                  <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(p) => setPage(p)}
+                  />
+                </div>
+              </div>
+            )}
           </LoadingGate>
         </CardContent>
       </Card>

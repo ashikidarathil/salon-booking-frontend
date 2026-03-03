@@ -208,7 +208,7 @@ export default function SlotManagementPage() {
     };
     const label =
       status === 'AVAILABLE' && type === 'special'
-        ? '⚡ Special (Available)'
+        ? 'Special (Available)'
         : status.replace('_', ' ').toLowerCase();
     return (
       <Badge
@@ -222,7 +222,7 @@ export default function SlotManagementPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold">Slot Management</h1>
           <p className="text-muted-foreground">
@@ -233,7 +233,7 @@ export default function SlotManagementPage() {
           <div className="relative group">
             <Input
               placeholder="Search stylists..."
-              className="h-10 w-full md:w-64 pl-10 rounded-xl border-muted bg-white/50 backdrop-blur-sm transition-all duration-200 focus:md:w-72 focus:shadow-md"
+              className="w-full h-10 pl-10 transition-all duration-200 md:w-64 rounded-xl border-muted bg-white/50 backdrop-blur-sm focus:md:w-72 focus:shadow-md"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -262,11 +262,11 @@ export default function SlotManagementPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Icon icon="solar:filter-bold" /> Filters
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <label className="text-sm font-medium">Branch</label>
             <Select
@@ -312,7 +312,7 @@ export default function SlotManagementPage() {
                   </SelectItem>
                 ))}
                 {filteredStylists.length === 0 && (
-                  <p className="p-2 text-xs text-muted-foreground text-center">No stylists found</p>
+                  <p className="p-2 text-xs text-center text-muted-foreground">No stylists found</p>
                 )}
               </SelectContent>
             </Select>
@@ -331,7 +331,6 @@ export default function SlotManagementPage() {
               }
               )
             </CardTitle>
-            {/* Normal / Special toggle */}
             <div className="flex items-center rounded-lg border border-border/60 p-0.5 bg-muted/40">
               <button
                 type="button"
@@ -353,7 +352,7 @@ export default function SlotManagementPage() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                ⚡ Special
+                Special
               </button>
             </div>
           </div>
@@ -387,44 +386,44 @@ export default function SlotManagementPage() {
             <>
               {filters.stylistId !== 'all' && slots.find((s) => s.status === 'OFF_DAY') ? (
                 <div className="p-8 text-center border-t">
-                  <div className="inline-flex items-center justify-center size-16 rounded-full bg-purple-50 text-purple-600 mb-4 border border-purple-100">
+                  <div className="inline-flex items-center justify-center mb-4 text-purple-600 border border-purple-100 rounded-full size-16 bg-purple-50">
                     <Icon icon="solar:tea-cup-bold" className="size-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Stylist is on Leave</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">
+                  <h3 className="mb-2 text-xl font-bold text-slate-900">Stylist is on Leave</h3>
+                  <p className="max-w-sm mx-auto text-muted-foreground">
                     No slots are available for today because this stylist has an approved off-day
                     request.
                   </p>
                 </div>
               ) : filters.stylistId !== 'all' && slots.find((s) => s.status === 'NON_WORKING') ? (
                 <div className="p-8 text-center border-t">
-                  <div className="inline-flex items-center justify-center size-16 rounded-full bg-slate-50 text-slate-400 mb-4 border border-slate-100">
+                  <div className="inline-flex items-center justify-center mb-4 border rounded-full size-16 bg-slate-50 text-slate-400 border-slate-100">
                     <Icon icon="solar:calendar-minimalistic-bold" className="size-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Not a Working Day</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">
+                  <h3 className="mb-2 text-xl font-bold text-slate-900">Not a Working Day</h3>
+                  <p className="max-w-sm mx-auto text-muted-foreground">
                     This stylist is not scheduled to work on this day according to their weekly
                     schedule.
                   </p>
                 </div>
               ) : filters.stylistId !== 'all' && slots.find((s) => s.status === 'NO_SCHEDULE') ? (
                 <div className="p-8 text-center border-t">
-                  <div className="inline-flex items-center justify-center size-16 rounded-full bg-orange-50 text-orange-600 mb-4 border border-orange-100">
+                  <div className="inline-flex items-center justify-center mb-4 text-orange-600 border border-orange-100 rounded-full size-16 bg-orange-50">
                     <Icon icon="solar:shield-warning-bold" className="size-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">No Schedule Configured</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">
+                  <h3 className="mb-2 text-xl font-bold text-slate-900">No Schedule Configured</h3>
+                  <p className="max-w-sm mx-auto text-muted-foreground">
                     This stylist has not been assigned a weekly schedule yet. You can configure it
                     in the Stylist Management section.
                   </p>
                 </div>
               ) : slots.find((s) => s.status === 'HOLIDAY') ? (
                 <div className="p-8 text-center border-t">
-                  <div className="inline-flex items-center justify-center size-16 rounded-full bg-red-50 text-red-600 mb-4 border border-red-100">
+                  <div className="inline-flex items-center justify-center mb-4 text-red-600 border border-red-100 rounded-full size-16 bg-red-50">
                     <Icon icon="solar:calendar-minimalistic-broken" className="size-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Salon Holiday</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto">
+                  <h3 className="mb-2 text-xl font-bold text-slate-900">Salon Holiday</h3>
+                  <p className="max-w-sm mx-auto text-muted-foreground">
                     {slots.find((s) => s.status === 'HOLIDAY')?.note ||
                       'This day is marked as a holiday. No slots are available.'}
                   </p>
@@ -442,7 +441,7 @@ export default function SlotManagementPage() {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                           Loading slots...
                         </TableCell>
                       </TableRow>
@@ -453,7 +452,7 @@ export default function SlotManagementPage() {
                           ),
                       ).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                           No slots found for the selected criteria.
                         </TableCell>
                       </TableRow>
@@ -514,17 +513,17 @@ export default function SlotManagementPage() {
             // ─── Special Slots ───
             <div className="p-4">
               {loading ? (
-                <div className="flex items-center justify-center py-10 text-muted-foreground gap-2">
+                <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
                   <Icon icon="eos-icons:loading" className="size-5 animate-spin" />
                   <span>Loading special slots...</span>
                 </div>
               ) : specialSlots.length === 0 ? (
                 <div className="flex flex-col items-center py-10 text-center text-muted-foreground">
-                  <div className="size-16 rounded-full bg-violet-50 flex items-center justify-center mb-3 border border-violet-100">
+                  <div className="flex items-center justify-center mb-3 border rounded-full size-16 bg-violet-50 border-violet-100">
                     <Icon icon="solar:add-square-bold" className="size-8 text-violet-400" />
                   </div>
                   <p className="font-medium text-slate-700">No special slots for this date</p>
-                  <p className="text-sm mt-1">
+                  <p className="mt-1 text-sm">
                     Select a specific stylist and create a special slot.
                   </p>
                 </div>
@@ -533,14 +532,14 @@ export default function SlotManagementPage() {
                   {specialSlots.map((slot) => (
                     <div
                       key={slot.id}
-                      className="flex items-center justify-between p-4 rounded-xl border border-violet-200 bg-violet-50/50"
+                      className="flex items-center justify-between p-4 border rounded-xl border-violet-200 bg-violet-50/50"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-violet-100 flex items-center justify-center">
+                        <div className="flex items-center justify-center rounded-full size-10 bg-violet-100">
                           <Icon icon="solar:add-square-bold" className="size-5 text-violet-600" />
                         </div>
                         <div>
-                          <p className="font-semibold text-sm">
+                          <p className="text-sm font-semibold">
                             {slot.startTime} – {slot.endTime}
                           </p>
                           <div className="flex flex-col gap-0.5 mt-0.5">
@@ -579,7 +578,7 @@ export default function SlotManagementPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                            className="w-8 h-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleCancelSpecialSlot(slot.id)}
                           >
                             <Icon icon="solar:trash-bin-trash-bold" className="size-4" />

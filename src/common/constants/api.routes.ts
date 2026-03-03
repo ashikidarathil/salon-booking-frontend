@@ -172,7 +172,6 @@ export const API_ROUTES = {
     BY_ID: (id: string) => `/bookings/${id}`,
     CANCEL: (id: string) => `/bookings/${id}/cancel`,
     RESCHEDULE: (id: string) => `/bookings/${id}/reschedule`,
-    EXTEND: (id: string) => `/bookings/${id}/extend`,
     STATUS: (id: string) => `/bookings/${id}/status`,
     ADMIN: {
       LIST: '/admin/bookings',
@@ -190,5 +189,14 @@ export const API_ROUTES = {
   HOLIDAY: {
     BASE: '/holidays',
     BY_ID: (id: string) => `/holidays/${id}`,
+  },
+  WALLET: {
+    ME: '/wallet/me',
+    TRANSACTIONS: '/wallet/transactions',
+    CREDIT: '/wallet/credit',
+  },
+  ESCROW: {
+    ADMIN_LIST: '/escrow/admin/list',
+    BY_BOOKING: (bookingId: string) => `/escrow/admin/booking/${bookingId}`,
   },
 } as const;

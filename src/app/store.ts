@@ -17,6 +17,8 @@ import stylistServiceReducer from '@/features/stylistService/stylistService.slic
 import wishlistReducer from '@/features/wishlist/wishlistSlice';
 import cartReducer from '@/features/cart/cart.slice';
 import holidayReducer from '@/features/holiday/holiday.slice';
+import walletReducer from '@/features/wallet/wallet.slice';
+import escrowReducer from '@/features/escrow/escrow.slice';
 
 export const store = configureStore({
   reducer: {
@@ -38,6 +40,8 @@ export const store = configureStore({
     wishlist: wishlistReducer,
     cart: cartReducer,
     holiday: holidayReducer,
+    wallet: walletReducer,
+    escrow: escrowReducer,
   },
 });
 

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
-import { format, differenceInHours } from 'date-fns';
+import { format } from 'date-fns';
 import { showApiError, showSuccess, showCancellationConfirm } from '@/common/utils/swal.utils';
 import {
   BookingStatus,
@@ -57,7 +57,11 @@ export default function BookingDetailPage() {
       const dt = new Date(bookingDate);
       const [h, m] = startTime.split(':').map(Number);
       dt.setHours(h, m, 0, 0);
-      return differenceInHours(dt, new Date()) >= BOOKING_RULES.LEAD_TIME_HOURS;
+      
+      const diffMs = dt.getTime() - new Date().getTime();
+      const diffHrs = diffMs / (1000 * 60 * 60);
+      
+      return diffHrs >= BOOKING_RULES.LEAD_TIME_HOURS;
     } catch {
       return false;
     }
@@ -202,12 +206,7 @@ export default function BookingDetailPage() {
                 <span className="text-right max-w-[60%]">{b.notes}</span>
               </div>
             )}
-            {b.extensionReason && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Extended</span>
-                <span className="text-right max-w-[60%] text-xs">{b.extensionReason}</span>
-              </div>
-            )}
+
             <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
               <span>Total</span>
               <span className="text-primary text-lg">₹{b.totalPrice.toLocaleString('en-IN')}</span>

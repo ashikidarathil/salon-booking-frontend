@@ -320,6 +320,8 @@ export default function StylistProfilePage() {
       resetError={() => {
         dispatch(clearError());
       }}
+      role="STYLIST"
+      backPath="/stylist"
     >
       <div className="space-y-6 md:space-y-8">
         <div>

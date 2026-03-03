@@ -4,8 +4,8 @@ import type {
   CreateBookingDto,
   BookingResponse,
   BookingListResponse,
+  PaginatedBookingResponse,
   RescheduleBookingDto,
-  ExtendBookingDto,
 } from '@/features/booking/booking.types';
 
 class BookingService {
@@ -32,15 +32,15 @@ class BookingService {
     return response.data;
   }
 
-  async listStylistBookings(params: { date?: string }): Promise<BookingListResponse> {
-    const response = await api.get<BookingListResponse>(API_ROUTES.BOOKING.STYLIST.LIST, {
+  async listStylistBookings(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    date?: string;
+  }): Promise<PaginatedBookingResponse> {
+    const response = await api.get<PaginatedBookingResponse>(API_ROUTES.BOOKING.STYLIST.LIST, {
       params,
     });
-    return response.data;
-  }
-
-  async extendBooking(bookingId: string, data: ExtendBookingDto): Promise<BookingResponse> {
-    const response = await api.post<BookingResponse>(API_ROUTES.BOOKING.EXTEND(bookingId), data);
     return response.data;
   }
 

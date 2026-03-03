@@ -19,11 +19,7 @@ export interface RescheduleBookingDto {
   reason?: string;
 }
 
-export interface ExtendBookingDto {
-  additionalDuration?: number;
-  reason: string;
-  newService?: BookingItemInput;
-}
+
 
 export interface BookingDetailsItem {
   serviceId: string;
@@ -53,7 +49,7 @@ export interface BookingItem {
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   totalPrice: number;
-  extensionReason?: string;
+
   rescheduleCount?: number;
   rescheduleReason?: string;
   cancelledBy?: string;
@@ -75,9 +71,27 @@ export interface StylistService {
   price: number;
 }
 
+export interface PaginationMetadata {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface BookingListResponse {
   success: boolean;
   data: BookingItem[];
+  message: string;
+}
+
+export interface PaginatedBookingResponse {
+  success: boolean;
+  data: {
+    data: BookingItem[];
+    pagination: PaginationMetadata;
+  };
   message: string;
 }
 
@@ -85,6 +99,7 @@ export interface BookingState {
   myBookings: BookingItem[];
   todayBookings: BookingItem[];
   currentBooking: BookingItem | null;
+  pagination: PaginationMetadata | null;
   loading: boolean;
   error: string | null;
   bookingSuccess: boolean;

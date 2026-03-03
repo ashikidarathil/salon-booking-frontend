@@ -2,7 +2,12 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { bookingService } from '@/services/booking.service';
 import { handleThunkError } from '@/common/utils/thunk.utils';
 import { BOOKING_MESSAGES } from './booking.constants';
-import type { BookingItem, CreateBookingDto, RescheduleBookingDto } from './booking.types';
+import type {
+  BookingItem,
+  CreateBookingDto,
+  RescheduleBookingDto,
+  PaginationMetadata,
+} from './booking.types';
 
 export const createBooking = createAsyncThunk<
   BookingItem,
@@ -55,8 +60,8 @@ export const fetchAdminBookings = createAsyncThunk<
 });
 
 export const fetchStylistBookings = createAsyncThunk<
-  BookingItem[],
-  { date?: string },
+  { data: BookingItem[]; pagination: PaginationMetadata },
+  { page?: number; limit?: number; search?: string; date?: string },
   { rejectValue: string }
 >('booking/fetchStylistBookings', async (params, { rejectWithValue }) => {
   try {

@@ -1,20 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import {
-  fetchStylistTodayBookings,
-  fetchStylistBookings,
-  updateBookingStatus,
-} from '@/features/booking/booking.thunks';
+import { fetchStylistBookings, updateBookingStatus } from '@/features/booking/booking.thunks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Icon } from '@iconify/react';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { format } from 'date-fns';
+import Pagination from '@/components/pagination/Pagination';
 import { showSuccess, showApiError } from '@/common/utils/swal.utils';
 import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
-import type { BookingItem } from '@/features/booking/booking.types';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -35,124 +32,136 @@ const getStatusColor = (status: string) => {
   }
 };
 
-type Tab = 'today' | 'upcoming' | 'past';
-
 export default function StylistAppointmentsPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { todayBookings, myBookings, loading, error } = useAppSelector((s) => s.booking);
-  const [activeTab, setActiveTab] = useState<Tab>('today');
+  const { myBookings: bookingsList, pagination, loading, error } = useAppSelector((s) => s.booking);
+
+  const [filterMode, setFilterMode] = useState<'today' | 'all'>('today');
+  const [customDate, setCustomDate] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 5;
 
   useEffect(() => {
-    dispatch(fetchStylistTodayBookings());
-    dispatch(fetchStylistBookings({}));
-  }, [dispatch]);
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const upcomingBookings = myBookings.filter((b) => {
-    const d = new Date(b.date);
-    return (
-      d >= today &&
-      (b.status === BookingStatus.CONFIRMED ||
-        b.status === BookingStatus.IN_PROGRESS ||
-        (b.status as string) === 'SPECIAL')
-    );
-  });
-  const pastBookings = myBookings.filter((b) => {
-    const d = new Date(b.date);
-    return (
-      d < today ||
-      b.status === BookingStatus.COMPLETED ||
-      b.status === BookingStatus.CANCELLED ||
-      b.status === BookingStatus.NO_SHOW
-    );
-  });
+  useEffect(() => {
+    setPage(1);
+  }, [filterMode, debouncedSearch, customDate]);
 
-  const bookingsList: BookingItem[] =
-    activeTab === 'today'
-      ? todayBookings
-      : activeTab === 'upcoming'
-        ? upcomingBookings
-        : pastBookings;
+  const fetchBookings = useCallback(() => {
+    let dateToFetch;
+    if (filterMode === 'today') {
+      dateToFetch = new Date().toISOString().split('T')[0];
+    } else if (customDate) {
+      dateToFetch = customDate;
+    }
+
+    dispatch(
+      fetchStylistBookings({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+        date: dateToFetch,
+      })
+    );
+  }, [dispatch, page, limit, debouncedSearch, filterMode, customDate]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const handleStatusUpdate = async (bookingId: string, status: string, label: string) => {
     const result = await dispatch(updateBookingStatus({ bookingId, status }));
     if (updateBookingStatus.fulfilled.match(result)) {
       showSuccess('Updated!', `${BOOKING_MESSAGES.STATUS_UPDATE_SUCCESS}`);
+      fetchBookings(); 
     } else {
       showApiError(BOOKING_MESSAGES.STATUS_UPDATE_FAILED, `Failed to mark ${label}`);
     }
   };
 
-  const tabs: { key: Tab; label: string; icon: string; count?: number }[] = [
-    { key: 'today', label: 'Today', icon: 'solar:sun-bold-duotone', count: todayBookings.length },
-    {
-      key: 'upcoming',
-      label: 'Upcoming',
-      icon: 'solar:calendar-bold-duotone',
-      count: upcomingBookings.length,
-    },
-    { key: 'past', label: 'Past', icon: 'solar:history-bold-duotone' },
-  ];
-
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold font-heading">Appointments</h1>
-        <p className="text-muted-foreground">Manage your appointment schedule</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold font-heading">Appointments</h1>
+          <p className="text-muted-foreground">Manage your appointment schedule</p>
+        </div>
+        <Button onClick={fetchBookings} variant="outline" className="gap-2">
+          <Icon icon="solar:refresh-linear" /> Refresh
+        </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.key
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-border pb-4 w-full">
+        <div className="flex gap-2 bg-muted p-1 rounded-lg w-full sm:w-auto">
+          <Button
+            variant={filterMode === 'today' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => { setFilterMode('today'); setCustomDate(''); }}
+            className={`flex-1 sm:flex-none ${filterMode === 'today' ? 'bg-background shadow-sm' : ''}`}
           >
-            <Icon icon={tab.icon} className="size-4" />
-            {tab.label}
-            {tab.count !== undefined && tab.count > 0 && (
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                  activeTab === tab.key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
+            Today
+          </Button>
+          <Button
+            variant={filterMode === 'all' && !customDate ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => { setFilterMode('all'); setCustomDate(''); }}
+            className={`flex-1 sm:flex-none ${filterMode === 'all' && !customDate ? 'bg-background shadow-sm' : ''}`}
+          >
+            All Appointments
+          </Button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto shrink-0">
+          <Input
+            type="date"
+            value={customDate}
+            onChange={(e) => {
+              setCustomDate(e.target.value);
+              if (e.target.value) setFilterMode('all');
+            }}
+            className="w-full sm:w-40 text-sm"
+          />
+          <div className="relative w-full sm:w-64">
+            <Icon
+              icon="solar:search-linear"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder="Search by customer name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 w-full text-sm"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Bookings List */}
       <LoadingGate
         loading={loading}
         error={error}
         data={bookingsList}
-        emptyMessage={`No ${activeTab} appointments.`}
+        emptyMessage={`No appointments found.`}
         emptyIcon="solar:calendar-minimalistic-broken"
+        resetError={fetchBookings}
+        backPath="/stylist"
+        role="STYLIST"
       >
         <div className="grid gap-4 ">
           {bookingsList.map((booking) => (
             <Card
               key={booking.id}
-              className="overflow-hidden border-border/60 hover:shadow-md transition-all"
+              className="overflow-hidden transition-all border-border/60 hover:shadow-md"
             >
               <CardContent className="p-6 mt-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 text-left">
-                  {/* Left: booking info */}
+                <div className="flex flex-col justify-between gap-6 text-left sm:flex-row sm:items-center">
                   <div className="flex items-start gap-4">
-                    {/* Time badge */}
-                    <div className="size-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
+                    <div className="flex flex-col items-center justify-center size-14 rounded-xl bg-primary/10 shrink-0">
                       <span className="text-xs font-bold text-primary">
                         {booking.startTime.slice(0, 5)}
                       </span>
@@ -162,7 +171,7 @@ export default function StylistAppointmentsPage() {
                     </div>
 
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">
                           {booking.items
                             .map((i) => i.serviceName)
@@ -173,23 +182,25 @@ export default function StylistAppointmentsPage() {
                           className={`text-[10px] h-5 border ${getStatusColor(booking.status)}`}
                         >
                           {(booking.status as string) === 'SPECIAL'
-                            ? '⚡ Special'
+                            ? 'Special'
                             : booking.status.replace('_', ' ')}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Icon icon="solar:user-rounded-linear" className="size-3" />
+                        {booking.userName || 'Customer'}
+                        <span className="mx-1">·</span>
                         <Icon icon="solar:clock-circle-linear" className="size-3" />
                         {booking.startTime} – {booking.endTime}
                         <span className="mx-1">·</span>
                         <span className="font-medium text-foreground">
-                          ₹{booking.totalPrice.toLocaleString('en-IN')}
+                          ₹{booking.totalPrice?.toLocaleString('en-IN') ?? '0'}
                         </span>
                       </p>
                     </div>
                   </div>
 
-                  {/* Right: action buttons */}
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -258,6 +269,23 @@ export default function StylistAppointmentsPage() {
             </Card>
           ))}
         </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex flex-col items-center justify-between pt-6 mt-4 border-t md:flex-row">
+            <p className="mb-4 text-sm text-center text-muted-foreground md:mb-0">
+              Showing {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} to{' '}
+              {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of{' '}
+              {pagination.totalItems} entries
+            </p>
+            <div className="-mt-8">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={(p) => setPage(p)}
+              />
+            </div>
+          </div>
+        )}
       </LoadingGate>
     </div>
   );

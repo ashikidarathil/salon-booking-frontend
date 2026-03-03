@@ -2,12 +2,12 @@ export const BOOKING_MESSAGES = {
   CREATE_SUCCESS: 'Your appointment has been successfully booked.',
   CANCEL_SUCCESS: 'Your booking has been cancelled successfully.',
   RESCHEDULE_SUCCESS: 'Your booking has been rescheduled successfully.',
-  EXTEND_SUCCESS: 'Your booking has been extended successfully.',
+
   FETCH_FAILED: 'Failed to fetch bookings.',
   CREATE_FAILED: 'Failed to create booking.',
   CANCEL_FAILED: 'Failed to cancel booking.',
   RESCHEDULE_FAILED: 'Failed to reschedule booking.',
-  EXTEND_FAILED: 'Failed to extend booking.',
+
   DETAILS_FAILED: 'Failed to fetch booking details.',
   ADMIN_FETCH_FAILED: 'Failed to fetch admin bookings.',
   STYLIST_FETCH_FAILED: 'Failed to fetch stylist bookings.',

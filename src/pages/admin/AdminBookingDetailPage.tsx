@@ -84,7 +84,7 @@ export default function AdminBookingDetailPage() {
   const b = currentBooking;
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <div className="p-6 mx-auto space-y-6 max-w-7xl">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -98,32 +98,32 @@ export default function AdminBookingDetailPage() {
             <span>Customer ID: {b.userId}</span>
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-3 ml-auto">
           <Badge className={getStatusColor(b.status as BookingStatus)}>
             {b.status.replace('_', ' ')}
           </Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {/* Main Details */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="space-y-6 md:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium">
                 <Icon icon="solar:clipboard-list-bold-duotone" className="size-5 text-primary" />
                 Appointment Info
               </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                   Date
                 </p>
                 <p className="font-medium">{format(new Date(b.date), 'PPP')}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                   Time
                 </p>
                 <p className="font-medium">
@@ -131,16 +131,16 @@ export default function AdminBookingDetailPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                   Branch ID
                 </p>
                 <p className="font-medium break-all">{b.branchId}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                   Total Price
                 </p>
-                <p className="font-bold text-primary text-lg">
+                <p className="text-lg font-bold text-primary">
                   ₹{b.totalPrice.toLocaleString('en-IN')}
                 </p>
               </div>
@@ -149,7 +149,7 @@ export default function AdminBookingDetailPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium">
                 <Icon icon="solar:scissors-square-bold-duotone" className="size-5 text-primary" />
                 Services & Stylists
               </CardTitle>
@@ -158,7 +158,7 @@ export default function AdminBookingDetailPage() {
               {b.items.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border"
+                  className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
                 >
                   <div>
                     <p className="font-medium">{item.serviceName || 'Service'}</p>
@@ -238,9 +238,9 @@ export default function AdminBookingDetailPage() {
               </div>
               {b.cancelledAt && (
                 <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground font-semibold">CANCELLED DETAILS</p>
-                  <p className="text-xs text-red-600 mt-1">By: {b.cancelledBy}</p>
-                  <p className="text-xs text-muted-foreground italic mt-1 pb-1">
+                  <p className="text-xs font-semibold text-muted-foreground">CANCELLED DETAILS</p>
+                  <p className="mt-1 text-xs text-red-600">By: {b.cancelledBy}</p>
+                  <p className="pb-1 mt-1 text-xs italic text-muted-foreground">
                     "{b.cancelledReason}"
                   </p>
                   <p className="text-[10px] text-muted-foreground">
@@ -249,8 +249,8 @@ export default function AdminBookingDetailPage() {
                 </div>
               )}
               {b.extensionReason && (
-                <div className="pt-2 border-t text-xs">
-                  <p className="text-muted-foreground font-semibold">EXTENSION REASON</p>
+                <div className="pt-2 text-xs border-t">
+                  <p className="font-semibold text-muted-foreground">EXTENSION REASON</p>
                   <p className="mt-1 italic">"{b.extensionReason}"</p>
                 </div>
               )}

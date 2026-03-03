@@ -18,7 +18,6 @@ import { format } from 'date-fns';
 import { showSuccess, showApiError, showCancellationConfirm } from '@/common/utils/swal.utils';
 import Swal from 'sweetalert2';
 import { SlotBookingDialog } from '@/components/booking/SlotBookingDialog';
-import { CreateSpecialSlotDialog } from '@/components/booking/CreateSpecialSlotDialog';
 import type { BookingItem, BookingDetailsItem } from '@/features/booking/booking.types';
 import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
 import {
@@ -44,10 +43,6 @@ export default function AdminBookingsPage() {
     booking: BookingItem | null;
   }>({ isOpen: false, booking: null });
 
-  const [extensionData, setExtensionData] = useState<{
-    isOpen: boolean;
-    booking: BookingItem | null;
-  }>({ isOpen: false, booking: null });
 
   useEffect(() => {
     dispatch(fetchBranches());
@@ -142,14 +137,14 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight font-heading">Booking Management</h1>
           <p className="text-muted-foreground">Monitor and manage all salon appointments</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-col gap-1.5 min-w-[200px]">
-            <span className="text-xs font-bold uppercase text-muted-foreground ml-1">Branch</span>
+            <span className="ml-1 text-xs font-bold uppercase text-muted-foreground">Branch</span>
             <Select value={selectedBranch} onValueChange={setSelectedBranch}>
               <SelectTrigger className="bg-background border-border/60">
                 <SelectValue placeholder="All Branches" />
@@ -165,17 +160,17 @@ export default function AdminBookingsPage() {
             </Select>
           </div>
           <div className="flex flex-col gap-1.5 min-w-[160px]">
-            <span className="text-xs font-bold uppercase text-muted-foreground ml-1">Date</span>
+            <span className="ml-1 text-xs font-bold uppercase text-muted-foreground">Date</span>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-background border border-border/60 rounded-md h-10 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="h-10 px-3 text-sm border rounded-md bg-background border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <Button
             variant="outline"
-            className="mt-5 h-10"
+            className="h-10 mt-5"
             onClick={() =>
               dispatch(
                 fetchAdminBookings({
@@ -200,15 +195,15 @@ export default function AdminBookingsPage() {
           {bookings.map((booking) => (
             <Card
               key={booking.id}
-              className="overflow-hidden border-border/60 hover:shadow-md transition-all"
+              className="overflow-hidden transition-all border-border/60 hover:shadow-md"
             >
               <div className="flex flex-col lg:flex-row">
-                <div className="p-6 flex-1">
+                <div className="flex-1 p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Icon icon="solar:hashtag-bold" className="size-4 text-primary" />
-                        <span className="font-bold text-lg">
+                        <span className="text-lg font-bold">
                           {booking.id.slice(-8).toUpperCase()}
                         </span>
                         <Badge className={getStatusColor(booking.status)}>
@@ -216,7 +211,7 @@ export default function AdminBookingsPage() {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1 group relative">
+                        <div className="relative flex items-center gap-1 group">
                           <Icon icon="solar:user-bold" className="size-3.5 text-blue-500" />
                           <span className="font-medium text-foreground">
                             {booking.userName || `User ${booking.userId.slice(-6)}`}
@@ -232,10 +227,10 @@ export default function AdminBookingsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                      <p className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
                         Appointment Time
                       </p>
-                      <p className="font-bold text-lg">
+                      <p className="text-lg font-bold">
                         {booking.startTime} - {booking.endTime}
                       </p>
                     </div>
@@ -245,29 +240,29 @@ export default function AdminBookingsPage() {
                     {booking.items.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/40"
+                        className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border/40"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <div className="flex items-center justify-center rounded-lg size-8 bg-primary/10">
                             <Icon
                               icon="solar:scissors-square-bold"
                               className="size-4 text-primary"
                             />
                           </div>
                           <div>
-                            <p className="font-semibold text-sm">{item.serviceName}</p>
+                            <p className="text-sm font-semibold">{item.serviceName}</p>
                             <p className="text-xs text-muted-foreground">
                               Stylist: {item.stylistName}
                             </p>
                           </div>
                         </div>
-                        <p className="font-bold text-sm">₹{item.price}</p>
+                        <p className="text-sm font-bold">₹{item.price}</p>
                       </div>
                     ))}
                   </div>
 
                   {booking.notes && (
-                    <div className="mt-4 p-3 bg-yellow-50/50 border border-yellow-100 rounded-lg">
+                    <div className="p-3 mt-4 border border-yellow-100 rounded-lg bg-yellow-50/50">
                       <p className="text-[10px] font-bold uppercase text-yellow-700 mb-1">
                         Customer Notes
                       </p>
@@ -276,10 +271,10 @@ export default function AdminBookingsPage() {
                   )}
                 </div>
 
-                <div className="bg-muted/10 p-6 lg:w-72 border-t lg:border-t-0 lg:border-l border-border/40 flex flex-col justify-between gap-4">
+                <div className="flex flex-col justify-between gap-4 p-6 border-t bg-muted/10 lg:w-72 lg:border-t-0 lg:border-l border-border/40">
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                      <p className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
                         Payment
                       </p>
                       <Badge variant="outline" className="mt-1">
@@ -287,7 +282,7 @@ export default function AdminBookingsPage() {
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+                      <p className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
                         Total Price
                       </p>
                       <p className="text-2xl font-black text-primary">₹{booking.totalPrice}</p>
@@ -297,28 +292,19 @@ export default function AdminBookingsPage() {
                   <div className="flex flex-col gap-2">
                     {booking.status === BookingStatus.CONFIRMED && (
                       <>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setRescheduleData({ isOpen: true, booking })}
-                          >
-                            <Icon icon="solar:calendar-rotate-bold" className="mr-2 size-4" />
-                            Reschedule
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setExtensionData({ isOpen: true, booking })}
-                          >
-                            <Icon icon="solar:add-circle-bold" className="mr-2 size-4" />
-                            Extend
-                          </Button>
-                        </div>
+
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-red-600 hover:bg-red-50 border-red-100"
+                          onClick={() => setRescheduleData({ isOpen: true, booking })}
+                        >
+                          <Icon icon="solar:calendar-rotate-bold" className="mr-2 size-4" />
+                          Reschedule
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-100 hover:bg-red-50"
                           onClick={() => handleCancel(booking)}
                         >
                           <Icon icon="solar:close-circle-bold" className="mr-2 size-4" />
@@ -328,7 +314,7 @@ export default function AdminBookingsPage() {
                     )}
                     <Button
                       size="sm"
-                      variant="secondary"
+                      variant="outline"
                       onClick={() => navigate(`/admin/bookings/${booking.id}`)}
                     >
                       <Icon icon="solar:document-text-bold" className="mr-2 size-4" />
@@ -358,16 +344,6 @@ export default function AdminBookingsPage() {
         />
       )}
 
-      {extensionData.isOpen && extensionData.booking && (
-        <CreateSpecialSlotDialog
-          isOpen={extensionData.isOpen}
-          onClose={() => setExtensionData({ isOpen: false, booking: null })}
-          branchId={extensionData.booking.branchId}
-          stylistId={extensionData.booking.stylistId}
-          date={extensionData.booking.date?.split('T')[0]}
-          suggestedStartTime={extensionData.booking.endTime}
-        />
-      )}
     </div>
   );
 }
