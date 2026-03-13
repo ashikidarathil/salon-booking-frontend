@@ -1,26 +1,62 @@
+export interface PaginationQueryDto {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  status?: string;
+}
+
+export interface EscrowPagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export interface PaginatedEscrowResponse {
+  data: EscrowResponseDto[];
+  pagination: EscrowPagination;
+}
+
 export enum EscrowStatus {
   HELD = 'HELD',
   RELEASED = 'RELEASED',
-  REFUNDED = 'REFUNDED',
-  CANCELLED = 'CANCELLED',
+  CANCELLED = 'CANCELLED'
 }
 
-export interface EscrowResponse {
-  _id: string;
-  bookingId: string | { _id: string; [key: string]: unknown };
-  userId: string | { _id: string; [key: string]: unknown };
+export interface EscrowResponseDto {
+  id: string;
+  bookingId: {
+    id: string;
+    bookingNumber: string;
+    userId?: {
+      name: string;
+    };
+    items?: Array<{
+      serviceId: {
+        name: string;
+      };
+    }>;
+  };
+  stylistId: {
+    id: string;
+    userId: {
+      name: string;
+    };
+  };
   amount: number;
   status: EscrowStatus;
-  heldAt: string;
-  releasedAt?: string;
-  refundedAt?: string;
+  releaseMonth: string;
+  releaseDate: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface EscrowState {
-  escrows: EscrowResponse[];
-  currentEscrow: EscrowResponse | null;
+  escrows: EscrowResponseDto[];
+  pagination: EscrowPagination | null;
+  heldBalance: number;
   loading: boolean;
   error: string | null;
 }
