@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { WalletState, WalletResponse, WalletTransaction } from './wallet.types';
-import { fetchMyWallet, fetchTransactionHistory, creditWallet } from './wallet.thunks';
+import { fetchMyWallet, fetchTransactionHistory, creditWallet, topUpWallet } from './wallet.thunks';
 
 const initialState: WalletState = {
   wallet: null,
@@ -32,22 +32,25 @@ const walletSlice = createSlice({
       })
       .addCase(fetchMyWallet.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || null;
       })
       // Fetch Transactions
       .addCase(fetchTransactionHistory.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchTransactionHistory.fulfilled, (state, action: PayloadAction<WalletTransaction[]>) => {
-        state.isLoading = false;
-        state.transactions = action.payload;
-      })
+      .addCase(
+        fetchTransactionHistory.fulfilled,
+        (state, action: PayloadAction<WalletTransaction[]>) => {
+          state.isLoading = false;
+          state.transactions = action.payload;
+        },
+      )
       .addCase(fetchTransactionHistory.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || null;
       })
-      // Credit Wallet
+      // Credit Wallet (direct)
       .addCase(creditWallet.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -58,7 +61,20 @@ const walletSlice = createSlice({
       })
       .addCase(creditWallet.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || null;
+      })
+      // Top-Up via Razorpay
+      .addCase(topUpWallet.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(topUpWallet.fulfilled, (state, action: PayloadAction<WalletResponse>) => {
+        state.isLoading = false;
+        state.wallet = action.payload;
+      })
+      .addCase(topUpWallet.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload !== 'DISMISSED' ? action.payload || null : null;
       });
   },
 });

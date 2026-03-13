@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   fetchMyBookings,
@@ -15,17 +15,23 @@ import { format } from 'date-fns';
 import { showApiError, showSuccess, showCancellationConfirm } from '@/common/utils/swal.utils';
 import Swal from 'sweetalert2';
 import { SlotBookingDialog } from '@/components/booking/SlotBookingDialog';
+import { fetchUserRooms, initializeChatRoom } from '@/features/chat/state/chat.thunks';
 import type { BookingItem, BookingDetailsItem } from '@/features/booking/booking.types';
 import {
   BookingStatus,
+  PaymentStatus,
   BOOKING_MESSAGES,
   BOOKING_RULES,
 } from '@/features/booking/booking.constants';
+import { PaymentCountdown } from '@/components/common/PaymentCountdown';
 
 export default function BookingsPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { myBookings, loading, error } = useAppSelector((state) => state.booking);
+  const { rooms } = useAppSelector((state) => state.chat);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
 
   // State for rescheduling
   const [rescheduleData, setRescheduleData] = useState<{
@@ -44,15 +50,61 @@ export default function BookingsPage() {
 
   useEffect(() => {
     dispatch(fetchMyBookings());
+    dispatch(fetchUserRooms());
   }, [dispatch]);
+
+  const handleOpenChat = async (booking: BookingItem) => {
+    let room = rooms.find(r => r.bookingId === booking.id);
+    
+    if (!room) {
+      try {
+        const action = await dispatch(initializeChatRoom(booking.id)).unwrap();
+        room = action;
+        showSuccess('Room Ready', 'Chat room initialized successfully.');
+      } catch (err) {
+        showApiError('Chat room not ready yet.', 'Please try again later.');
+        return;
+      }
+    }
+    
+    navigate(`/profile/chat?roomId=${room.id}`);
+  };
+
+  useEffect(() => {
+    const shouldOpenChat = searchParams.get('openChat') === 'true';
+    if (shouldOpenChat) {
+      // Find the first confirmed/completed booking and open chat
+      const firstValidBooking = myBookings.find(b => 
+        b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.COMPLETED
+      );
+      
+      if (firstValidBooking) {
+        let room = rooms.find(r => r.bookingId === firstValidBooking.id);
+        
+        const openWidget = (r: any) => {
+          navigate(`/profile/chat?roomId=${r.id}`);
+        };
+
+        if (room) {
+          openWidget(room);
+        } else {
+          // Room missing, initialize it
+          dispatch(initializeChatRoom(firstValidBooking.id))
+            .unwrap()
+            .then(newRoom => openWidget(newRoom))
+            .catch(() => setSearchParams({}));
+        }
+      } else {
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, rooms, myBookings, dispatch, setSearchParams, navigate]);
 
   const getStatusColor = (status: BookingStatus) => {
     switch (status) {
       case BookingStatus.CONFIRMED:
         return 'bg-green-100 text-green-700 border-green-200';
-      case BookingStatus.IN_PROGRESS:
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case BookingStatus.PENDING:
+      case BookingStatus.PENDING_PAYMENT:
         return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       case BookingStatus.CANCELLED:
         return 'bg-red-100 text-red-700 border-red-200';
@@ -60,6 +112,8 @@ export default function BookingsPage() {
         return 'bg-purple-100 text-purple-700 border-purple-200';
       case BookingStatus.NO_SHOW:
         return 'bg-gray-200 text-gray-600 border-gray-300';
+      case BookingStatus.FAILED:
+        return 'bg-red-50 text-red-500 border-red-100';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -70,7 +124,7 @@ export default function BookingsPage() {
       // 1. Parse booking date (e.g., "2026-02-28T00:00:00.000Z")
       const appointmentDate = new Date(bookingDate);
       const [hours, minutes] = startTime.split(':').map(Number);
-      
+
       // 2. Set the appointment time (HH:mm)
       appointmentDate.setHours(hours, minutes, 0, 0);
 
@@ -211,6 +265,9 @@ export default function BookingsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-mono font-bold bg-muted px-1.5 py-0.5 rounded border text-muted-foreground">
+                          #{booking.bookingNumber}
+                        </span>
                         <Icon icon="solar:calendar-bold-duotone" className="size-5 text-primary" />
                         <span className="font-semibold">
                           {booking.date
@@ -290,18 +347,84 @@ export default function BookingsPage() {
                         </Badge>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
-                          Total Amount
-                        </p>
-                        <p className="text-xl font-bold text-primary">
-                          ₹{booking.totalPrice.toLocaleString('en-IN')}
-                        </p>
+                      {booking.status === BookingStatus.PENDING_PAYMENT ? (
+                          <>
+                            <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+                              Advance Due (20%)
+                            </p>
+                            <p className="text-xl font-bold text-primary">
+                              ₹{booking.advanceAmount.toLocaleString('en-IN')}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              of ₹{booking.totalPrice.toLocaleString('en-IN')} total
+                            </p>
+                          </>
+                        ) : booking.paymentStatus === PaymentStatus.ADVANCE_PAID ? (
+                          <>
+                            <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+                              Advance Paid (20%)
+                            </p>
+                            <p className="text-xl font-bold text-green-600">
+                              ₹{booking.advanceAmount.toLocaleString('en-IN')}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              of ₹{booking.totalPrice.toLocaleString('en-IN')} total
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+                              Total Amount
+                            </p>
+                            <p className="text-xl font-bold text-primary">
+                              ₹{booking.totalPrice.toLocaleString('en-IN')}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-muted/30 px-6 py-4 md:w-64 border-t md:border-t-0 md:border-l border-border/40 flex flex-col justify-center gap-2">
+                  {booking.status === BookingStatus.PENDING_PAYMENT && (
+                    <>
+                      {booking.paymentWindowExpiresAt && (
+                        <PaymentCountdown expiresAt={booking.paymentWindowExpiresAt} />
+                      )}
+                      {booking.paymentWindowExpiresAt &&
+                      new Date(booking.paymentWindowExpiresAt) > new Date() ? (
+                        <Button
+                          className="w-full justify-start gap-2 h-10 bg-primary hover:bg-primary/90 text-white"
+                          onClick={() => navigate(`/checkout/${booking.id}`)}
+                        >
+                          <Icon icon="solar:card-2-bold" className="size-4" />
+                          Pay Advance Now
+                        </Button>
+                      ) : (
+                        <div className="flex flex-col gap-1 items-center p-2 rounded-lg bg-red-50 border border-red-100 mb-2">
+                          <span className="text-[10px] text-red-600 font-bold uppercase tracking-tight">
+                            Payment Expired
+                          </span>
+                          <span className="text-[10px] text-red-500 text-center">
+                            Slot released
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {booking.status === BookingStatus.COMPLETED &&
+                    booking.paymentStatus === PaymentStatus.ADVANCE_PAID && (
+                      <Button
+                        className="w-full justify-start gap-2 h-10 bg-primary hover:bg-primary/90 text-white shadow-sm"
+                        onClick={() => navigate(`/profile/bookings/${booking.id}`)}
+                      >
+                        <Icon icon="solar:wallet-money-bold" className="size-4" />
+                        Pay Remaining
+                      </Button>
+                    )}
+
                   <Button
                     variant="outline"
                     className="w-full justify-start gap-2 h-10"
@@ -310,6 +433,18 @@ export default function BookingsPage() {
                     <Icon icon="solar:document-text-linear" className="size-4" />
                     View Details
                   </Button>
+
+                  {(booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.COMPLETED) && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2 h-10 text-primary hover:text-primary/90 hover:bg-primary/5 border-primary/10"
+                      onClick={() => handleOpenChat(booking)}
+                    >
+                      <Icon icon="solar:chat-round-bold-duotone" className="size-4" />
+                      Chat with Stylist
+                    </Button>
+                  )}
+
                   {booking.status === BookingStatus.CONFIRMED && (
                     <>
                       <Button
@@ -358,6 +493,7 @@ export default function BookingsPage() {
           onSelect={handleRescheduleSubmit}
         />
       )}
+
     </div>
   );
 }

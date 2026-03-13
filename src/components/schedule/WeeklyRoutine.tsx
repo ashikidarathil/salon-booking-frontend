@@ -290,7 +290,7 @@ export default function WeeklyRoutine({
         })}
       </div>
 
-      <div className="p-6 bg-amber-50 rounded-[2.5rem] border border-amber-100 flex items-start gap-4 mx-2">
+      {/* <div className="p-6 bg-amber-50 rounded-[2.5rem] border border-amber-100 flex items-start gap-4 mx-2">
         <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
           <Icon icon="solar:info-square-bold" className="size-6" />
         </div>
@@ -303,7 +303,7 @@ export default function WeeklyRoutine({
             the "Daily Adjustments" section will override these settings for specific dates.
           </p>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

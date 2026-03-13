@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppDispatch } from '@/app/hooks';
 import { fetchMe } from '@/features/auth/authThunks';
 import AppRoutes from '@/routes/AppRoutes';
+import { NotificationWrapper } from '@/features/notification/components/NotificationWrapper';
 
 export default function App() {
   const dispatch = useAppDispatch();
@@ -28,5 +29,9 @@ export default function App() {
     );
   }
 
-  return <AppRoutes />;
+  return (
+    <NotificationWrapper>
+      <AppRoutes />
+    </NotificationWrapper>
+  );
 }

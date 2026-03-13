@@ -1,27 +1,59 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import EscrowService from '../../services/escrow.service';
+import escrowService from './escrow.service';
+import type { PaginationQueryDto, PaginatedEscrowResponse } from './escrow.types';
 import { handleThunkError } from '../../common/utils/thunk.utils';
 
-export const fetchAdminEscrows = createAsyncThunk(
-  'escrow/fetchAdminEscrows',
-  async (_, { rejectWithValue }) => {
+export const fetchStylistEscrows = createAsyncThunk<PaginatedEscrowResponse, PaginationQueryDto, { rejectValue: string }>(
+  'escrow/fetchStylistEscrows',
+  async (query, { rejectWithValue }) => {
     try {
-      const response = await EscrowService.getAdminEscrows();
-      return response.data;
-    } catch (err) {
-      return handleThunkError(err, rejectWithValue);
+      return await escrowService.getStylistEscrows(query);
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
     }
   }
 );
 
-export const fetchEscrowByBooking = createAsyncThunk(
-  'escrow/fetchEscrowByBooking',
-  async (bookingId: string, { rejectWithValue }) => {
+export const fetchHeldBalance = createAsyncThunk<number, void, { rejectValue: string }>(
+  'escrow/fetchHeldBalance',
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await EscrowService.getEscrowByBooking(bookingId);
-      return response.data;
-    } catch (err) {
-      return handleThunkError(err, rejectWithValue);
+      return await escrowService.getHeldBalance();
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);
+
+export const fetchAdminEscrows = createAsyncThunk<PaginatedEscrowResponse, PaginationQueryDto, { rejectValue: string }>(
+  'escrow/fetchAdminEscrows',
+  async (query, { rejectWithValue }) => {
+    try {
+      return await escrowService.getAllEscrows(query);
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);
+
+export const fetchAdminStylistEscrows = createAsyncThunk<PaginatedEscrowResponse, { stylistId: string; query: PaginationQueryDto }, { rejectValue: string }>(
+  'escrow/fetchAdminStylistEscrows',
+  async ({ stylistId, query }, { rejectWithValue }) => {
+    try {
+      return await escrowService.getAdminStylistEscrows(stylistId, query);
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);
+
+export const fetchAdminStylistHeldBalance = createAsyncThunk<number, string, { rejectValue: string }>(
+  'escrow/fetchAdminStylistHeldBalance',
+  async (stylistId, { rejectWithValue }) => {
+    try {
+      return await escrowService.getAdminStylistHeldBalance(stylistId);
+    } catch (error) {
+      return handleThunkError(error, rejectWithValue);
     }
   }
 );

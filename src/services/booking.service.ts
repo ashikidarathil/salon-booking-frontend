@@ -77,6 +77,25 @@ class BookingService {
     const response = await api.get<BookingListResponse>(API_ROUTES.BOOKING.STYLIST.TODAY);
     return response.data;
   }
+
+  async getStylistStats(period?: string, date?: string): Promise<any> {
+    const response = await api.get<any>(API_ROUTES.BOOKING.STYLIST.STATS, {
+      params: { period, date },
+    });
+    return response.data;
+  }
+
+  async applyCoupon(bookingId: string, code: string): Promise<BookingResponse> {
+    const response = await api.post<BookingResponse>(API_ROUTES.BOOKING.APPLY_COUPON(bookingId), {
+      code,
+    });
+    return response.data;
+  }
+
+  async removeCoupon(bookingId: string): Promise<BookingResponse> {
+    const response = await api.post<BookingResponse>(API_ROUTES.BOOKING.REMOVE_COUPON(bookingId));
+    return response.data;
+  }
 }
 
 export const bookingService = new BookingService();

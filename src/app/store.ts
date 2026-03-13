@@ -19,6 +19,12 @@ import cartReducer from '@/features/cart/cart.slice';
 import holidayReducer from '@/features/holiday/holiday.slice';
 import walletReducer from '@/features/wallet/wallet.slice';
 import escrowReducer from '@/features/escrow/escrow.slice';
+import stylistWalletReducer from '@/features/stylistWallet/stylistWallet.slice';
+import couponReducer from '@/features/coupon/coupon.slice';
+import paymentReducer from '../features/payment/payment.slice';
+import chatReducer from '../features/chat/state/chat.slice';
+import notificationReducer from '../features/notification/state/notification.slice';
+import adminReducer from '@/features/admin/state/admin.slice';
 
 export const store = configureStore({
   reducer: {
@@ -42,6 +48,12 @@ export const store = configureStore({
     holiday: holidayReducer,
     wallet: walletReducer,
     escrow: escrowReducer,
+    stylistWallet: stylistWalletReducer,
+    coupon: couponReducer,
+    payment: paymentReducer,
+    chat: chatReducer,
+    notification: notificationReducer,
+    admin: adminReducer,
   },
 });
 

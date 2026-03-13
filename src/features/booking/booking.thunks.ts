@@ -136,3 +136,43 @@ export const fetchStylistTodayBookings = createAsyncThunk<
     return handleThunkError(err, rejectWithValue, BOOKING_MESSAGES.TODAY_FETCH_FAILED);
   }
 });
+
+export const applyCoupon = createAsyncThunk<
+  BookingItem,
+  { bookingId: string; code: string },
+  { rejectValue: string }
+>('booking/applyCoupon', async ({ bookingId, code }, { rejectWithValue }) => {
+  try {
+    const res = await bookingService.applyCoupon(bookingId, code);
+    return res.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, 'Failed to apply coupon');
+  }
+});
+
+export const removeCoupon = createAsyncThunk<
+  BookingItem,
+  string,
+  { rejectValue: string }
+>('booking/removeCoupon', async (bookingId, { rejectWithValue }) => {
+  try {
+    const res = await bookingService.removeCoupon(bookingId);
+    return res.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, 'Failed to remove coupon');
+  }
+});
+
+export const fetchStylistStats = createAsyncThunk<
+  any,
+  { period?: string; date?: string } | void,
+  { rejectValue: string }
+>('booking/fetchStylistStats', async (params, { rejectWithValue }) => {
+  try {
+    const { period, date } = (params as { period?: string; date?: string }) || {};
+    const res = await bookingService.getStylistStats(period, date);
+    return res.data;
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, 'Failed to fetch dashboard statistics');
+  }
+});

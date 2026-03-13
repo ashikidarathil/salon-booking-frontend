@@ -107,6 +107,27 @@ export function SalonAdminLayout() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate(APP_ROUTES.ADMIN.COUPONS)}>
+                  <Icon icon="solar:ticket-bold" className="size-4" />
+                  <span>Coupons</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate(APP_ROUTES.ADMIN.CHAT)}>
+                  <Icon icon="solar:chat-round-bold" className="size-4" />
+                  <span>Dispute Chats</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate('/admin/wallet')}>
+                  <Icon icon="solar:wallet-bold" className="size-4" />
+                  <span>Platform Wallet</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate('/admin/settings')}>
                   <Icon icon="solar:settings-bold" className="size-4" />
                   <span>Settings</span>

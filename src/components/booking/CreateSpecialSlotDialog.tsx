@@ -89,7 +89,7 @@ export function CreateSpecialSlotDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`sm:max-w-[420px] ${isStylist ? 'theme-stylist' : ''}`}>
+      <DialogContent className={`sm:max-w-[420px] ${isStylist ? 'theme-stylist' : 'theme-admin'}`}>
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">Create Special Slot</DialogTitle>
         </DialogHeader>

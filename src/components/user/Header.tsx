@@ -24,6 +24,7 @@ import {
 } from '@/features/branch/branch.slice';
 import { fetchPublicBranches } from '@/features/branch/branch.thunks';
 import { APP_ROUTES } from '@/common/constants/app.routes';
+import { NotificationCenter } from '@/features/notification/components/NotificationCenter';
 
 export function Header() {
   const dispatch = useAppDispatch();
@@ -265,6 +266,8 @@ export function Header() {
               </div>
             )}
           </div>
+
+          {isAuthenticated && <NotificationCenter />}
 
           {/* Mobile Menu Trigger */}
           <Sheet>

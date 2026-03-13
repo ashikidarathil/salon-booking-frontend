@@ -43,7 +43,6 @@ export default function AdminBookingsPage() {
     booking: BookingItem | null;
   }>({ isOpen: false, booking: null });
 
-
   useEffect(() => {
     dispatch(fetchBranches());
   }, [dispatch]);
@@ -118,9 +117,7 @@ export default function AdminBookingsPage() {
     switch (status as string) {
       case 'CONFIRMED':
         return 'bg-green-100 text-green-700 border-green-200';
-      case 'IN_PROGRESS':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'PENDING':
+      case 'PENDING_PAYMENT':
         return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       case 'CANCELLED':
         return 'bg-red-100 text-red-700 border-red-200';
@@ -129,7 +126,9 @@ export default function AdminBookingsPage() {
       case 'NO_SHOW':
         return 'bg-gray-200 text-gray-600 border-gray-300';
       case 'SPECIAL':
-        return 'bg-violet-100 text-violet-700 border-violet-200';
+        return 'bg-primary/20 text-primary border-primary/30';
+      case 'FAILED':
+        return 'bg-red-50 text-red-500 border-red-100';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -204,7 +203,7 @@ export default function AdminBookingsPage() {
                       <div className="flex items-center gap-2">
                         <Icon icon="solar:hashtag-bold" className="size-4 text-primary" />
                         <span className="text-lg font-bold">
-                          {booking.id.slice(-8).toUpperCase()}
+                          {booking.bookingNumber}
                         </span>
                         <Badge className={getStatusColor(booking.status)}>
                           {(booking.status as string) === 'SPECIAL' ? '⚡ Special' : booking.status}
@@ -292,7 +291,6 @@ export default function AdminBookingsPage() {
                   <div className="flex flex-col gap-2">
                     {booking.status === BookingStatus.CONFIRMED && (
                       <>
-
                         <Button
                           size="sm"
                           variant="outline"
@@ -343,7 +341,6 @@ export default function AdminBookingsPage() {
           onSelect={handleRescheduleSubmit}
         />
       )}
-
     </div>
   );
 }

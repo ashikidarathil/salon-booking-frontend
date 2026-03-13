@@ -1,9 +1,12 @@
 import { cn } from '@/lib/utils';
 import type { UIProps } from '@/types/ui';
 
-export function Card({ children, className }: UIProps) {
+export function Card({ children, className, onClick }: UIProps) {
   return (
-    <div className={cn('rounded-xl border bg-card text-card-foreground shadow', className)}>
+    <div 
+      className={cn('rounded-xl border bg-card text-card-foreground shadow', className)}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

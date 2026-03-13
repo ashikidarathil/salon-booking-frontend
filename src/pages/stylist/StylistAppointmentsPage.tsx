@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchStylistBookings, updateBookingStatus } from '@/features/booking/booking.thunks';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,13 +12,12 @@ import { format } from 'date-fns';
 import Pagination from '@/components/pagination/Pagination';
 import { showSuccess, showApiError } from '@/common/utils/swal.utils';
 import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
+import { fetchStylistRooms, initializeChatRoom } from '@/features/chat/state/chat.thunks';
 
 const getStatusColor = (status: string) => {
   switch (status) {
     case BookingStatus.CONFIRMED:
       return 'bg-green-100 text-green-700 border-green-200';
-    case BookingStatus.IN_PROGRESS:
-      return 'bg-blue-100 text-blue-700 border-blue-200';
     case BookingStatus.COMPLETED:
       return 'bg-purple-100 text-purple-700 border-purple-200';
     case BookingStatus.CANCELLED:
@@ -26,7 +25,9 @@ const getStatusColor = (status: string) => {
     case BookingStatus.NO_SHOW:
       return 'bg-gray-200 text-gray-600 border-gray-300';
     case 'SPECIAL':
-      return 'bg-violet-100 text-violet-700 border-violet-200';
+      return 'bg-primary/20 text-primary border-primary/30';
+    case BookingStatus.FAILED:
+      return 'bg-red-50 text-red-500 border-red-100';
     default:
       return 'bg-gray-100 text-gray-700 border-gray-200';
   }
@@ -36,6 +37,7 @@ export default function StylistAppointmentsPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { myBookings: bookingsList, pagination, loading, error } = useAppSelector((s) => s.booking);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [filterMode, setFilterMode] = useState<'today' | 'all'>('today');
   const [customDate, setCustomDate] = useState('');
@@ -43,6 +45,12 @@ export default function StylistAppointmentsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const limit = 5;
+
+  const { rooms } = useAppSelector((state) => state.chat);
+
+  useEffect(() => {
+    dispatch(fetchStylistRooms());
+  }, [dispatch]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 500);
@@ -67,7 +75,7 @@ export default function StylistAppointmentsPage() {
         limit,
         search: debouncedSearch || undefined,
         date: dateToFetch,
-      })
+      }),
     );
   }, [dispatch, page, limit, debouncedSearch, filterMode, customDate]);
 
@@ -79,14 +87,61 @@ export default function StylistAppointmentsPage() {
     const result = await dispatch(updateBookingStatus({ bookingId, status }));
     if (updateBookingStatus.fulfilled.match(result)) {
       showSuccess('Updated!', `${BOOKING_MESSAGES.STATUS_UPDATE_SUCCESS}`);
-      fetchBookings(); 
+      fetchBookings();
     } else {
       showApiError(BOOKING_MESSAGES.STATUS_UPDATE_FAILED, `Failed to mark ${label}`);
     }
   };
 
+  const handleOpenChat = async (booking: any) => {
+    let room = rooms.find((r) => r.bookingId === booking.id);
+    
+    if (!room) {
+      try {
+        const action = await dispatch(initializeChatRoom(booking.id)).unwrap();
+        room = action;
+        showSuccess('Room Ready', 'Chat room initialized successfully.');
+      } catch (err) {
+        showApiError('Chat room not ready yet.', 'Please try again later.');
+        return;
+      }
+    }
+    
+    navigate(`/stylist/chat?roomId=${room.id}`);
+  };
+
+  useEffect(() => {
+    const shouldOpenChat = searchParams.get('openChat') === 'true';
+    if (shouldOpenChat) {
+      // Find the first confirmed/completed appointment and open chat
+      const firstValidBooking = bookingsList.find(b => 
+        b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.COMPLETED
+      );
+      
+      if (firstValidBooking) {
+        let room = rooms.find(r => r.bookingId === firstValidBooking.id);
+        
+        const openWidget = (r: any) => {
+          navigate(`/stylist/chat?roomId=${r.id}`);
+        };
+
+        if (room) {
+          openWidget(room);
+        } else {
+          // Room missing, initialize it
+          dispatch(initializeChatRoom(firstValidBooking.id))
+            .unwrap()
+            .then(newRoom => openWidget(newRoom))
+            .catch(() => setSearchParams({}));
+        }
+      } else {
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, rooms, bookingsList, dispatch, setSearchParams, navigate]);
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-heading">Appointments</h1>
@@ -102,7 +157,10 @@ export default function StylistAppointmentsPage() {
           <Button
             variant={filterMode === 'today' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => { setFilterMode('today'); setCustomDate(''); }}
+            onClick={() => {
+              setFilterMode('today');
+              setCustomDate('');
+            }}
             className={`flex-1 sm:flex-none ${filterMode === 'today' ? 'bg-background shadow-sm' : ''}`}
           >
             Today
@@ -110,7 +168,10 @@ export default function StylistAppointmentsPage() {
           <Button
             variant={filterMode === 'all' && !customDate ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => { setFilterMode('all'); setCustomDate(''); }}
+            onClick={() => {
+              setFilterMode('all');
+              setCustomDate('');
+            }}
             className={`flex-1 sm:flex-none ${filterMode === 'all' && !customDate ? 'bg-background shadow-sm' : ''}`}
           >
             All Appointments
@@ -169,9 +230,11 @@ export default function StylistAppointmentsPage() {
                         {format(new Date(booking.date), 'dd MMM')}
                       </span>
                     </div>
-
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold bg-muted px-1.5 py-0.5 rounded border text-muted-foreground">
+                          #{booking.bookingNumber}
+                        </span>
                         <p className="font-semibold">
                           {booking.items
                             .map((i) => i.serviceName)
@@ -211,20 +274,19 @@ export default function StylistAppointmentsPage() {
                       Details
                     </Button>
 
-                    {booking.status === BookingStatus.CONFIRMED && (
+                    {(booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.COMPLETED) && (
                       <Button
+                        variant="ghost"
                         size="sm"
-                        className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() =>
-                          handleStatusUpdate(booking.id, BookingStatus.IN_PROGRESS, 'In Progress')
-                        }
+                        className="gap-1.5 text-xs text-primary hover:bg-primary/5"
+                        onClick={() => handleOpenChat(booking)}
                       >
-                        <Icon icon="solar:play-circle-bold-duotone" className="size-4" />
-                        Start
+                        <Icon icon="solar:chat-round-bold-duotone" className="size-4" />
+                        Chat
                       </Button>
                     )}
 
-                    {booking.status === BookingStatus.IN_PROGRESS && (
+                    {booking.status === BookingStatus.CONFIRMED && (
                       <>
                         <Button
                           size="sm"
@@ -248,20 +310,6 @@ export default function StylistAppointmentsPage() {
                           No Show
                         </Button>
                       </>
-                    )}
-
-                    {booking.status === BookingStatus.CONFIRMED && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5 text-xs text-gray-600"
-                        onClick={() =>
-                          handleStatusUpdate(booking.id, BookingStatus.NO_SHOW, 'No Show')
-                        }
-                      >
-                        <Icon icon="solar:ghost-bold-duotone" className="size-4" />
-                        No Show
-                      </Button>
                     )}
                   </div>
                 </div>
@@ -287,6 +335,7 @@ export default function StylistAppointmentsPage() {
           </div>
         )}
       </LoadingGate>
+
     </div>
   );
 }

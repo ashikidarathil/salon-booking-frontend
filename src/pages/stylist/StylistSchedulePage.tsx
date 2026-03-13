@@ -6,7 +6,7 @@ import BreakManagement from '@/components/schedule/BreakManagement';
 
 export default function StylistSchedulePage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-lg bg-muted/30 border border-border/40 transition-all hover:shadow-md p-10">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">My Schedule</h2>
         <p className="text-muted-foreground">

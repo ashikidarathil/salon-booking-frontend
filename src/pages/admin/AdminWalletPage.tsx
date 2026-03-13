@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { fetchAdminEscrows } from '../../features/escrow/escrow.slice';
+import { fetchAdminEscrows } from '../../features/escrow/escrow.thunks';
 import { EscrowStatus } from '../../features/escrow/escrow.types';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -31,11 +31,21 @@ export default function AdminWalletPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
+    // Search is handled by the useEffect dependency on searchTerm
   };
 
   const handleTabChange = (val: string) => {
     setActiveTab(val);
     setPage(1);
+  };
+
+  const handleRefresh = () => {
+    dispatch(fetchAdminEscrows({ 
+      page, 
+      limit: 10, 
+      search: searchTerm,
+      status: activeTab === 'escrowed' ? EscrowStatus.HELD : EscrowStatus.RELEASED
+    }));
   };
 
   const heldEscrows = (escrows || []).filter((e) => e.status === EscrowStatus.HELD);
@@ -57,12 +67,7 @@ export default function AdminWalletPage() {
           variant="outline" 
           size="sm" 
           className="gap-2"
-          onClick={() => dispatch(fetchAdminEscrows({ 
-            page, 
-            limit: 10, 
-            search: searchTerm,
-            status: activeTab === 'escrowed' ? EscrowStatus.HELD : EscrowStatus.RELEASED
-          }))}
+          onClick={handleRefresh}
         >
           <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh

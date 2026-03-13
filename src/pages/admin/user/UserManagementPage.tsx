@@ -86,6 +86,19 @@ export default function UserManagementPage() {
         <p className="mt-2 text-muted-foreground">Manage all registered customers</p>
       </div>
 
+      {/* Search Bar - ✨ NEW */}
+      <div className="max-w-md">
+        <Input
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full"
+        />
+      </div>
+
       <LoadingGate
         loading={loading}
         error={error}
@@ -96,19 +109,6 @@ export default function UserManagementPage() {
         }}
         emptyMessage={searchTerm ? 'No matches' : 'No registered users yet'}
       >
-        {/* Search Bar - ✨ NEW */}
-        <div className="max-w-md">
-          <Input
-            placeholder="Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full"
-          />
-        </div>
-
         {/* Table */}
         <Card>
           <CardHeader>

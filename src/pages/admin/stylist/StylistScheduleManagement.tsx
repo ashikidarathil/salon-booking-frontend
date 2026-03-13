@@ -55,11 +55,11 @@ export default function StylistScheduleManagement({
               onClick={onClose}
               className="rounded-full hover:bg-slate-100"
             >
-              <Icon icon="solar:arrow-left-linear" className="size-6 text-slate-500" />
+              <Icon icon="solar:arrow-left-linear" className="size-8 text-slate-500" />
             </Button>
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-slate-800 flex items-center gap-2">
-                <Icon icon="solar:calendar-linear" className="size-6 text-primary/80" />
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-800 flex items-center gap-2">
+                <Icon icon="solar:calendar-bold" className="size-6 text-primary/80" />
                 Schedule Management
               </h2>
               <p className="text-sm text-slate-500 mt-0.5">

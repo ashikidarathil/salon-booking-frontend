@@ -289,6 +289,77 @@ export default function CategoriesPage() {
         </Dialog>
       </div>
 
+      {/* Search */}
+      <div className="flex gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search by name or description..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="min-w-[140px] justify-between gap-2">
+              {statusFilter === 'ALL' && (
+                <>
+                  <span>All Categories</span>
+                </>
+              )}
+              {statusFilter === 'ACTIVE' && (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span>Active</span>
+                </>
+              )}
+              {statusFilter === 'INACTIVE' && (
+                <>
+                  <XCircle className="w-4 h-4 text-red-600" />
+                  <span>Inactive</span>
+                </>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-white focus:outline-none">
+            <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                setStatusFilter('ALL');
+                setCurrentPage(1);
+              }}
+              className={statusFilter === 'ALL' ? 'bg-accent' : ''}
+            >
+              All Categories
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setStatusFilter('ACTIVE');
+                setCurrentPage(1);
+              }}
+              className={statusFilter === 'ACTIVE' ? 'bg-accent' : ''}
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
+              Active
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setStatusFilter('INACTIVE');
+                setCurrentPage(1);
+              }}
+              className={statusFilter === 'INACTIVE' ? 'bg-accent' : ''}
+            >
+              <XCircle className="w-4 h-4 mr-2 text-red-600" />
+              Inactive
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <LoadingGate
         loading={loading}
         error={error}
@@ -300,77 +371,6 @@ export default function CategoriesPage() {
         emptyMessage={searchTerm ? 'No matches' : 'Add your first category above'}
         emptyIcon="hugeicons:service"
       >
-        {/* Search */}
-        <div className="flex gap-4">
-          <div className="flex-1 max-w-md">
-            <Input
-              placeholder="Search by name or description..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="min-w-[140px] justify-between gap-2">
-                {statusFilter === 'ALL' && (
-                  <>
-                    <span>All Categories</span>
-                  </>
-                )}
-                {statusFilter === 'ACTIVE' && (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span>Active</span>
-                  </>
-                )}
-                {statusFilter === 'INACTIVE' && (
-                  <>
-                    <XCircle className="w-4 h-4 text-red-600" />
-                    <span>Inactive</span>
-                  </>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-white focus:outline-none">
-              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setStatusFilter('ALL');
-                  setCurrentPage(1);
-                }}
-                className={statusFilter === 'ALL' ? 'bg-accent' : ''}
-              >
-                All Categories
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setStatusFilter('ACTIVE');
-                  setCurrentPage(1);
-                }}
-                className={statusFilter === 'ACTIVE' ? 'bg-accent' : ''}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-                Active
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setStatusFilter('INACTIVE');
-                  setCurrentPage(1);
-                }}
-                className={statusFilter === 'INACTIVE' ? 'bg-accent' : ''}
-              >
-                <XCircle className="w-4 h-4 mr-2 text-red-600" />
-                Inactive
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
         {/* Table */}
         <Card>
           <CardHeader>

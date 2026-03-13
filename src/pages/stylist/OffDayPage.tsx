@@ -98,7 +98,7 @@ export default function OffDayPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto px-4 py-8">
+    <div className="space-y-6 max-w-8xl mx-auto px-4 py-8 rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md p-10">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-6">
         <div>

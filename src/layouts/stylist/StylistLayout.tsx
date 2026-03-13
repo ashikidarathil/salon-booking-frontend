@@ -19,6 +19,7 @@ import { Icon } from '@iconify/react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAppSelector, useAppDispatch } from '@/app/hooks';
 import { logout } from '@/features/auth/authThunks';
+import { NotificationCenter } from '@/features/notification/components/NotificationCenter';
 
 interface NavItem {
   icon: string;
@@ -29,9 +30,11 @@ interface NavItem {
 function StylistSidebarContent({
   onLogout,
   onNavigate,
+  unreadCount = 0,
 }: {
   onLogout: () => void;
   onNavigate: (path: string) => void;
+  unreadCount?: number;
 }) {
   const navItems: NavItem[] = [
     { icon: 'solar:widget-bold', label: 'Dashboard', path: '/stylist' },
@@ -39,6 +42,7 @@ function StylistSidebarContent({
     { icon: 'solar:clock-circle-bold', label: 'My Schedule', path: '/stylist/schedule' },
     { icon: 'solar:calendar-mark-bold', label: 'My Slots', path: '/stylist/slots' },
     { icon: 'solar:letter-bold', label: 'Leave Requests', path: '/stylist/off-days' },
+    { icon: 'solar:wallet-bold', label: 'My Wallet', path: '/stylist/wallet' },
     { icon: 'solar:chat-round-bold', label: 'Chat', path: '/stylist/chat' },
     { icon: 'solar:star-bold', label: 'Reviews', path: '/stylist/reviews' },
     { icon: 'solar:user-bold', label: 'Profile', path: '/stylist/profile' },
@@ -63,8 +67,17 @@ function StylistSidebarContent({
                 onClick={() => onNavigate(item.path)}
                 className="hover:bg-accent/50"
               >
-                <Icon icon={item.icon} className="size-4" />
-                <span>{item.label}</span>
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2">
+                    <Icon icon={item.icon} className="size-4" />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.label === 'Chat' && unreadCount > 0 && (
+                    <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -89,6 +102,7 @@ export function StylistLayout() {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user } = useAppSelector((state) => state.auth);
+  const totalUnreadCount = useAppSelector((state) => state.chat.totalUnreadCount);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -105,7 +119,11 @@ export function StylistLayout() {
       <div className="flex min-h-screen w-full">
         {/* Desktop Sidebar (visible from md up) */}
         <Sidebar className="border-r border-border/50">
-          <StylistSidebarContent onLogout={handleLogout} onNavigate={handleNavigate} />
+          <StylistSidebarContent 
+            onLogout={handleLogout} 
+            onNavigate={handleNavigate} 
+            unreadCount={totalUnreadCount} 
+          />
         </Sidebar>
 
         <SidebarInset className="bg-background">
@@ -119,7 +137,11 @@ export function StylistLayout() {
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72 theme-stylist">
                   <div className="flex flex-col h-full bg-[var(--color-sidebar)]">
-                    <StylistSidebarContent onLogout={handleLogout} onNavigate={handleNavigate} />
+                    <StylistSidebarContent 
+                      onLogout={handleLogout} 
+                      onNavigate={handleNavigate} 
+                      unreadCount={totalUnreadCount} 
+                    />
                   </div>
                 </SheetContent>
               </Sheet>
@@ -133,6 +155,7 @@ export function StylistLayout() {
             </div>
 
             <div className="flex items-center gap-3">
+              <NotificationCenter />
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium leading-none">{user?.name}</p>
                 <p className="text-xs text-muted-foreground mt-1 capitalize">

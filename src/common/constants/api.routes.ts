@@ -60,6 +60,9 @@ export const API_ROUTES = {
     GET_ALL_USERS: '/admin/users',
     TOGGLE_BLOCK: (userId: string) => `/admin/users/${userId}/block`,
     GET_USERS: '/admin/users',
+    DASHBOARD: {
+      STATS: '/admin/dashboard/stats',
+    },
   },
 
   CATEGORY: {
@@ -180,7 +183,10 @@ export const API_ROUTES = {
     STYLIST: {
       LIST: '/stylist/bookings',
       TODAY: '/stylist/bookings/today',
+      STATS: '/stylist/bookings/stats',
     },
+    APPLY_COUPON: (id: string) => `/bookings/${id}/apply-coupon`,
+    REMOVE_COUPON: (id: string) => `/bookings/${id}/remove-coupon`,
   },
   WISHLIST: {
     TOGGLE: '/wishlist/toggle',
@@ -194,9 +200,48 @@ export const API_ROUTES = {
     ME: '/wallet/me',
     TRANSACTIONS: '/wallet/transactions',
     CREDIT: '/wallet/credit',
+    TOPUP_ORDER: '/wallet/topup/create-order',
+    TOPUP_VERIFY: '/wallet/topup/verify',
+  },
+  STYLIST_WALLET: {
+    ME: '/stylist-wallet/my-wallet',
+    ADMIN_BY_STYLIST: (stylistId: string) => `/stylist-wallet/admin/stylist/${stylistId}/wallet`,
+    WITHDRAW: '/stylist-wallet/withdraw',
+    WITHDRAWALS: '/stylist-wallet/withdrawals',
+    ADMIN_WITHDRAWALS: '/stylist-wallet/admin/withdrawals',
+    PROCESS_WITHDRAWAL: (id: string) => `/stylist-wallet/admin/withdrawals/${id}/process`,
   },
   ESCROW: {
     ADMIN_LIST: '/escrow/admin/list',
+    ADMIN_STYLIST_LIST: (stylistId: string) => `/escrow/admin/stylists/${stylistId}`,
+    ADMIN_STYLIST_BALANCE: (stylistId: string) => `/escrow/admin/stylists/${stylistId}/balance`,
     BY_BOOKING: (bookingId: string) => `/escrow/admin/booking/${bookingId}`,
+    STYLIST_LIST: '/escrow/stylist/list',
+    STYLIST_BALANCE: '/escrow/stylist/balance',
+  },
+  COUPONS: {
+    BASE: '/coupons',
+    AVAILABLE: '/coupons/available',
+    VALIDATE: '/coupons/validate',
+    UPDATE: (id: string) => `/coupons/${id}`,
+    TOGGLE: (id: string) => `/coupons/${id}/toggle`,
+    DELETE: (id: string) => `/coupons/${id}`,
+  },
+  PAYMENTS: {
+    CREATE_ORDER: '/payments/create-order',
+    VERIFY: '/payments/verify',
+    PAY_WITH_WALLET: '/payments/pay-with-wallet',
+    PAY_REMAINING_ORDER: '/payments/create-remaining-order',
+    PAY_REMAINING_WALLET: '/payments/pay-remaining-with-wallet',
+  },
+  CHAT: {
+    INITIALIZE: '/rooms/initialize',
+    USER_ROOMS: '/rooms/user',
+    STYLIST_ROOMS: '/rooms/stylist',
+    ADMIN_ROOMS: '/rooms/admin',
+    ROOM_MESSAGES: (roomId: string) => `/rooms/${roomId}/messages`,
+    MARK_READ: (roomId: string) => `/rooms/${roomId}/read`,
+    UNREAD_COUNT: (roomId: string) => `/rooms/${roomId}/unread`,
+    UPLOAD: '/rooms/upload',
   },
 } as const;

@@ -1,3 +1,14 @@
+export enum TransactionType {
+  CREDIT = 'CREDIT',
+  DEBIT = 'DEBIT',
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
 export interface WalletResponse {
   userId: string;
   balance: number;
@@ -7,8 +18,8 @@ export interface WalletResponse {
 export interface WalletTransaction {
   id: string;
   amount: number;
-  type: 'CREDIT' | 'DEBIT';
-  status: string;
+  type: TransactionType;
+  status: TransactionStatus;
   description: string;
   referenceId?: string;
   referenceType?: string;
@@ -20,4 +31,17 @@ export interface WalletState {
   transactions: WalletTransaction[];
   isLoading: boolean;
   error: string | null;
+}
+
+export interface WalletTopupOrder {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+}
+
+export interface VerifyTopupPayload {
+  orderId: string;
+  paymentId: string;
+  signature: string;
 }

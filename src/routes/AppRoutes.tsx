@@ -15,8 +15,12 @@ import ServiceDetailsPage from '@/pages/user/service/ServiceDetailsPage';
 import StylistsListingPage from '@/pages/user/stylist/StylistsListingPage';
 import StylistDetailsPage from '@/pages/user/stylist/StylistDetailsPage';
 import CartPage from '@/pages/user/CartPage';
+import CheckoutPage from '@/pages/user/CheckoutPage';
 import BookingsPage from '@/pages/user/BookingsPage';
 import BookingDetailPage from '@/pages/user/BookingDetailPage';
+import WalletPage from '@/pages/user/WalletPage';
+import PaymentSuccessPage from '@/pages/user/PaymentSuccessPage';
+import PaymentFailurePage from '@/pages/user/PaymentFailurePage';
 import NotFoundPage from '@/pages/error/NotFoundPage';
 import { RoleNotFound } from '@/components/common/RoleNotFound';
 
@@ -32,6 +36,8 @@ import OffDayManagementPage from '@/pages/admin/stylist/OffDayManagementPage';
 import DashboardContent from '@/pages/admin/DashboardContent';
 import AdminBookingsPage from '@/pages/admin/AdminBookingsPage';
 import AdminBookingDetailPage from '@/pages/admin/AdminBookingDetailPage';
+import CouponManagementPage from '@/pages/admin/CouponManagementPage';
+import AdminChatPage from '@/pages/admin/AdminChatPage';
 
 import HolidayManagementPage from '@/pages/admin/holiday/HolidayManagementPage';
 
@@ -45,6 +51,8 @@ import OffDayPage from '@/pages/stylist/OffDayPage';
 import StylistSlotManagementPage from '@/pages/stylist/StylistSlotManagementPage';
 import StylistAppointmentsPage from '@/pages/stylist/StylistAppointmentsPage';
 import StylistBookingDetailPage from '@/pages/stylist/StylistBookingDetailPage';
+import StylistWalletPage from '@/pages/stylist/StylistWalletPage';
+import AdminWalletPage from '@/pages/admin/AdminWalletPage';
 
 // Layouts
 import { SalonAdminLayout } from '@/layouts/admin/SalonAdminLayout';
@@ -56,9 +64,13 @@ import HomePage from '@/pages/user/HomePage';
 import ContactPage from '@/pages/user/ContactPage';
 import ProfileContent from '@/pages/user/ProfileContent';
 import FavoritesPage from '@/pages/user/FavoritesPage';
+import NotificationsPage from '@/features/notification/pages/NotificationsPage';
 
 // HOC
 import ProtectedRoute from '@/hoc/ProtectedRoute';
+
+// Shared Pages
+import ChatPage from '@/pages/shared/ChatPage';
 
 export default function AppRoutes() {
   return (
@@ -89,12 +101,18 @@ export default function AppRoutes() {
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute roles={['USER']} />}>
-        <Route path={APP_ROUTES.USER.DASHBOARD} element={<HomePage />} />
+        <Route path={APP_ROUTES.USER.CART} element={<CartPage />} />
+        <Route path={APP_ROUTES.USER.CHECKOUT} element={<CheckoutPage />} />
+        <Route path="/payment/success/:bookingId" element={<PaymentSuccessPage />} />
+        <Route path="/payment/failure/:bookingId" element={<PaymentFailurePage />} />
         <Route path={APP_ROUTES.USER.PROFILE} element={<ProfileLayout />}>
           <Route index element={<ProfileContent />} />
           <Route path="favorites" element={<FavoritesPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="bookings" element={<BookingsPage />} />
           <Route path="bookings/:id" element={<BookingDetailPage />} />
+          <Route path="wallet" element={<WalletPage />} />
+          <Route path="chat" element={<ChatPage />} />
         </Route>
       </Route>
 
@@ -111,6 +129,9 @@ export default function AppRoutes() {
           <Route path="bookings/:id" element={<AdminBookingDetailPage />} />
           <Route path="off-days" element={<OffDayManagementPage />} />
           <Route path="holidays" element={<HolidayManagementPage />} />
+          <Route path="coupons" element={<CouponManagementPage />} />
+          <Route path="chat" element={<AdminChatPage />} />
+          <Route path="wallet" element={<AdminWalletPage />} />
           <Route path="*" element={<RoleNotFound role="ADMIN" />} />
         </Route>
       </Route>
@@ -124,6 +145,9 @@ export default function AppRoutes() {
           <Route path="off-days" element={<OffDayPage />} />
           <Route path="appointments" element={<StylistAppointmentsPage />} />
           <Route path="appointments/:id" element={<StylistBookingDetailPage />} />
+          <Route path="wallet" element={<StylistWalletPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="*" element={<RoleNotFound role="STYLIST" />} />
         </Route>
       </Route>

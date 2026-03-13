@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { useNavigate } from 'react-router-dom';
-import { APP_ROUTES } from '@/common/constants/app.routes';
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
 import { Button } from '@/components/ui/button';
@@ -18,9 +17,8 @@ import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types
 import { SlotBookingDialog } from '@/components/booking/SlotBookingDialog';
 import { createBooking as createBookingThunk } from '@/features/booking/booking.thunks';
 import { fetchBranchStylists } from '@/features/stylistBranch/stylistBranch.thunks';
-import { showSuccess, showError } from '@/common/utils/swal.utils';
+import { showError } from '@/common/utils/swal.utils';
 import { resetBookingSuccess, clearBookingError } from '@/features/booking/booking.slice';
-import { BOOKING_MESSAGES } from '@/features/booking/booking.constants';
 
 export default function CartPage() {
   const dispatch = useAppDispatch();
@@ -49,15 +47,15 @@ export default function CartPage() {
     }
   }, [branchId, dispatch]);
 
-  // Handle successful booking
+  const { currentBooking } = useAppSelector((state) => state.booking);
+
   useEffect(() => {
-    if (bookingSuccess) {
-      showSuccess('Booking Confirmed!', BOOKING_MESSAGES.CREATE_SUCCESS);
+    if (bookingSuccess && currentBooking) {
       dispatch(clearCart());
       dispatch(resetBookingSuccess());
-      navigate(APP_ROUTES.USER.BOOKINGS);
+      navigate(`/checkout/${currentBooking.id}`);
     }
-  }, [bookingSuccess, dispatch, navigate]);
+  }, [bookingSuccess, currentBooking, dispatch, navigate]);
 
   // Handle booking error
   useEffect(() => {
@@ -284,7 +282,7 @@ export default function CartPage() {
           <div className="lg:col-span-1">
             <Card className="p-6 sticky top-24 shadow-lg border-primary/10">
               <h2 className="text-xl font-bold mb-6">Order Summary</h2>
-              <div className="space-y-4 mb-8">
+              <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal ({items.length} items)</span>
                   <span>₹{totalPrice}</span>
@@ -297,6 +295,18 @@ export default function CartPage() {
                   <span>Total</span>
                   <span className="text-primary">₹{totalPrice}</span>
                 </div>
+              </div>
+
+              {/* Advance Payment Notice */}
+              <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 mb-6 space-y-2">
+                <div className="flex items-center gap-2 text-primary font-semibold text-sm">
+                  <Icon icon="solar:shield-check-bold" className="size-4" />
+                  <span>20% Advance Required at Checkout</span>
+                </div>
+                <p className="text-[11px] text-primary/60 leading-relaxed">
+                  The exact advance amount will be calculated by the system at checkout. The
+                  remaining 80% is paid at the saloon after your service.
+                </p>
               </div>
 
               {!allSlotsSelected && (
@@ -319,7 +329,7 @@ export default function CartPage() {
                     Booking...
                   </>
                 ) : (
-                  'Book All Services'
+                  'Proceed to Checkout'
                 )}
               </Button>
 

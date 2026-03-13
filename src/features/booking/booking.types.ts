@@ -19,11 +19,10 @@ export interface RescheduleBookingDto {
   reason?: string;
 }
 
-
-
 export interface BookingDetailsItem {
   serviceId: string;
   serviceName?: string;
+  serviceImageUrl?: string;
   stylistId: string;
   stylistName?: string;
   price: number;
@@ -35,6 +34,7 @@ export interface BookingDetailsItem {
 
 export interface BookingItem {
   id: string;
+  bookingNumber: string;
   userId: string;
   userName?: string;
   branchId: string;
@@ -49,12 +49,16 @@ export interface BookingItem {
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   totalPrice: number;
-
+  discountAmount?: number;
+  payableAmount: number;
+  advanceAmount: number;
+  couponId?: string;
   rescheduleCount?: number;
   rescheduleReason?: string;
   cancelledBy?: string;
   cancelledReason?: string;
   cancelledAt?: string;
+  paymentWindowExpiresAt?: string;
   notes?: string;
 }
 
@@ -95,10 +99,37 @@ export interface PaginatedBookingResponse {
   message: string;
 }
 
+export interface StylistStats {
+  summary: {
+    total: number;
+    confirmed: number;
+    pending: number;
+    cancelled: number;
+    completed: number;
+    revenue: number;
+  };
+  chartData: {
+    label: string;
+    bookings: number;
+    revenue: number;
+  }[];
+  statusBreakdown: {
+    name: string;
+    value: number;
+    color: string;
+  }[];
+  period: string;
+  range: {
+    start: string;
+    end: string;
+  };
+}
+
 export interface BookingState {
   myBookings: BookingItem[];
   todayBookings: BookingItem[];
   currentBooking: BookingItem | null;
+  stats: StylistStats | null;
   pagination: PaginationMetadata | null;
   loading: boolean;
   error: string | null;

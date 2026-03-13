@@ -195,7 +195,7 @@ export default function SlotManagementPage() {
     const variants: Record<string, string> = {
       AVAILABLE:
         type === 'special'
-          ? 'bg-violet-50 text-violet-700 border-violet-100'
+          ? 'bg-primary/10 text-primary border-primary/20'
           : 'bg-emerald-50 text-emerald-700 border-emerald-100',
       BOOKED: 'bg-blue-100 text-blue-800 border-blue-200',
       BLOCKED: 'bg-red-100 text-red-800 border-red-200',
@@ -348,7 +348,7 @@ export default function SlotManagementPage() {
                 onClick={() => setSlotView('special')}
                 className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
                   slotView === 'special'
-                    ? 'bg-background shadow text-violet-700'
+                    ? 'bg-background shadow text-primary'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -361,7 +361,7 @@ export default function SlotManagementPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 border-violet-300 text-violet-700 hover:bg-violet-50 gap-1.5 font-semibold"
+                className="h-8 border-primary/30 text-primary hover:bg-primary/5 gap-1.5 font-semibold"
                 onClick={() => setSpecialSlotOpen(true)}
                 disabled={!filters.branchId || filters.stylistId === 'all'}
               >
@@ -519,8 +519,8 @@ export default function SlotManagementPage() {
                 </div>
               ) : specialSlots.length === 0 ? (
                 <div className="flex flex-col items-center py-10 text-center text-muted-foreground">
-                  <div className="flex items-center justify-center mb-3 border rounded-full size-16 bg-violet-50 border-violet-100">
-                    <Icon icon="solar:add-square-bold" className="size-8 text-violet-400" />
+                  <div className="flex items-center justify-center mb-3 border rounded-full size-16 bg-primary/10 border-primary/20">
+                    <Icon icon="solar:add-square-bold" className="size-8 text-primary/60" />
                   </div>
                   <p className="font-medium text-slate-700">No special slots for this date</p>
                   <p className="mt-1 text-sm">
@@ -532,11 +532,11 @@ export default function SlotManagementPage() {
                   {specialSlots.map((slot) => (
                     <div
                       key={slot.id}
-                      className="flex items-center justify-between p-4 border rounded-xl border-violet-200 bg-violet-50/50"
+                      className="flex items-center justify-between p-4 border rounded-xl border-primary/20 bg-primary/5"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center rounded-full size-10 bg-violet-100">
-                          <Icon icon="solar:add-square-bold" className="size-5 text-violet-600" />
+                        <div className="flex items-center justify-center rounded-full size-10 bg-primary/20">
+                          <Icon icon="solar:add-square-bold" className="size-5 text-primary" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold">
@@ -558,7 +558,7 @@ export default function SlotManagementPage() {
                                 {slot.bookedServices.map((svc, i) => (
                                   <span
                                     key={i}
-                                    className="text-[9px] bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded font-medium"
+                                    className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-medium"
                                   >
                                     {svc}
                                   </span>

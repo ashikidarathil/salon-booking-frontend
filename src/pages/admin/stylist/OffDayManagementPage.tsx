@@ -111,9 +111,9 @@ export default function OffDayManagement({ stylistId, onClose }: OffDayManagemen
               <CardContent className="py-12 text-center">
                 <Icon
                   icon="solar:check-read-bold"
-                  className="size-12 text-slate-200 mx-auto mb-3"
+                  className="size-12 text-slate-200 mx-auto mb-3 mt-3"
                 />
-                <p className="font-semibold text-slate-400">All caught up!</p>
+                <p className="font-semibold text-slate-400 ">All caught up!</p>
                 <p className="text-xs text-slate-400">No pending leave requests at the moment.</p>
               </CardContent>
             </Card>

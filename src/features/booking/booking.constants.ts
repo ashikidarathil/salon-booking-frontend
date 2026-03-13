@@ -20,17 +20,21 @@ export const BOOKING_MESSAGES = {
 } as const;
 
 export enum BookingStatus {
-  PENDING = 'PENDING',
+  PENDING_PAYMENT = 'PENDING_PAYMENT',
   CONFIRMED = 'CONFIRMED',
-  IN_PROGRESS = 'IN_PROGRESS',
   CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED',
   NO_SHOW = 'NO_SHOW',
+  FAILED = 'FAILED',
+  BLOCKED = 'BLOCKED',
+  SPECIAL = 'SPECIAL',
 }
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
+  ADVANCE_PAID = 'ADVANCE_PAID',
   PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
   FAILED = 'FAILED',
 }
 

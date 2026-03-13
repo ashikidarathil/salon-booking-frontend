@@ -10,6 +10,7 @@ import StylistScheduleManagement from './StylistScheduleManagement';
 import OffDayManagement from './OffDayManagementPage';
 import type { StylistListItem } from '@/features/stylistInvite/stylistInvite.types';
 import type { Branch } from '@/features/branch/branch.types';
+import StylistWalletManagement from './StylistWalletManagement';
 
 interface StylistDetailsViewProps {
   stylist: StylistListItem;
@@ -118,6 +119,13 @@ export default function StylistDetailsView({ stylist, onClose }: StylistDetailsV
             <Icon icon="solar:calendar-linear" className="mr-2 size-4" />
             Off-Days
           </TabsTrigger>
+          <TabsTrigger
+            value="wallet"
+            className="rounded-lg px-8 py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
+          >
+            <Icon icon="solar:wallet-bold" className="mr-2 size-4" />
+            Wallet
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="schedule" className="mt-0 outline-none">
@@ -138,6 +146,10 @@ export default function StylistDetailsView({ stylist, onClose }: StylistDetailsV
 
         <TabsContent value="off-days" className="mt-0 outline-none">
           <OffDayManagement stylistId={stylist.id} onClose={onClose} />
+        </TabsContent>
+
+        <TabsContent value="wallet" className="mt-0 outline-none">
+          <StylistWalletManagement stylistId={stylist.id} />
         </TabsContent>
       </Tabs>
     </div>

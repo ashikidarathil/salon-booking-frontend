@@ -10,6 +10,9 @@ import {
   updateBookingStatus,
   fetchTodayBookings,
   fetchStylistTodayBookings,
+  applyCoupon,
+  removeCoupon,
+  fetchStylistStats,
 } from './booking.thunks';
 import type { BookingState, BookingItem } from './booking.types';
 
@@ -17,6 +20,7 @@ const initialState: BookingState = {
   myBookings: [],
   todayBookings: [],
   currentBooking: null,
+  stats: null,
   pagination: null,
   loading: false,
   error: null,
@@ -129,6 +133,36 @@ const bookingSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+      // Apply Coupon
+      .addCase(applyCoupon.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(applyCoupon.fulfilled, (state, action: PayloadAction<BookingItem>) => {
+        state.loading = false;
+        state.currentBooking = action.payload;
+      })
+      .addCase(removeCoupon.fulfilled, (state, action: PayloadAction<BookingItem>) => {
+        state.loading = false;
+        state.currentBooking = action.payload;
+      })
+      .addCase(applyCoupon.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch Stylist Stats
+      .addCase(fetchStylistStats.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchStylistStats.fulfilled, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        state.stats = action.payload;
+      })
+      .addCase(fetchStylistStats.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
       // Stylist Paginated Bookings
       .addCase(fetchStylistBookings.fulfilled, (state, action) => {
         state.loading = false;
@@ -150,10 +184,7 @@ const bookingSlice = createSlice({
         },
       )
       .addMatcher(
-        (action) =>
-          [fetchAdminBookings.fulfilled.type].includes(
-            action.type,
-          ),
+        (action) => [fetchAdminBookings.fulfilled.type].includes(action.type),
         (state, action: PayloadAction<BookingItem[]>) => {
           state.loading = false;
           state.myBookings = action.payload;
