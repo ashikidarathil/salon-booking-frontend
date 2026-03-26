@@ -17,6 +17,9 @@ export const BOOKING_MESSAGES = {
   STATUS_UPDATE_SUCCESS: 'Booking status updated.',
   STATUS_UPDATE_FAILED: 'Failed to update booking status.',
   TODAY_FETCH_FAILED: "Failed to fetch today's appointments.",
+  FETCH_STATS_FAILED: 'Failed to fetch dashboard statistics.',
+  APPLY_COUPON_FAILED: 'Failed to apply coupon.',
+  REMOVE_COUPON_FAILED: 'Failed to remove coupon.',
 } as const;
 
 export enum BookingStatus {

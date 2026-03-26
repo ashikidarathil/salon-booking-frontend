@@ -2,42 +2,45 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import PaymentService from '../../services/payment.service';
 import { handleThunkError } from '../../common/utils/thunk.utils';
 import { loadRazorpayScript } from '../../common/utils/razorpay.utils';
+import { PAYMENT_MESSAGES } from './payment.constants';
+import type { OrderResponse, Payment, PaymentVerificationDto } from './payment.types';
 
-export const createPaymentOrder = createAsyncThunk(
+const PM = PAYMENT_MESSAGES;
+
+export const createPaymentOrder = createAsyncThunk<OrderResponse, string, { rejectValue: string }>(
   'payment/createOrder',
-  async (bookingId: string, { rejectWithValue }) => {
+  async (bookingId, { rejectWithValue }) => {
     try {
-      const response = await PaymentService.createOrder(bookingId);
-      return response.data.data;
+      return await PaymentService.createOrder(bookingId);
     } catch (error) {
-      return handleThunkError(error, rejectWithValue, 'Failed to create payment order');
+      return handleThunkError(error, rejectWithValue, PM.CREATE_ORDER_FAILED);
     }
   },
 );
 
-export const verifyPayment = createAsyncThunk(
-  'payment/verify',
-  async (data: { orderId: string; paymentId: string; signature: string }, { rejectWithValue }) => {
-    try {
-      const response = await PaymentService.verifyPayment(data);
-      return response.data.data;
-    } catch (error) {
-      return handleThunkError(error, rejectWithValue, 'Payment verification failed');
-    }
-  },
-);
+export const verifyPayment = createAsyncThunk<
+  Payment,
+  PaymentVerificationDto,
+  { rejectValue: string }
+>('payment/verify', async (data, { rejectWithValue }) => {
+  try {
+    return await PaymentService.verifyPayment(data);
+  } catch (error) {
+    return handleThunkError(error, rejectWithValue, PM.VERIFICATION_FAILED);
+  }
+});
 
-export const payWithWallet = createAsyncThunk(
-  'payment/payWithWallet',
-  async ({ bookingId }: { bookingId: string }, { rejectWithValue }) => {
-    try {
-      const response = await PaymentService.payWithWallet(bookingId);
-      return response.data;
-    } catch (error) {
-      return handleThunkError(error, rejectWithValue, 'Wallet payment failed');
-    }
-  },
-);
+export const payWithWallet = createAsyncThunk<
+  Payment,
+  { bookingId: string },
+  { rejectValue: string }
+>('payment/payWithWallet', async ({ bookingId }, { rejectWithValue }) => {
+  try {
+    return await PaymentService.payWithWallet(bookingId);
+  } catch (error) {
+    return handleThunkError(error, rejectWithValue, PM.WALLET_PAY_FAILED);
+  }
+});
 
 export const processRazorpayPayment = createAsyncThunk<
   { status: 'success' | 'cancelled' },
@@ -47,7 +50,7 @@ export const processRazorpayPayment = createAsyncThunk<
   try {
     const isLoaded = await loadRazorpayScript();
     if (!isLoaded) {
-      return rejectWithValue('Razorpay SDK failed to load');
+      return rejectWithValue(PM.RAZORPAY_LOAD_ERROR);
     }
 
     const resultAction = await dispatch(createPaymentOrder(bookingId));
@@ -58,8 +61,7 @@ export const processRazorpayPayment = createAsyncThunk<
     const order = resultAction.payload;
 
     return await new Promise<{ status: 'success' | 'cancelled' }>((resolve, reject) => {
-      let paymentFailed = false; // tracks whether card/UPI was actually declined
-
+      let paymentFailed = false;
       const options = {
         key: order.keyId,
         amount: order.amount,
@@ -67,63 +69,64 @@ export const processRazorpayPayment = createAsyncThunk<
         name: 'Saloon Booking',
         description: '20% Advance Payment',
         order_id: order.orderId,
-        handler: (response: any) => {
-          // Verify asynchronously but resolve/reject via the Promise
+        handler: (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
           dispatch(
             verifyPayment({
               orderId: order.orderId,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
+              bookingId,
             }),
           )
             .then((verifyAction) => {
               if (verifyPayment.fulfilled.match(verifyAction)) {
                 resolve({ status: 'success' });
               } else {
-                reject(new Error((verifyAction.payload as string) || 'Verification failed'));
+                reject(new Error((verifyAction.payload as string) || PM.VERIFICATION_FAILED));
               }
             })
             .catch((err) => {
               reject(err);
             });
         },
-        theme: { color: '#7c3aed' },
+        theme: { color: '#F87171' },
         modal: {
           ondismiss: () => {
             if (paymentFailed) {
-              // Card was declined — navigate to failure page
               reject(new Error('Payment failed'));
             } else {
-              // User voluntarily closed the modal — stay on checkout
               resolve({ status: 'cancelled' });
             }
           },
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', (_response: any) => {
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', () => {
         paymentFailed = true;
-        // Don't reject here — wait for ondismiss to settle the promise
       });
       rzp.open();
     });
-  } catch (error: any) {
-    return rejectWithValue(error.message || 'Payment processing failed');
+  } catch (error: unknown) {
+    return handleThunkError(error, rejectWithValue, PM.CHECKOUT_ERROR);
   }
 });
 
-export const payRemainingWithWallet = createAsyncThunk(
-  'payment/payRemainingWithWallet',
-  async ({ bookingId }: { bookingId: string }, { rejectWithValue }) => {
-    try {
-      const response = await PaymentService.payRemainingWithWallet(bookingId);
-      return response.data;
-    } catch (error) {
-      return handleThunkError(error, rejectWithValue, 'Wallet payment for remaining amount failed');
-    }
-  },
-);
+export const payRemainingWithWallet = createAsyncThunk<
+  Payment,
+  { bookingId: string },
+  { rejectValue: string }
+>('payment/payRemainingWithWallet', async ({ bookingId }, { rejectWithValue }) => {
+  try {
+    return await PaymentService.payRemainingWithWallet(bookingId);
+  } catch (error) {
+    return handleThunkError(error, rejectWithValue, PM.REMAINING_WALLET_FAILED);
+  }
+});
 
 export const processRemainingPayment = createAsyncThunk<
   { status: 'success' | 'cancelled' },
@@ -132,10 +135,9 @@ export const processRemainingPayment = createAsyncThunk<
 >('payment/processRemainingRazorpay', async ({ bookingId }, { dispatch, rejectWithValue }) => {
   try {
     const isLoaded = await loadRazorpayScript();
-    if (!isLoaded) return rejectWithValue('Razorpay SDK failed to load');
+    if (!isLoaded) return rejectWithValue(PM.RAZORPAY_LOAD_ERROR);
 
-    const orderRes = await PaymentService.createRemainingOrder(bookingId);
-    const order = orderRes.data.data;
+    const order = await PaymentService.createRemainingOrder(bookingId);
 
     return await new Promise<{ status: 'success' | 'cancelled' }>((resolve, reject) => {
       let paymentFailed = false;
@@ -147,17 +149,22 @@ export const processRemainingPayment = createAsyncThunk<
         name: 'Saloon Booking',
         description: 'Remaining Balance Payment (80%)',
         order_id: order.orderId,
-        handler: (response: any) => {
+        handler: (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
           dispatch(
             verifyPayment({
               orderId: order.orderId,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
+              bookingId,
             }),
           )
             .then((verifyAction) => {
               if (verifyPayment.fulfilled.match(verifyAction)) resolve({ status: 'success' });
-              else reject(new Error((verifyAction.payload as string) || 'Verification failed'));
+              else reject(new Error((verifyAction.payload as string) || PM.VERIFICATION_FAILED));
             })
             .catch(reject);
         },
@@ -170,13 +177,13 @@ export const processRemainingPayment = createAsyncThunk<
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
+      const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', () => {
         paymentFailed = true;
       });
       rzp.open();
     });
-  } catch (error: any) {
-    return rejectWithValue(error.message || 'Remaining payment processing failed');
+  } catch (error: unknown) {
+    return handleThunkError(error, rejectWithValue, PM.REMAINING_PAY_FAILED);
   }
 });

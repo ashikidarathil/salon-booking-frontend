@@ -40,6 +40,9 @@ import CouponManagementPage from '@/pages/admin/CouponManagementPage';
 import AdminChatPage from '@/pages/admin/AdminChatPage';
 
 import HolidayManagementPage from '@/pages/admin/holiday/HolidayManagementPage';
+import BranchStylistsPage from '@/pages/admin/branch/BranchStylistsPage';
+import BranchCategoriesPage from '@/pages/admin/branch/BranchCategoriesPage';
+import BranchServicesPage from '@/pages/admin/branch/BranchServicesPage';
 
 // Stylist Pages
 import AcceptInvitePage from '@/pages/stylist/AcceptInvitePage';
@@ -52,7 +55,9 @@ import StylistSlotManagementPage from '@/pages/stylist/StylistSlotManagementPage
 import StylistAppointmentsPage from '@/pages/stylist/StylistAppointmentsPage';
 import StylistBookingDetailPage from '@/pages/stylist/StylistBookingDetailPage';
 import StylistWalletPage from '@/pages/stylist/StylistWalletPage';
+import StylistReviewsPage from '../pages/stylist/StylistReviewsPage';
 import AdminWalletPage from '@/pages/admin/AdminWalletPage';
+import AdminReviewsPage from '../pages/admin/AdminReviewsPage';
 
 // Layouts
 import { SalonAdminLayout } from '@/layouts/admin/SalonAdminLayout';
@@ -124,14 +129,19 @@ export default function AppRoutes() {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="services" element={<ServicesPage />} />
           <Route path="branches" element={<BranchesPage />} />
+          <Route path="branches/:branchId/stylists" element={<BranchStylistsPage />} />
+          <Route path="branches/:branchId/categories" element={<BranchCategoriesPage />} />
+          <Route path="branches/:branchId/services" element={<BranchServicesPage />} />
           <Route path="slots" element={<SlotManagementPage />} />
           <Route path="bookings" element={<AdminBookingsPage />} />
           <Route path="bookings/:id" element={<AdminBookingDetailPage />} />
           <Route path="off-days" element={<OffDayManagementPage />} />
           <Route path="holidays" element={<HolidayManagementPage />} />
           <Route path="coupons" element={<CouponManagementPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="chat" element={<AdminChatPage />} />
           <Route path="wallet" element={<AdminWalletPage />} />
+          <Route path="reviews" element={<AdminReviewsPage />} />
           <Route path="*" element={<RoleNotFound role="ADMIN" />} />
         </Route>
       </Route>
@@ -148,6 +158,7 @@ export default function AppRoutes() {
           <Route path="wallet" element={<StylistWalletPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="chat" element={<ChatPage />} />
+          <Route path="reviews" element={<StylistReviewsPage />} />
           <Route path="*" element={<RoleNotFound role="STYLIST" />} />
         </Route>
       </Route>

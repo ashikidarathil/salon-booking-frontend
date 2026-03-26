@@ -35,7 +35,7 @@ export default function PaymentFailurePage() {
           <Card className="w-full p-8 sm:p-10 space-y-8 shadow-2xl shadow-slate-200/50 border-white/40 bg-white/80 backdrop-blur-sm rounded-[2.5rem]">
             {/* Elegant Failure Icon */}
             <div className="flex justify-center">
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
@@ -53,7 +53,8 @@ export default function PaymentFailurePage() {
                 Payment Unsuccessful
               </h1>
               <p className="text-slate-500 text-lg leading-relaxed">
-                We couldn't process your transaction. Please check your payment details and try again.
+                We couldn't process your transaction. Please check your payment details and try
+                again.
               </p>
             </div>
 
@@ -67,15 +68,18 @@ export default function PaymentFailurePage() {
 
             {/* Info Box - Slot Protection */}
             <div className="p-5 rounded-2xl bg-amber-50/50 border border-amber-100/50 flex gap-4 items-start shadow-sm">
-                <div className="bg-amber-500/10 p-2.5 rounded-xl shrink-0">
-                    <Icon icon="solar:clock-circle-line-duotone" className="size-6 text-amber-600" />
-                </div>
-                <div>
-                    <h4 className="font-semibold text-amber-900 text-sm">Slot reserved for 10 minutes</h4>
-                    <p className="text-xs text-amber-700/80 leading-relaxed mt-1">
-                        Don't worry, your selected slot is still held for you. Navigate to "My Bookings" to safely retry before the window expires.
-                    </p>
-                </div>
+              <div className="bg-amber-500/10 p-2.5 rounded-xl shrink-0">
+                <Icon icon="solar:clock-circle-line-duotone" className="size-6 text-amber-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-amber-900 text-sm">
+                  Slot reserved for 10 minutes
+                </h4>
+                <p className="text-xs text-amber-700/80 leading-relaxed mt-1">
+                  Don't worry, your selected slot is still held for you. Navigate to "My Bookings"
+                  to safely retry before the window expires.
+                </p>
+              </div>
             </div>
 
             {/* Soft CTAs */}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   createBranch,
@@ -34,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Edit, Users, Tags, Scissors, Ban, RotateCcw, Clock } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/pagination/Pagination';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import {
   showSuccess,
   showError,
@@ -45,9 +47,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Branch, MapLocation } from '@/features/branch/branch.types';
-import BranchStylistModal from './BranchStylistModal';
-import BranchCategoryModal from './BranchCategoryModal';
-import BranchServiceModal from './BranchServiceModal';
 import BranchBreakModal from './BranchBreakModal';
 import { MapPin } from 'lucide-react';
 import LeafletMapPicker from '@/components/branch/LeafletMapPicker';
@@ -68,6 +67,7 @@ const branchSchema = z.object({
 type BranchFormData = z.infer<typeof branchSchema>;
 
 export default function BranchesPage() {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { branches, loading, error, pagination } = useAppSelector((state) => state.branch);
 
@@ -75,9 +75,6 @@ export default function BranchesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
-  const [selectedCategoryBranchId, setSelectedCategoryBranchId] = useState<string | null>(null);
-  const [selectedServiceBranchId, setSelectedServiceBranchId] = useState<string | null>(null);
   const [selectedBreakBranchId, setSelectedBreakBranchId] = useState<string | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | undefined>();
@@ -133,30 +130,21 @@ export default function BranchesPage() {
     }
     showLoading(editingBranch ? 'Updating branch...' : 'Creating branch...');
 
-    let result;
-    if (editingBranch) {
-      result = await dispatch(updateBranch({ id: editingBranch.id, data }));
-    } else {
-      result = await dispatch(createBranch(data));
-    }
+    const result = editingBranch
+      ? await dispatch(updateBranch({ id: editingBranch.id, data }))
+      : await dispatch(createBranch(data));
 
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (createBranch.fulfilled.match(result) || updateBranch.fulfilled.match(result)) {
       showSuccess(
         editingBranch ? 'Branch Updated' : 'Branch Created',
         editingBranch ? 'Changes saved successfully' : 'New branch added',
       );
       resetFormAndCloseDialog();
-      dispatch(
-        fetchPaginatedBranches({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-        }),
-      );
+      loadBranches();
     } else {
-      showError('Failed', 'Could not save branch');
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.OPERATION_FAILED);
     }
   };
 
@@ -196,17 +184,11 @@ export default function BranchesPage() {
     const result = await dispatch(softDeleteBranch(id));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (softDeleteBranch.fulfilled.match(result)) {
       showSuccess('Disabled', 'Branch disabled successfully');
-      dispatch(
-        fetchPaginatedBranches({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-        }),
-      );
+      loadBranches();
     } else {
-      showError('Failed', 'Could not disable branch');
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.DELETE_FAILED);
     }
   };
 
@@ -229,26 +211,24 @@ export default function BranchesPage() {
     const result = await dispatch(restoreBranch(id));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (restoreBranch.fulfilled.match(result)) {
       showSuccess('Restored', 'Branch restored successfully');
-      dispatch(
-        fetchPaginatedBranches({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-        }),
-      );
+      loadBranches();
     } else {
-      showError('Failed', 'Could not restore branch');
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.OPERATION_FAILED);
     }
   };
 
   const handleManageStylists = (branchId: string) => {
-    setSelectedBranchId(branchId);
+    navigate(`${branchId}/stylists`);
   };
 
-  const handleDrawerClose = () => {
-    setSelectedBranchId(null);
+  const handleManageCategories = (branchId: string) => {
+    navigate(`${branchId}/categories`);
+  };
+
+  const handleManageServices = (branchId: string) => {
+    navigate(`${branchId}/services`);
   };
 
   return (
@@ -426,7 +406,7 @@ export default function BranchesPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="w-8 h-8"
-                                  onClick={() => setSelectedCategoryBranchId(branch.id)}
+                                  onClick={() => handleManageCategories(branch.id)}
                                 >
                                   <Tags className="w-4 h-4" />
                                 </Button>
@@ -443,7 +423,7 @@ export default function BranchesPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="w-8 h-8"
-                                  onClick={() => setSelectedServiceBranchId(branch.id)}
+                                  onClick={() => handleManageServices(branch.id)}
                                 >
                                   <Scissors className="w-4 h-4" />
                                 </Button>
@@ -519,32 +499,6 @@ export default function BranchesPage() {
         title={editingBranch ? 'Update Branch Location' : 'Select Branch Location'}
       />
 
-      {selectedBranchId && (
-        <BranchStylistModal
-          branchId={selectedBranchId}
-          branchName={branches.find((b) => b.id === selectedBranchId)?.name}
-          open={!!selectedBranchId}
-          onClose={handleDrawerClose}
-        />
-      )}
-
-      {selectedCategoryBranchId && (
-        <BranchCategoryModal
-          branchId={selectedCategoryBranchId}
-          branchName={branches.find((b) => b.id === selectedCategoryBranchId)?.name}
-          open={!!selectedCategoryBranchId}
-          onClose={() => setSelectedCategoryBranchId(null)}
-        />
-      )}
-
-      {selectedServiceBranchId && (
-        <BranchServiceModal
-          branchId={selectedServiceBranchId}
-          branchName={branches.find((b) => b.id === selectedServiceBranchId)?.name}
-          open={!!selectedServiceBranchId}
-          onClose={() => setSelectedServiceBranchId(null)}
-        />
-      )}
 
       {selectedBreakBranchId && (
         <BranchBreakModal

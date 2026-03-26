@@ -1,6 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { serviceService } from '@/services/service.service';
-import type { Service, ServiceStatus } from './service.types';
+import type {
+  Service,
+  ServiceStatus,
+  ServiceQuery,
+  PaginatedServiceResponse,
+} from './service.types';
 import { handleThunkError } from '@/common/utils/thunk.utils';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 
@@ -21,27 +26,8 @@ export const fetchServices = createAsyncThunk<
 });
 
 export const fetchPaginatedServices = createAsyncThunk<
-  {
-    data: Service[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-      itemsPerPage: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
-  },
-  {
-    page?: number;
-    limit?: number;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    categoryId?: string;
-    status?: 'ACTIVE' | 'INACTIVE';
-    isDeleted?: boolean;
-  },
+  PaginatedServiceResponse,
+  ServiceQuery,
   { rejectValue: string }
 >('service/fetchPaginatedServices', async (params, { rejectWithValue }) => {
   try {
@@ -86,12 +72,14 @@ export const updateService = createAsyncThunk<
       description?: string;
       status: ServiceStatus;
       imageUrl: string;
+      categoryId: string;
+      whatIncluded: string[];
     }>;
   },
   { rejectValue: string }
 >('service/updateService', async ({ id, data }, { rejectWithValue }) => {
   try {
-    const res = await serviceService.update(id, data);
+    const res = await serviceService.update(id, data as Partial<Service>);
     return res.data.data;
   } catch (err) {
     return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
@@ -176,17 +164,7 @@ export const restoreService = createAsyncThunk<Service, string, { rejectValue: s
 );
 
 export const fetchPublicServicesPaginated = createAsyncThunk<
-  {
-    data: Service[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-      itemsPerPage: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
-  },
+  PaginatedServiceResponse,
   {
     page?: number;
     limit?: number;

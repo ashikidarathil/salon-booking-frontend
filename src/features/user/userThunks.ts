@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { userService } from '@/services/user.service';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
-import type { PaginatedUsersResponse } from '@/services/user.service';
+import type { PaginatedUsersResponse, UserQuery } from '@/services/user.service';
 import { handleThunkError } from '@/common/utils/thunk.utils';
 
 export const toggleBlockUser = createAsyncThunk<
@@ -19,16 +19,7 @@ export const toggleBlockUser = createAsyncThunk<
 
 export const fetchUsers = createAsyncThunk<
   PaginatedUsersResponse,
-  {
-    page?: number;
-    limit?: number;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    isBlocked?: boolean;
-    isActive?: boolean;
-    role?: string;
-  },
+  UserQuery,
   { rejectValue: string }
 >('user/fetchUsers', async (query, { rejectWithValue }) => {
   try {

@@ -53,9 +53,8 @@ export default function OffDayManagement({ stylistId, onClose }: OffDayManagemen
       ).unwrap();
       showSuccess('Success', OFF_DAY_MESSAGES.UPDATE_STATUS_SUCCESS);
     } catch (error: unknown) {
-      showError('Error', (error as string) || OFF_DAY_MESSAGES.UPDATE_STATUS_ERROR);
-    } finally {
       closeLoading();
+      showError('Error', (error as string) || OFF_DAY_MESSAGES.UPDATE_STATUS_ERROR);
     }
   };
 

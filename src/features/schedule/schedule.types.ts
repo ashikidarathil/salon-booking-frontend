@@ -55,3 +55,11 @@ export interface CreateDailyOverrideDto {
   shifts: Shift[];
   reason?: string;
 }
+
+export interface ScheduleState {
+  weeklySchedule: WeeklySchedule[];
+  dailyOverrides: DailyOverride[];
+  breaks: StylistBreak[];
+  loading: boolean;
+  error: string | null;
+}

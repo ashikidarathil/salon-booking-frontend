@@ -1,8 +1,8 @@
 import { Icon } from '@iconify/react';
 import { format } from 'date-fns';
 import { VoicePlayer } from './VoicePlayer';
-import { MessageType } from '../types/chat.types';
-import type { ChatMessage, ChatRoom } from '../types/chat.types';
+import { MessageType } from '../chat.types';
+import type { ChatMessage, ChatRoom } from '../chat.types';
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
@@ -84,11 +84,7 @@ export function ChatMessageList({
                 </div>
               </div>
             ) : (
-              <div
-                className={`flex items-end gap-2 w-full ${
-                  isMine ? 'flex-row-reverse' : ''
-                }`}
-              >
+              <div className={`flex items-end gap-2 w-full ${isMine ? 'flex-row-reverse' : ''}`}>
                 <div
                   className={`flex flex-col max-w-[85%] md:max-w-[70%] ${
                     isMine ? 'items-end' : 'items-start'
@@ -109,7 +105,8 @@ export function ChatMessageList({
                           className="max-sm:max-w-48 max-w-sm rounded-lg object-contain bg-muted/20"
                           loading="lazy"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://placehold.co/400x300?text=Image+Not+Found';
+                            (e.target as HTMLImageElement).src =
+                              'https://placehold.co/400x300?text=Image+Not+Found';
                           }}
                         />
                       </a>

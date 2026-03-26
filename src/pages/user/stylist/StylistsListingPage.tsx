@@ -224,24 +224,29 @@ export default function StylistsListingPage() {
                     </div>
                     <div className="flex items-center gap-1 mb-2">
                       <div className="flex text-amber-400">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Icon
-                            key={i}
-                            icon={
-                              i < Math.floor(stylist.rating || 5)
-                                ? 'solar:star-bold'
-                                : 'solar:star-bold-duotone'
-                            }
-                            className={`size-4 ${
-                              i >= Math.floor(stylist.rating || 5) ? 'text-amber-400/30' : ''
-                            }`}
-                          />
-                        ))}
+                        {Array.from({ length: 5 }).map((_, i) => {
+                          const rating = stylist.rating || 0;
+                          return (
+                            <Icon
+                              key={i}
+                              icon={
+                                i < Math.floor(rating)
+                                  ? 'solar:star-bold'
+                                  : 'solar:star-bold-duotone'
+                              }
+                              className={`size-4 ${
+                                i >= Math.floor(rating) ? 'text-amber-400/30' : ''
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                       <span className="text-sm font-semibold ml-1">
-                        {(stylist.rating || 5.0).toFixed(1)}
+                        {(stylist.rating || 0).toFixed(1)}
                       </span>
-                      <span className="text-sm text-muted-foreground">({stylist.reviewCount})</span>
+                      <span className="text-sm text-muted-foreground">
+                        ({stylist.reviewCount || 0} reviews)
+                      </span>
                     </div>
                   </CardHeader>
 

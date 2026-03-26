@@ -11,7 +11,7 @@ import { showApiError, showSuccess, showCancellationConfirm } from '@/common/uti
 import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
 import { LoadingGate } from '@/components/common/LoadingGate';
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: BookingStatus) => {
   switch (status) {
     case BookingStatus.CONFIRMED:
       return 'bg-green-100 text-green-700 border-green-200';
@@ -38,7 +38,7 @@ export default function StylistBookingDetailPage() {
     if (id) dispatch(fetchBookingDetails(id));
   }, [id, dispatch]);
 
-  const handleStatusUpdate = async (status: string, label: string) => {
+  const handleStatusUpdate = async (status: BookingStatus, label: string) => {
     if (!currentBooking) return;
     const result = await dispatch(updateBookingStatus({ bookingId: currentBooking.id, status }));
     if (updateBookingStatus.fulfilled.match(result)) {
@@ -83,7 +83,7 @@ export default function StylistBookingDetailPage() {
       backPath="/stylist/appointments"
       role="STYLIST"
     >
-      <div className="p-6 space-y-6 max-w-7xl mx-auto rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md text-foreground">
         {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -94,7 +94,7 @@ export default function StylistBookingDetailPage() {
             <p className="text-muted-foreground text-sm">#{b?.bookingNumber}</p>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Badge className={getStatusColor(b?.status || '')}>{b?.status.replace('_', ' ')}</Badge>
+            <Badge className={getStatusColor(b?.status as BookingStatus)}>{b?.status.replace('_', ' ')}</Badge>
           </div>
         </div>
 
@@ -194,7 +194,7 @@ export default function StylistBookingDetailPage() {
             {b?.status === BookingStatus.CONFIRMED && (
               <>
                 <Button
-                  className="w-full h-12 text-base font-bold bg-purple-600 hover:bg-purple-700"
+                  className="w-full h-12 text-base font-bold bg-purple-600 hover:bg-purple-700 text-white"
                   onClick={() => handleStatusUpdate(BookingStatus.COMPLETED, 'Completed')}
                 >
                   <Icon icon="solar:check-circle-bold-duotone" className="mr-2 size-5" />

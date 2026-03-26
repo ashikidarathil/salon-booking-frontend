@@ -2,16 +2,23 @@ import { Icon } from '@iconify/react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import type { ChatRoom } from '../types/chat.types';
+import type { ChatRoom } from '../chat.types';
 
 interface ChatSidebarProps {
   rooms: ChatRoom[];
   activeRoomId: string | null;
   onRoomSelect: (roomId: string) => void;
   isStylist: boolean;
+  onSearch?: (query: string) => void;
 }
 
-export function ChatSidebar({ rooms, activeRoomId, onRoomSelect, isStylist }: ChatSidebarProps) {
+export function ChatSidebar({
+  rooms,
+  activeRoomId,
+  onRoomSelect,
+  isStylist,
+  onSearch,
+}: ChatSidebarProps) {
   const getPartnerDetails = (room: ChatRoom) => {
     if (isStylist) {
       return {
@@ -25,8 +32,7 @@ export function ChatSidebar({ rooms, activeRoomId, onRoomSelect, isStylist }: Ch
     };
   };
 
-  const bookingRef = (room: ChatRoom) =>
-    room.bookingNumber || room.booking?.bookingNumber;
+  const bookingRef = (room: ChatRoom) => room.bookingNumber || room.booking?.bookingNumber;
 
   return (
     <div
@@ -41,7 +47,11 @@ export function ChatSidebar({ rooms, activeRoomId, onRoomSelect, isStylist }: Ch
             icon="solar:magnifer-linear"
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
           />
-          <Input placeholder="Search conversations..." className="bg-muted/50 border-none pl-9" />
+          <Input
+            placeholder="Search conversations..."
+            className="bg-muted/50 border-none pl-9"
+            onChange={(e) => onSearch?.(e.target.value)}
+          />
         </div>
       </div>
 

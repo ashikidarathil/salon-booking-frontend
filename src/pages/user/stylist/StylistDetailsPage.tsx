@@ -8,6 +8,8 @@ import { fetchMyFavorites } from '@/features/wishlist/wishlistSlice';
 import { useWishlist } from '@/hooks/useWishlist';
 import { loadSelectedBranchFromStorage } from '@/features/branch/branch.slice';
 import { addToCart } from '@/features/cart/cart.slice';
+import { reviewService } from '@/features/review/review.service';
+import type { Review } from '@/features/review/review.types';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +43,34 @@ export default function StylistDetailsPage() {
     price: number;
     duration: number;
   } | null>(null);
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (selectedStylist?.id) {
+      (async () => {
+        try {
+          setLoadingReviews(true);
+          const res = await reviewService.getReviews({
+            stylistId: selectedStylist.id,
+            limit: 3,
+            sortBy: 'rating',
+            sortOrder: 'desc',
+          });
+          if (isMounted) setReviews(res.reviews);
+        } catch (err) {
+          console.error('Failed to fetch reviews:', err);
+        } finally {
+          if (isMounted) setLoadingReviews(false);
+        }
+      })();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedStylist?.id]);
 
   useEffect(() => {
     dispatch(loadSelectedBranchFromStorage());
@@ -190,10 +220,10 @@ export default function StylistDetailsPage() {
                         <Icon icon="solar:star-bold" className="size-4 md:size-5" />
                       </div>
                       <span className="font-bold text-gray-900">
-                        {selectedStylist?.rating?.toFixed(1) || '5.0'}
+                        {selectedStylist?.rating ? selectedStylist.rating.toFixed(1) : '0.0'}
                       </span>
                       <span className="text-muted-foreground">
-                        ({selectedStylist?.reviewCount || '142'} reviews)
+                        ({selectedStylist?.reviewCount || 0} reviews)
                       </span>
                     </div>
                     <div className="flex items-center justify-center md:justify-start gap-1.5 text-muted-foreground text-sm">
@@ -266,48 +296,92 @@ export default function StylistDetailsPage() {
                         </div>
                         <CardTitle className="text-lg">Client Reviews</CardTitle>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="font-normal border-amber-200 bg-amber-50 text-amber-700"
-                      >
-                        Coming Soon
-                      </Badge>
+                      {reviews.length > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="font-normal border-green-200 bg-green-50 text-green-700"
+                        >
+                          Top Reviews
+                        </Badge>
+                      )}
                     </div>
                     <CardDescription>
                       What clients say about {selectedStylist?.name}'s work
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {[1, 2].map((i) => (
-                        <div
-                          key={i}
-                          className="p-4 rounded-xl bg-muted/20 border border-border/40 opacity-40 select-none"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="size-8 rounded-full bg-muted" />
-                            <div className="h-3 w-24 bg-muted rounded" />
+                    {loadingReviews ? (
+                      <div className="space-y-4">
+                        {[1, 2].map((i) => (
+                          <div
+                            key={i}
+                            className="p-4 rounded-xl bg-muted/20 border border-border/40 opacity-40 select-none"
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="size-8 rounded-full bg-muted animate-pulse" />
+                              <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+                            </div>
+                            <div className="space-y-2">
+                              <div className="h-2 w-full bg-muted rounded animate-pulse" />
+                              <div className="h-2 w-3/4 bg-muted rounded animate-pulse" />
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <div className="h-2 w-full bg-muted rounded" />
-                            <div className="h-2 w-3/4 bg-muted rounded" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-center py-6 mt-2">
-                      <div className="flex justify-center text-amber-400/30 gap-1 mb-2">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Icon key={s} icon="solar:star-bold" className="size-5" />
                         ))}
                       </div>
-                      <p className="text-sm font-semibold text-muted-foreground">
-                        Be the first to review!
-                      </p>
-                      <p className="text-xs text-muted-foreground/60 mt-1">
-                        Reviewing feature will be available after your next appointment.
-                      </p>
-                    </div>
+                    ) : reviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {reviews.map((review) => (
+                          <div
+                            key={review.id}
+                            className="p-4 rounded-xl bg-muted/10 border border-border/40 transition-colors hover:border-primary/30"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={
+                                    review.userId.profilePicture ||
+                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                      review.userId.name,
+                                    )}&background=random`
+                                  }
+                                  alt={review.userId.name}
+                                  className="size-8 rounded-full object-cover"
+                                />
+                                <span className="font-semibold text-sm">{review.userId.name}</span>
+                              </div>
+                              <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                  <Icon
+                                    key={i}
+                                    icon="solar:star-bold"
+                                    className={`size-3 ${
+                                      i < review.rating ? 'text-yellow-400' : 'text-gray-200'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
+                              "{review.comment || 'Great experience!'}"
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 mt-2">
+                        <div className="flex justify-center text-amber-400/30 gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Icon key={s} icon="solar:star-bold" className="size-5" />
+                          ))}
+                        </div>
+                        <p className="text-sm font-semibold text-muted-foreground">
+                          Be the first to review!
+                        </p>
+                        <p className="text-xs text-muted-foreground/60 mt-1">
+                          Reviewing feature will be available after your next appointment.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useDispatch } from 'react-redux';
-import { addMessageToRoom, updateRoomLastMessage, incrementUnreadCount } from '../state/chat.slice';
-import { type ChatMessage, type SendMessagePayload, MessageType } from '../types/chat.types';
+import { addMessageToRoom, updateRoomLastMessage, incrementUnreadCount } from '../chat.slice';
+import { type ChatMessage, type SendMessagePayload, MessageType } from '../chat.types';
 import { showError } from '../../../common/utils/swal.utils';
 import { SOCKET_BASE_URL } from '../../../services/api/api';
-
 
 export const useChat = (userId: string | undefined) => {
   const socketRef = useRef<Socket | null>(null);
@@ -25,13 +24,11 @@ export const useChat = (userId: string | undefined) => {
 
     socketRef.current.on('connect', () => {
       setIsConnected(true);
-      console.log('Socket connected');
     });
 
     socketRef.current.on('newMessage', (message: ChatMessage) => {
       dispatch(addMessageToRoom(message));
 
-      // Only increment unread if the message is from someone else
       if (message.senderId !== userId) {
         dispatch(incrementUnreadCount());
       }
@@ -40,20 +37,20 @@ export const useChat = (userId: string | undefined) => {
       if (message.messageType === MessageType.TEXT) preview = message.content || 'Text message';
       else if (message.messageType === MessageType.IMAGE) preview = '📷 Image';
       else if (message.messageType === MessageType.VOICE) preview = '🎤 Voice message';
-      else if (message.messageType === MessageType.SYSTEM) preview = message.content || 'System message';
+      else if (message.messageType === MessageType.SYSTEM)
+        preview = message.content || 'System message';
 
       dispatch(
         updateRoomLastMessage({
           roomId: message.chatRoomId,
           lastMessage: preview,
           lastMessageAt: message.createdAt,
-        })
+        }),
       );
     });
 
     socketRef.current.on('disconnect', () => {
       setIsConnected(false);
-      console.log('Socket disconnected');
     });
 
     socketRef.current.on('error', (err: { message: string }) => {

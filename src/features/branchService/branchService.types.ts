@@ -13,6 +13,8 @@ export interface BranchServiceItem {
   whatIncluded?: string[];
   isActive: boolean;
   configured: boolean;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export interface BranchServiceState {

@@ -10,7 +10,7 @@ import type {
   CreateStylistBreakDto,
 } from '@/features/schedule/schedule.types';
 
-export const scheduleService = {
+const ScheduleService = {
   getWeeklySchedule: (stylistId: string, branchId: string) =>
     api.get<ApiResponse<WeeklySchedule[]>>(
       `${API_ROUTES.SCHEDULE.BY_STYLIST_WEEKLY(stylistId)}?branchId=${branchId}`,
@@ -41,3 +41,5 @@ export const scheduleService = {
   deleteBreak: (breakId: string) =>
     api.delete<ApiResponse<{ success: true }>>(API_ROUTES.SCHEDULE.BREAK_BY_ID(breakId)),
 };
+
+export default ScheduleService;

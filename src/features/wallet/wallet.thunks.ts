@@ -16,31 +16,29 @@ export const fetchMyWallet = createAsyncThunk<WalletResponse, void, { rejectValu
   },
 );
 
-export const fetchTransactionHistory = createAsyncThunk<WalletTransaction[], void, { rejectValue: string }>(
-  'wallet/fetchTransactionHistory',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await WalletService.getTransactionHistory();
-    } catch (err) {
-      return handleThunkError(err, rejectWithValue, WALLET_MESSAGES.FETCH_TRANSACTIONS_ERROR);
-    }
-  },
-);
+export const fetchTransactionHistory = createAsyncThunk<
+  WalletTransaction[],
+  void,
+  { rejectValue: string }
+>('wallet/fetchTransactionHistory', async (_, { rejectWithValue }) => {
+  try {
+    return await WalletService.getTransactionHistory();
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, WALLET_MESSAGES.FETCH_TRANSACTIONS_ERROR);
+  }
+});
 
 export const creditWallet = createAsyncThunk<
   WalletResponse,
   { amount: number; description: string },
   { rejectValue: string }
->(
-  'wallet/creditWallet',
-  async ({ amount, description }, { rejectWithValue }) => {
-    try {
-      return await WalletService.creditWallet(amount, description);
-    } catch (err) {
-      return handleThunkError(err, rejectWithValue, WALLET_MESSAGES.CREDIT_ERROR);
-    }
-  },
-);
+>('wallet/creditWallet', async ({ amount, description }, { rejectWithValue }) => {
+  try {
+    return await WalletService.creditWallet(amount, description);
+  } catch (err) {
+    return handleThunkError(err, rejectWithValue, WALLET_MESSAGES.CREDIT_ERROR);
+  }
+});
 
 export const topUpWallet = createAsyncThunk<
   WalletResponse,
@@ -89,21 +87,22 @@ export const topUpWallet = createAsyncThunk<
         },
       };
 
-      const RazorpayCtor = (window as any).Razorpay;
-      if (!RazorpayCtor) {
+      const WindowRazorpay = window.Razorpay;
+      if (!WindowRazorpay) {
         reject(new Error(WALLET_MESSAGES.RAZORPAY_LOAD_ERROR));
         return;
       }
 
-      const rzp = new RazorpayCtor(options);
+      const rzp = new WindowRazorpay(options);
       rzp.on('payment.failed', () => {
         paymentFailed = true;
       });
       rzp.open();
     });
   } catch (error: unknown) {
-    const err = error as Error;
-    if (err.message === 'DISMISSED') return rejectWithValue('DISMISSED');
-    return rejectWithValue(err.message || WALLET_MESSAGES.TOPUP_ERROR);
+    if (error instanceof Error && error.message === 'DISMISSED') {
+      return rejectWithValue('DISMISSED');
+    }
+    return handleThunkError(error, rejectWithValue, WALLET_MESSAGES.TOPUP_ERROR);
   }
 });

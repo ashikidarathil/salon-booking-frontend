@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import {
   SidebarProvider,
@@ -16,10 +16,19 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { useAppSelector, useAppDispatch } from '@/app/hooks';
 import { logout } from '@/features/auth/authThunks';
+import { fetchTotalUnreadCount } from '@/features/chat/chat.thunks';
 import { NotificationCenter } from '@/features/notification/components/NotificationCenter';
+import type { RootState } from '@/app/store';
 
 interface NavItem {
   icon: string;
@@ -42,6 +51,7 @@ function StylistSidebarContent({
     { icon: 'solar:clock-circle-bold', label: 'My Schedule', path: '/stylist/schedule' },
     { icon: 'solar:calendar-mark-bold', label: 'My Slots', path: '/stylist/slots' },
     { icon: 'solar:letter-bold', label: 'Leave Requests', path: '/stylist/off-days' },
+    { icon: 'solar:bell-bold', label: 'Notifications', path: '/stylist/notifications' },
     { icon: 'solar:wallet-bold', label: 'My Wallet', path: '/stylist/wallet' },
     { icon: 'solar:chat-round-bold', label: 'Chat', path: '/stylist/chat' },
     { icon: 'solar:star-bold', label: 'Reviews', path: '/stylist/reviews' },
@@ -102,7 +112,13 @@ export function StylistLayout() {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user } = useAppSelector((state) => state.auth);
-  const totalUnreadCount = useAppSelector((state) => state.chat.totalUnreadCount);
+  const { totalUnreadCount } = useAppSelector((state: RootState) => state.chat);
+
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchTotalUnreadCount());
+    }
+  }, [dispatch, user]);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -119,10 +135,10 @@ export function StylistLayout() {
       <div className="flex min-h-screen w-full">
         {/* Desktop Sidebar (visible from md up) */}
         <Sidebar className="border-r border-border/50">
-          <StylistSidebarContent 
-            onLogout={handleLogout} 
-            onNavigate={handleNavigate} 
-            unreadCount={totalUnreadCount} 
+          <StylistSidebarContent
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+            unreadCount={totalUnreadCount}
           />
         </Sidebar>
 
@@ -136,11 +152,15 @@ export function StylistLayout() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72 theme-stylist">
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Stylist Navigation</SheetTitle>
+                    <SheetDescription>Stylist portal navigation and menu</SheetDescription>
+                  </SheetHeader>
                   <div className="flex flex-col h-full bg-[var(--color-sidebar)]">
-                    <StylistSidebarContent 
-                      onLogout={handleLogout} 
-                      onNavigate={handleNavigate} 
-                      unreadCount={totalUnreadCount} 
+                    <StylistSidebarContent
+                      onLogout={handleLogout}
+                      onNavigate={handleNavigate}
+                      unreadCount={totalUnreadCount}
                     />
                   </div>
                 </SheetContent>

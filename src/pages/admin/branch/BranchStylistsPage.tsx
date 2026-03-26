@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   assignStylist,
@@ -8,14 +9,6 @@ import {
   fetchBranchStylistsPaginated,
   fetchUnassignedStylistsPaginated,
 } from '@/features/stylistBranch/stylistBranch.thunks';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,7 +19,6 @@ import {
   TableBody,
   TableCell,
 } from '@/components/ui/table';
-
 import {
   showSuccess,
   showError,
@@ -37,23 +29,19 @@ import {
 import Pagination from '@/components/pagination/Pagination';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/stylistBranch/stylistBranch.slice';
-
-interface BranchStylistModalProps {
-  branchId: string;
-  branchName?: string;
-  open: boolean;
-  onClose: () => void;
-}
+import { ArrowLeft, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const ITEMS_PER_PAGE = 5;
 
-export default function BranchStylistModal({
-  branchId,
-  branchName,
-  open,
-  onClose,
-}: BranchStylistModalProps) {
+export default function BranchStylistsPage() {
+  const { branchId } = useParams<{ branchId: string }>();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  
+  const { branches } = useAppSelector((state) => state.branch);
+  const branchName = branches.find((b) => b.id === branchId)?.name || 'Branch';
+
   const {
     assignedStylists,
     unassignedOptions,
@@ -96,16 +84,12 @@ export default function BranchStylistModal({
   }, [branchId, dispatch, currentPageUnassigned, searchUnassigned]);
 
   useEffect(() => {
-    if (open) {
-      loadAssignedStylists();
-    }
-  }, [open, loadAssignedStylists]);
+    loadAssignedStylists();
+  }, [loadAssignedStylists]);
 
   useEffect(() => {
-    if (open) {
-      loadUnassignedStylists();
-    }
-  }, [open, loadUnassignedStylists]);
+    loadUnassignedStylists();
+  }, [loadUnassignedStylists]);
 
   const handleSearchAssignedChange = (value: string) => {
     setSearchAssigned(value);
@@ -118,6 +102,7 @@ export default function BranchStylistModal({
   };
 
   const handleAssignClick = async (stylistId: string, stylistName: string) => {
+    if (!branchId) return;
     const confirmed = await showConfirm(
       'Assign Stylist?',
       `Assign ${stylistName} to this branch?`,
@@ -134,29 +119,15 @@ export default function BranchStylistModal({
 
     if (result.meta.requestStatus === 'fulfilled') {
       showSuccess('Assigned', 'Stylist assigned successfully');
-
-      dispatch(
-        fetchBranchStylistsPaginated({
-          branchId,
-          page: currentPageAssigned,
-          limit: ITEMS_PER_PAGE,
-          search: searchAssigned || undefined,
-        }),
-      );
-      dispatch(
-        fetchUnassignedStylistsPaginated({
-          branchId,
-          page: currentPageUnassigned,
-          limit: ITEMS_PER_PAGE,
-          search: searchUnassigned || undefined,
-        }),
-      );
+      loadAssignedStylists();
+      loadUnassignedStylists();
     } else {
       showError('Failed', 'Could not assign stylist');
     }
   };
 
   const handleUnassignClick = async (stylistId: string, stylistName: string) => {
+    if (!branchId) return;
     const confirmed = await showConfirm(
       'Unassign Stylist?',
       `Remove ${stylistName} from this branch?`,
@@ -173,53 +144,39 @@ export default function BranchStylistModal({
 
     if (result.meta.requestStatus === 'fulfilled') {
       showSuccess('Unassigned', 'Stylist removed successfully');
-      dispatch(
-        fetchBranchStylistsPaginated({
-          branchId,
-          page: currentPageAssigned,
-          limit: ITEMS_PER_PAGE,
-          search: searchAssigned || undefined,
-        }),
-      );
-      dispatch(
-        fetchUnassignedStylistsPaginated({
-          branchId,
-          page: currentPageUnassigned,
-          limit: ITEMS_PER_PAGE,
-          search: searchUnassigned || undefined,
-        }),
-      );
+      loadAssignedStylists();
+      loadUnassignedStylists();
     } else {
       showError('Failed', 'Could not unassign stylist');
     }
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(newOpen) => {
-        if (!newOpen) {
-          setSearchAssigned('');
-          setCurrentPageAssigned(1);
-          setSearchUnassigned('');
-          setCurrentPageUnassigned(1);
-          onClose();
-        }
-      }}
-    >
-      <DialogContent className="max-w-[95vw] lg:max-w-4xl max-h-[90vh] overflow-y-auto theme-admin">
-        <DialogHeader>
-          <DialogTitle>Manage Stylists</DialogTitle>
-          <DialogDescription>
-            {branchName || `Branch ${branchId}`} - Assign or remove stylists from this branch.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="p-8 space-y-8 theme-admin mx-auto rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/branches')}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Manage Stylists</h1>
+          <p className="text-muted-foreground">{branchName}</p>
+        </div>
+      </div>
 
-        <div className="space-y-8">
-          {/* ✅ SECTION 1: Unassigned Stylists (Available for Assignment) */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold">Available Stylists</h3>
+      <div className="grid grid-cols-1 gap-8">
+        {/* Available Stylists Section */}
+        <Card className="shadow-none border-border/60">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2 mb-2">
+                  <Users className="w-5 h-5" />
+                  Available Stylists
+                </CardTitle>
+                <CardDescription>
+                  Stylists available to be assigned to this branch
+                </CardDescription>
+              </div>
               <Input
                 placeholder="Search available stylists..."
                 value={searchUnassigned}
@@ -227,13 +184,8 @@ export default function BranchStylistModal({
                 className="max-w-xs"
               />
             </div>
-
-            <p className="text-sm text-muted-foreground">
-              Showing {unassignedOptions.length} of {unassignedPagination.totalItems} stylists
-              available
-            </p>
-
-            {/* Available Stylists Table */}
+          </CardHeader>
+          <CardContent>
             <LoadingGate
               loading={loading}
               error={error}
@@ -257,7 +209,6 @@ export default function BranchStylistModal({
                       <TableHead>Name</TableHead>
                       <TableHead>Specialization</TableHead>
                       <TableHead>Experience</TableHead>
-                      {/* <TableHead>Status</TableHead> */}
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -267,15 +218,6 @@ export default function BranchStylistModal({
                         <TableCell className="font-medium">{stylist.name}</TableCell>
                         <TableCell>{stylist.specialization}</TableCell>
                         <TableCell>{stylist.experience} yrs</TableCell>
-                        {/* <TableCell>
-                            <Badge
-                              variant={
-                                stylist.stylistStatus === 'ACTIVE' ? 'default' : 'destructive'
-                              }
-                            >
-                              {stylist.stylistStatus}
-                            </Badge>
-                          </TableCell> */}
                         <TableCell className="text-right">
                           <Button
                             variant="default"
@@ -291,9 +233,8 @@ export default function BranchStylistModal({
                 </Table>
               </div>
 
-              {/* Pagination for Unassigned */}
               {unassignedPagination.totalPages > 1 && (
-                <div className="pt-4 border-t">
+                <div className="pt-4 flex justify-center">
                   <Pagination
                     currentPage={unassignedPagination.currentPage}
                     totalPages={unassignedPagination.totalPages}
@@ -301,13 +242,26 @@ export default function BranchStylistModal({
                   />
                 </div>
               )}
+              <div className="mt-4 text-xs text-muted-foreground">
+                Showing {unassignedOptions.length} of {unassignedPagination.totalItems} available stylists
+              </div>
             </LoadingGate>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* ✅ SECTION 2: Assigned Stylists (Already Working at Branch) */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold">Assigned Stylists</h3>
+        {/* Assigned Stylists Section */}
+        <Card className="shadow-none border-border/60">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2 mb-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Assigned Stylists
+                </CardTitle>
+                <CardDescription>
+                  Stylists currently working at this branch
+                </CardDescription>
+              </div>
               <Input
                 placeholder="Search assigned stylists..."
                 value={searchAssigned}
@@ -315,11 +269,8 @@ export default function BranchStylistModal({
                 className="max-w-xs"
               />
             </div>
-
-            <p className="text-sm text-muted-foreground">
-              Total: {assignedPagination.totalItems} stylists assigned to this branch
-            </p>
-
+          </CardHeader>
+          <CardContent>
             <LoadingGate
               loading={loading}
               error={error}
@@ -341,7 +292,6 @@ export default function BranchStylistModal({
                       <TableHead>Name</TableHead>
                       <TableHead>Specialization</TableHead>
                       <TableHead>Experience</TableHead>
-                      {/* <TableHead>Status</TableHead> */}
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -351,15 +301,6 @@ export default function BranchStylistModal({
                         <TableCell className="font-medium">{stylist.name}</TableCell>
                         <TableCell>{stylist.specialization}</TableCell>
                         <TableCell>{stylist.experience} yrs</TableCell>
-                        {/* <TableCell>
-                            <Badge
-                              variant={
-                                stylist.stylistStatus === 'ACTIVE' ? 'default' : 'destructive'
-                              }
-                            >
-                              {stylist.stylistStatus}
-                            </Badge>
-                          </TableCell> */}
                         <TableCell className="text-right">
                           <Button
                             variant="destructive"
@@ -375,9 +316,8 @@ export default function BranchStylistModal({
                 </Table>
               </div>
 
-              {/* Pagination for Assigned */}
               {assignedPagination.totalPages > 1 && (
-                <div className="pt-4 border-t">
+                <div className="pt-4 flex justify-center">
                   <Pagination
                     currentPage={assignedPagination.currentPage}
                     totalPages={assignedPagination.totalPages}
@@ -385,16 +325,13 @@ export default function BranchStylistModal({
                   />
                 </div>
               )}
+              <div className="mt-4 text-xs text-muted-foreground">
+                Total: {assignedPagination.totalItems} stylists assigned to this branch
+              </div>
             </LoadingGate>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

@@ -149,19 +149,6 @@ export const sendInviteToApplied = createAsyncThunk<
   }
 });
 
-export const toggleBlockStylist = createAsyncThunk<
-  { success: boolean; block: boolean; userId: string },
-  { userId: string; block: boolean },
-  { rejectValue: string }
->('stylistInvite/toggleBlockStylist', async ({ userId, block }, { rejectWithValue }) => {
-  try {
-    await stylistInviteService.toggleBlock(userId, block);
-    return { success: true, block, userId };
-  } catch (err) {
-    return handleThunkError(err, rejectWithValue, ERROR_MESSAGES.UPDATE_FAILED);
-  }
-});
-
 export const updateStylistPosition = createAsyncThunk<
   StylistListItem,
   { stylistId: string; position: 'JUNIOR' | 'SENIOR' | 'TRAINEE' },

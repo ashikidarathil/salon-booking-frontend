@@ -18,6 +18,7 @@ import { Icon } from '@iconify/react';
 import { useAppDispatch } from '@/app/hooks';
 import { logout } from '@/features/auth/authThunks';
 import { APP_ROUTES } from '@/common/constants/app.routes';
+import { NotificationCenter } from '@/features/notification/components/NotificationCenter';
 
 export function SalonAdminLayout() {
   const dispatch = useAppDispatch();
@@ -121,6 +122,13 @@ export function SalonAdminLayout() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate(APP_ROUTES.ADMIN.REVIEWS)}>
+                  <Icon icon="solar:star-bold" className="size-4" />
+                  <span>Reviews</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate('/admin/wallet')}>
                   <Icon icon="solar:wallet-bold" className="size-4" />
                   <span>Platform Wallet</span>
@@ -128,11 +136,18 @@ export function SalonAdminLayout() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate('/admin/notifications')}>
+                  <Icon icon="solar:bell-bold" className="size-4" />
+                  <span>Notifications</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate('/admin/settings')}>
                   <Icon icon="solar:settings-bold" className="size-4" />
                   <span>Settings</span>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem> */}
 
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -152,10 +167,13 @@ export function SalonAdminLayout() {
               <SidebarTrigger />
               <div className="w-px h-6 bg-border" />
             </div>
-            <Avatar>
-              <AvatarImage src="https://randomuser.me/api/portraits/women/34.jpg" />
-              <AvatarFallback>AD</AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-4">
+              <NotificationCenter />
+              <Avatar>
+                <AvatarImage src="https://randomuser.me/api/portraits/women/34.jpg" />
+                <AvatarFallback>AD</AvatarFallback>
+              </Avatar>
+            </div>
           </header>
 
           <main className="flex-1 p-6 overflow-auto bg-muted/40">

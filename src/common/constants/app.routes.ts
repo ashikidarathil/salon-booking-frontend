@@ -29,6 +29,7 @@ export const APP_ROUTES = {
     HOLIDAYS: '/admin/holidays',
     COUPONS: '/admin/coupons',
     CHAT: '/admin/chat',
+    REVIEWS: '/admin/reviews',
   },
 
   // Stylist routes
@@ -41,6 +42,7 @@ export const APP_ROUTES = {
     INVITE: '/stylist/invite/:token',
     SLOTS: '/stylist/slots',
     APPOINTMENTS: '/stylist/appointments',
+    REVIEWS: '/stylist/reviews',
   },
 
   // User routes

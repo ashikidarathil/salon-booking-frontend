@@ -3,7 +3,7 @@ import { API_ROUTES } from '@/common/constants/api.routes';
 import type { Holiday, CreateHolidayDto } from '@/features/holiday/holiday.types';
 import type { ApiResponse } from '@/common/types/api.types';
 
-export const holidayService = {
+const HolidayService = {
   listHolidays: async (branchId?: string) => {
     return api.get<ApiResponse<Holiday[]>>(API_ROUTES.HOLIDAY.BASE, {
       params: { branchId },
@@ -18,3 +18,5 @@ export const holidayService = {
     return api.delete<ApiResponse<void>>(API_ROUTES.HOLIDAY.BY_ID(id));
   },
 };
+
+export default HolidayService;

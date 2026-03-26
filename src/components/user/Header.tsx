@@ -3,7 +3,14 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -212,21 +219,6 @@ export function Header() {
                 <Icon icon="solar:heart-bold-duotone" className="size-6" />
               </Button>
             )}
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/cart')}
-                className="h-10 w-10 text-muted-foreground hover:text-primary transition-colors relative"
-              >
-                <Icon icon="solar:cart-large-2-bold-duotone" className="size-6" />
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full size-4 flex items-center justify-center border-2 border-white">
-                    {cartItems.length}
-                  </span>
-                )}
-              </Button>
-            )}
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -267,6 +259,22 @@ export function Header() {
             )}
           </div>
 
+          {isAuthenticated && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/cart')}
+              className="h-10 w-10 text-muted-foreground hover:text-primary transition-colors relative"
+            >
+              <Icon icon="solar:cart-large-2-bold-duotone" className="size-6" />
+              {cartItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full size-4 flex items-center justify-center border-2 border-white">
+                  {cartItems.length}
+                </span>
+              )}
+            </Button>
+          )}
+
           {isAuthenticated && <NotificationCenter />}
 
           {/* Mobile Menu Trigger */}
@@ -277,18 +285,14 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80">
-              <nav className="flex flex-col gap-4">
-                {navItems.map((item) => (
-                  <Link key={item.label} to={item.href} className="text-lg font-medium">
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-
-              {/* Mobile User Account Section */}
+              <SheetHeader className="sr-only">
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>Mobile navigation menu</SheetDescription>
+              </SheetHeader>
+              {/* Mobile Profile Info - TOP */}
               {isAuthenticated && user && (
-                <div className="mt-8 pt-6 border-t border-border">
-                  <div className="flex items-center gap-3 mb-6">
+                <div className="pb-6 mb-6 border-b border-border">
+                  <div className="flex items-center gap-3">
                     <Avatar className="size-10">
                       <AvatarImage src={user.profilePicture ?? undefined} />
                       <AvatarFallback className="bg-primary text-primary-foreground">
@@ -302,20 +306,27 @@ export function Header() {
                       </p>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Main Navigation - MIDDLE */}
+              <nav className="flex flex-col gap-4">
+                {navItems.map((item) => (
+                  <Link key={item.label} to={item.href} className="text-lg font-medium">
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+
+              {/* Mobile User Actions - BOTTOM */}
+              {isAuthenticated && user && (
+                <div className="mt-8 pt-6 border-t border-border">
                   <nav className="flex flex-col gap-4">
-                    <Link
-                      to={APP_ROUTES.USER.FAVORITES}
-                      className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-                    >
-                      <Icon icon="solar:heart-bold-duotone" className="size-5 text-primary" />
-                      My Favorites
-                    </Link>
                     <Link
                       to={APP_ROUTES.USER.PROFILE}
                       className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
                     >
-                      <Icon icon="solar:user-scan-bold-duotone" className="size-5 text-primary" />
-                      Profile Settings
+                      My Profile
                     </Link>
                     <button
                       onClick={() => {
@@ -324,7 +335,6 @@ export function Header() {
                       }}
                       className="flex items-center gap-3 text-lg font-medium text-red-600 w-full text-left hover:opacity-80 transition-opacity"
                     >
-                      <Icon icon="solar:logout-2-bold-duotone" className="size-5" />
                       Logout
                     </button>
                   </nav>

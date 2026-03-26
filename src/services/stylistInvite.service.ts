@@ -8,6 +8,8 @@ import type {
   ValidateInviteResponse,
   AcceptInvitePayload,
   ApplyAsStylistPayload,
+  PaginatedStylistResponse,
+  FetchPublicStylistsParams,
 } from '@/features/stylistInvite/stylistInvite.types';
 
 export const stylistInviteService = {
@@ -32,38 +34,15 @@ export const stylistInviteService = {
     isActive?: boolean;
     status?: string;
   }) {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-    if (params?.isBlocked !== undefined)
-      queryParams.append('isBlocked', params.isBlocked.toString());
-    if (params?.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
-    if (params?.status) queryParams.append('status', params.status);
-
-    return api.get<
-      ApiResponse<{
-        data: StylistListItem[];
-        pagination: {
-          currentPage: number;
-          totalPages: number;
-          totalItems: number;
-          itemsPerPage: number;
-          hasNextPage: boolean;
-          hasPreviousPage: boolean;
-        };
-      }>
-    >(`${API_ROUTES.STYLIST_INVITE.PAGINATED}?${queryParams.toString()}`);
+    return api.get<ApiResponse<PaginatedStylistResponse>>(API_ROUTES.STYLIST_INVITE.PAGINATED, {
+      params,
+    });
   },
 
   blockStylist(stylistId: string, isBlocked: boolean) {
     return api.patch<ApiResponse<{ success: boolean }>>(
       API_ROUTES.STYLIST_INVITE.TOGGLE_BLOCK_NEW.replace(':stylistId', stylistId),
-      {
-        isBlocked,
-      },
+      { isBlocked },
     );
   },
 
@@ -91,50 +70,27 @@ export const stylistInviteService = {
     const url = buildUrl(API_ROUTES.STYLIST_INVITE.SEND_INVITE_TO_APPLIED, { userId });
     return api.post<ApiResponse<{ inviteLink: string }>>(url);
   },
-  toggleBlock(userId: string, block: boolean) {
-    const url = buildUrl(API_ROUTES.STYLIST_INVITE.TOGGLE_BLOCK, { userId });
-    return api.post<ApiResponse<{ success: boolean; block: boolean }>>(url, { block });
-  },
+
   applyAsStylist(data: ApplyAsStylistPayload) {
     return api.post<ApiResponse<{ message: string }>>(
       API_ROUTES.STYLIST_INVITE.APPLY_STYLIST,
       data,
     );
   },
+
   updatePosition(stylistId: string, position: 'JUNIOR' | 'SENIOR' | 'TRAINEE') {
     return api.patch<ApiResponse<StylistListItem>>(
       API_ROUTES.STYLIST_INVITE.UPDATE_POSITION.replace(':stylistId', stylistId),
       { position },
     );
   },
-  getPublicStylists(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    branchId?: string;
-    position?: string;
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.branchId) queryParams.append('branchId', params.branchId);
-    if (params?.position) queryParams.append('position', params.position);
 
-    return api.get<
-      ApiResponse<{
-        data: StylistListItem[];
-        pagination: {
-          currentPage: number;
-          totalPages: number;
-          totalItems: number;
-          itemsPerPage: number;
-          hasNextPage: boolean;
-          hasPreviousPage: boolean;
-        };
-      }>
-    >(`${API_ROUTES.STYLIST_INVITE.PUBLIC_LIST}?${queryParams.toString()}`);
+  getPublicStylists(params?: FetchPublicStylistsParams) {
+    return api.get<ApiResponse<PaginatedStylistResponse>>(API_ROUTES.STYLIST_INVITE.PUBLIC_LIST, {
+      params,
+    });
   },
+
   getPublicStylistById(stylistId: string) {
     const url = API_ROUTES.STYLIST_INVITE.PUBLIC_BY_ID(stylistId);
     return api.get<ApiResponse<StylistListItem>>(url);

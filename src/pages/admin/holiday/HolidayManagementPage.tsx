@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchHolidays, createHoliday, deleteHoliday } from '@/features/holiday/holiday.thunks';
@@ -35,7 +33,7 @@ import { Icon } from '@iconify/react';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { showSuccess, showConfirm, showLoading, closeLoading } from '@/common/utils/swal.utils';
 import { format } from 'date-fns';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { CreateHolidayDto } from '@/features/holiday/holiday.types';
@@ -65,7 +63,6 @@ export default function HolidayManagementPage() {
     handleSubmit,
     control,
     reset,
-    watch,
     formState: { errors },
   } = useForm<HolidayFormData>({
     resolver: zodResolver(holidaySchema),
@@ -75,7 +72,11 @@ export default function HolidayManagementPage() {
     },
   });
 
-  const isAllBranches = watch('isAllBranches');
+  const isAllBranches = useWatch({
+    control,
+    name: 'isAllBranches',
+    defaultValue: true,
+  });
 
   useEffect(() => {
     dispatch(fetchHolidays());

@@ -23,3 +23,19 @@ export interface ServiceState {
   error: string | null;
   pagination: PaginationMetadata;
 }
+
+export interface ServiceQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  categoryId?: string;
+  status?: ServiceStatus;
+  isDeleted?: boolean;
+}
+
+export interface PaginatedServiceResponse {
+  data: Service[];
+  pagination: PaginationMetadata;
+}

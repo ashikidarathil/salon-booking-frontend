@@ -242,6 +242,15 @@ export const API_ROUTES = {
     ROOM_MESSAGES: (roomId: string) => `/rooms/${roomId}/messages`,
     MARK_READ: (roomId: string) => `/rooms/${roomId}/read`,
     UNREAD_COUNT: (roomId: string) => `/rooms/${roomId}/unread`,
+    TOTAL_UNREAD: '/rooms/total-unread/count',
     UPLOAD: '/rooms/upload',
+  },
+  REVIEW: {
+    CREATE: '/reviews',
+    GET_ALL: '/reviews',
+    TOP_STYLISTS: '/reviews/top-stylists',
+    TOP_SERVICES: '/reviews/top-services',
+    STYLIST_RATING: (stylistId: string) => `/reviews/stylist/${stylistId}/rating`,
+    DELETE: (id: string) => `/reviews/${id}`,
   },
 } as const;

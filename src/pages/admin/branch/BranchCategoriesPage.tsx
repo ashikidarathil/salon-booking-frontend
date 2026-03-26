@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   toggleBranchCategory,
@@ -9,14 +10,6 @@ import {
 import Pagination from '@/components/pagination/Pagination';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/branchCategory/branchCategory.slice';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -43,23 +36,19 @@ import {
   showLoading,
   closeLoading,
 } from '@/common/utils/swal.utils';
-
-interface BranchCategoryModalProps {
-  branchId: string;
-  branchName?: string;
-  open: boolean;
-  onClose: () => void;
-}
+import { ArrowLeft, Tags } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const ITEMS_PER_PAGE = 5;
 
-export default function BranchCategoryModal({
-  branchId,
-  branchName,
-  open,
-  onClose,
-}: BranchCategoryModalProps) {
+export default function BranchCategoriesPage() {
+  const { branchId } = useParams<{ branchId: string }>();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  
+  const { branches } = useAppSelector((state) => state.branch);
+  const branchName = branches.find((b) => b.id === branchId)?.name || 'Branch';
+
   const { categories, loading, error, pagination } = useAppSelector(
     (state) => state.branchCategory,
   );
@@ -83,10 +72,8 @@ export default function BranchCategoryModal({
   }, [branchId, dispatch, currentPage, search, filterActive]);
 
   useEffect(() => {
-    if (open) {
-      loadBranchCategories();
-    }
-  }, [open, loadBranchCategories]);
+    loadBranchCategories();
+  }, [loadBranchCategories]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -97,11 +84,13 @@ export default function BranchCategoryModal({
     setFilterActive(value as 'all' | 'active' | 'inactive');
     setCurrentPage(1);
   };
+
   const handleToggleClick = async (
     categoryId: string,
     currentActive: boolean,
     categoryName: string,
   ) => {
+    if (!branchId) return;
     const newActive = !currentActive;
     const action = newActive ? 'Enable' : 'Disable';
 
@@ -115,85 +104,76 @@ export default function BranchCategoryModal({
 
     if (!confirmed) return;
 
-    const isEnable = newActive;
-
-    showLoading(`${isEnable ? 'Enabling' : 'Disabling'}...`);
+    showLoading(`${action === 'Enable' ? 'Enabling' : 'Disabling'}...`);
     const result = await dispatch(
       toggleBranchCategory({
         branchId,
         categoryId,
-        isActive: isEnable,
+        isActive: newActive,
       }),
     );
     closeLoading();
 
     if (result.meta.requestStatus === 'fulfilled') {
-      showSuccess('Success', `${categoryName} ${isEnable ? 'enabled' : 'disabled'}`);
-      dispatch(
-        fetchBranchCategoriesPaginated({
-          branchId,
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: search || undefined,
-          isActive: filterActive === 'all' ? undefined : filterActive === 'active',
-        }),
-      );
+      showSuccess('Success', `${categoryName} ${newActive ? 'enabled' : 'disabled'}`);
+      loadBranchCategories();
     } else {
       showError('Failed', 'Could not update category');
     }
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(newOpen) => {
-        if (!newOpen) onClose();
-      }}
-    >
-      <DialogContent className="theme-admin max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Manage Categories</DialogTitle>
-          <DialogDescription>
-            {branchName || `Branch ${branchId}`} - Enable or disable categories available at this
-            branch.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="p-8 space-y-8 theme-admin mx-auto rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/branches')}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Manage Categories</h1>
+          <p className="text-muted-foreground">{branchName}</p>
+        </div>
+      </div>
 
-        <div className="space-y-6">
-          {/* ✅ NEW: Search and Filter Section */}
-          <div className="space-y-3">
-            {/* Search */}
-            <div>
-              <Label htmlFor="search-categories" className="text-sm font-medium">
-                Search
-              </Label>
-              <Input
-                id="search-categories"
-                placeholder="Search categories..."
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            {/* Filter */}
-            <div>
-              <Label htmlFor="filter-active" className="text-sm font-medium">
-                Filter by Status
-              </Label>
-              <Select value={filterActive} onValueChange={handleFilterChange}>
-                <SelectTrigger id="filter-active" className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper" sideOffset={4} className="z-[2000] bg-white">
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="active">Active Only</SelectItem>
-                  <SelectItem value="inactive">Disabled Only</SelectItem>
-                </SelectContent>
-              </Select>
+      <Card className="shadow-none border-border/60">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex-1 space-y-4">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Tags className="w-5 h-5" />
+                Branch Categories
+              </CardTitle>
+              <CardDescription>
+                Enable or disable categories available at this branch.
+              </CardDescription>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+                <div className="space-y-2">
+                  <Label htmlFor="search-categories">Search</Label>
+                  <Input
+                    id="search-categories"
+                    placeholder="Search categories..."
+                    value={search}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filter-active">Filter by Status</Label>
+                  <Select value={filterActive} onValueChange={handleFilterChange}>
+                    <SelectTrigger id="filter-active">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="active">Active Only</SelectItem>
+                      <SelectItem value="inactive">Disabled Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
-
+        </CardHeader>
+        <CardContent>
           <LoadingGate
             loading={loading}
             error={error}
@@ -221,11 +201,11 @@ export default function BranchCategoryModal({
                 <TableBody>
                   {categories.map((cat) => (
                     <TableRow key={cat.categoryId}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-base">
                         {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={cat.isActive ? 'default' : 'destructive'}>
+                        <Badge variant={cat.isActive ? 'default' : 'destructive'} className="px-3">
                           {cat.isActive ? 'Active' : 'Disabled'}
                         </Badge>
                       </TableCell>
@@ -244,9 +224,8 @@ export default function BranchCategoryModal({
               </Table>
             </div>
 
-            {/* ✅ NEW: Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="pt-4 border-t">
+              <div className="pt-6 flex justify-center">
                 <Pagination
                   currentPage={pagination.currentPage}
                   totalPages={pagination.totalPages}
@@ -255,18 +234,12 @@ export default function BranchCategoryModal({
               </div>
             )}
 
-            {/* ✅ NEW: Metadata */}
-            <div className="text-xs text-muted-foreground">
+            <div className="mt-4 text-sm text-muted-foreground">
               Showing {categories.length} of {pagination.totalItems} categories
             </div>
           </LoadingGate>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

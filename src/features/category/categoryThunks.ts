@@ -1,7 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { categoryService } from '@/services/category.service';
-import type { Category, CategoryStatus } from './category.types';
-import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+import type {
+  Category,
+  CategoryStatus,
+  CategoryQuery,
+  PaginatedCategoryResponse,
+} from './category.types';
 import { handleThunkError } from '@/common/utils/thunk.utils';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 
@@ -32,19 +36,8 @@ export const fetchPublicCategories = createAsyncThunk<
 });
 
 export const fetchPaginatedCategories = createAsyncThunk<
-  {
-    data: Category[];
-    pagination: PaginationMetadata;
-  },
-  {
-    page?: number;
-    limit?: number;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    status?: 'ACTIVE' | 'INACTIVE';
-    isDeleted?: boolean;
-  },
+  PaginatedCategoryResponse,
+  CategoryQuery,
   { rejectValue: string }
 >('category/fetchPaginatedCategories', async (params, { rejectWithValue }) => {
   try {

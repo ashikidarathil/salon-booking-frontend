@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { stylistBranchService } from '@/services/stylistBranch.service';
+import StylistBranchService from '@/services/stylistBranch.service';
+
 import type { BranchStylist, UnassignedStylist } from './stylistBranch.types';
 import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 import { handleThunkError } from '@/common/utils/thunk.utils';
@@ -10,7 +11,8 @@ export const fetchBranchStylists = createAsyncThunk<
   { rejectValue: string }
 >('stylistBranch/fetchBranchStylists', async (branchId, { rejectWithValue }) => {
   try {
-    const res = await stylistBranchService.listBranchStylists(branchId);
+    const res = await StylistBranchService.listBranchStylists(branchId);
+
     return res.data.data;
   } catch (err) {
     return handleThunkError(err, rejectWithValue, 'Failed to fetch stylists');
@@ -35,7 +37,7 @@ export const fetchBranchStylistsPaginated = createAsyncThunk<
   'stylistBranch/fetchBranchStylistsPaginated',
   async ({ branchId, page, limit, search, sortBy, sortOrder }, { rejectWithValue }) => {
     try {
-      const res = await stylistBranchService.listBranchStylistsPaginated(branchId, {
+      const res = await StylistBranchService.listBranchStylistsPaginated(branchId, {
         page,
         limit,
         search,
@@ -55,7 +57,7 @@ export const fetchUnassignedStylists = createAsyncThunk<
   { rejectValue: string }
 >('stylistBranch/fetchUnassignedStylists', async (branchId, { rejectWithValue }) => {
   try {
-    const res = await stylistBranchService.listUnassignedOptions(branchId);
+    const res = await StylistBranchService.listUnassignedOptions(branchId);
     return res.data.data;
   } catch (err) {
     return handleThunkError(err, rejectWithValue, 'Failed to fetch options');
@@ -80,7 +82,7 @@ export const fetchUnassignedStylistsPaginated = createAsyncThunk<
   'stylistBranch/fetchUnassignedStylistsPaginated',
   async ({ branchId, page, limit, search, sortBy, sortOrder }, { rejectWithValue }) => {
     try {
-      const res = await stylistBranchService.listUnassignedOptionsPaginated(branchId, {
+      const res = await StylistBranchService.listUnassignedOptionsPaginated(branchId, {
         page,
         limit,
         search,
@@ -100,7 +102,7 @@ export const assignStylist = createAsyncThunk<
   { rejectValue: string }
 >('stylistBranch/assignStylist', async ({ branchId, stylistId }, { rejectWithValue }) => {
   try {
-    const res = await stylistBranchService.assign(branchId, stylistId);
+    const res = await StylistBranchService.assign(branchId, stylistId);
     return res.data.data;
   } catch (err) {
     return handleThunkError(err, rejectWithValue, 'Failed to assign');
@@ -113,7 +115,7 @@ export const unassignStylist = createAsyncThunk<
   { rejectValue: string }
 >('stylistBranch/unassignStylist', async ({ branchId, stylistId }, { rejectWithValue }) => {
   try {
-    const res = await stylistBranchService.unassign(branchId, stylistId);
+    const res = await StylistBranchService.unassign(branchId, stylistId);
     return res.data.data;
   } catch (err) {
     return handleThunkError(err, rejectWithValue, 'Failed to unassign');
@@ -126,7 +128,7 @@ export const changeStylistBranch = createAsyncThunk<
   { rejectValue: string }
 >('stylistBranch/changeStylistBranch', async ({ branchId, stylistId }, { rejectWithValue }) => {
   try {
-    const res = await stylistBranchService.changeBranch(branchId, stylistId);
+    const res = await StylistBranchService.changeBranch(branchId, stylistId);
     return res.data.data;
   } catch (err) {
     return handleThunkError(err, rejectWithValue, 'Failed to change branch');

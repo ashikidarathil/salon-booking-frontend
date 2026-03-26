@@ -35,7 +35,7 @@ export default function PaymentSuccessPage() {
           <Card className="w-full p-8 sm:p-10 space-y-8 shadow-2xl shadow-slate-200/50 border-white/40 bg-white/80 backdrop-blur-sm rounded-[2.5rem]">
             {/* Elegant Success Icon */}
             <div className="flex justify-center">
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}

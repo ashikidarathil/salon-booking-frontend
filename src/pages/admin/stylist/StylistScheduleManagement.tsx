@@ -6,7 +6,8 @@ import { Icon } from '@iconify/react';
 import WeeklyRoutine from '@/components/schedule/WeeklyRoutine';
 import DailyAdjustments from '@/components/schedule/DailyAdjustments';
 import BreakManagement from '@/components/schedule/BreakManagement';
-import { stylistBranchService } from '@/services/stylistBranch.service';
+import StylistBranchService from '@/services/stylistBranch.service';
+
 
 interface StylistScheduleManagementProps {
   stylistId: string;
@@ -28,7 +29,8 @@ export default function StylistScheduleManagement({
     const fetchStylistBranch = async () => {
       setIsBranchLoading(true);
       try {
-        const response = await stylistBranchService.getStylistBranches(stylistId);
+        const response = await StylistBranchService.getStylistBranches(stylistId);
+
         const branches = response.data.data;
         if (branches.length > 0) {
           const activeBranch = branches.find((b) => b.isActive);

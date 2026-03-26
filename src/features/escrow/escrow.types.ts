@@ -5,6 +5,8 @@ export interface PaginationQueryDto {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   status?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface EscrowPagination {
@@ -22,7 +24,7 @@ export interface PaginatedEscrowResponse {
 export enum EscrowStatus {
   HELD = 'HELD',
   RELEASED = 'RELEASED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 export interface EscrowResponseDto {
@@ -47,7 +49,6 @@ export interface EscrowResponseDto {
   };
   amount: number;
   status: EscrowStatus;
-  releaseMonth: string;
   releaseDate: string;
   createdAt: string;
   updatedAt: string;

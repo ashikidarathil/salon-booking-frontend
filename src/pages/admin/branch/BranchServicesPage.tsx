@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   upsertBranchService,
@@ -8,14 +9,6 @@ import {
   fetchBranchServicesPaginated,
 } from '@/features/branchService/branchService.thunks';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -46,22 +39,19 @@ import type { BranchServiceItem } from '@/features/branchService/branchService.t
 import Pagination from '@/components/pagination/Pagination';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/branchService/branchService.slice';
+import { ArrowLeft, Scissors } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-interface BranchServiceModalProps {
-  branchId: string;
-  branchName?: string;
-  open: boolean;
-  onClose: () => void;
-}
 const ITEMS_PER_PAGE = 5;
 
-export default function BranchServiceModal({
-  branchId,
-  branchName,
-  open,
-  onClose,
-}: BranchServiceModalProps) {
+export default function BranchServicesPage() {
+  const { branchId } = useParams<{ branchId: string }>();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  
+  const { branches } = useAppSelector((state) => state.branch);
+  const branchName = branches.find((b) => b.id === branchId)?.name || 'Branch';
+
   const { services, loading, error, pagination } = useAppSelector((state) => state.branchService);
 
   const [search, setSearch] = useState('');
@@ -73,6 +63,7 @@ export default function BranchServiceModal({
   const [editingService, setEditingService] = useState<BranchServiceItem | null>(null);
   const [editPrice, setEditPrice] = useState<string>('0');
   const [editDuration, setEditDuration] = useState<string>('0');
+
   const loadBranchServices = useCallback(() => {
     if (branchId) {
       dispatch(
@@ -89,10 +80,8 @@ export default function BranchServiceModal({
   }, [branchId, dispatch, currentPage, search, filterConfigured, filterActive]);
 
   useEffect(() => {
-    if (open) {
-      loadBranchServices();
-    }
-  }, [open, loadBranchServices]);
+    loadBranchServices();
+  }, [loadBranchServices]);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -116,6 +105,7 @@ export default function BranchServiceModal({
   };
 
   const handleSaveEdit = async (serviceId: string, serviceName: string) => {
+    if (!branchId) return;
     const priceNum = Number(editPrice);
     const durationNum = Number(editDuration);
 
@@ -139,16 +129,7 @@ export default function BranchServiceModal({
     if (result.meta.requestStatus === 'fulfilled') {
       showSuccess('Updated', `${serviceName} updated successfully`);
       setEditingService(null);
-      dispatch(
-        fetchBranchServicesPaginated({
-          branchId,
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: search || undefined,
-          configured: filterConfigured === 'all' ? undefined : filterConfigured === 'configured',
-          isActive: filterActive === 'all' ? undefined : filterActive === 'active',
-        }),
-      );
+      loadBranchServices();
     } else {
       showError('Failed', 'Could not update service');
     }
@@ -161,6 +142,7 @@ export default function BranchServiceModal({
     price: number | null,
     duration: number | null,
   ) => {
+    if (!branchId) return;
     const newActive = !currentActive;
     const action = newActive ? 'Enable' : 'Disable';
 
@@ -182,108 +164,89 @@ export default function BranchServiceModal({
 
     if (!confirmed) return;
 
-    const isEnable = newActive;
-
-    showLoading(`${isEnable ? 'Enabling' : 'Disabling'}...`);
+    showLoading(`${action === 'Enable' ? 'Enabling' : 'Disabling'}...`);
     const result = await dispatch(
       toggleBranchServiceStatus({
         branchId,
         serviceId,
-        isActive: isEnable,
+        isActive: newActive,
       }),
     );
     closeLoading();
 
     if (result.meta.requestStatus === 'fulfilled') {
-      showSuccess('Success', `${serviceName} ${isEnable ? 'enabled' : 'disabled'}`);
-      dispatch(
-        fetchBranchServicesPaginated({
-          branchId,
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: search || undefined,
-          configured: filterConfigured === 'all' ? undefined : filterConfigured === 'configured',
-          isActive: filterActive === 'all' ? undefined : filterActive === 'active',
-        }),
-      );
+      showSuccess('Success', `${serviceName} ${newActive ? 'enabled' : 'disabled'}`);
+      loadBranchServices();
     } else {
       showError('Failed', 'Could not update status');
     }
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(newOpen) => {
-        if (!newOpen) {
-          setSearch('');
-          setCurrentPage(1);
-          setFilterConfigured('all');
-          setFilterActive('all');
-          setEditingService(null);
-          onClose();
-        }
-      }}
-    >
-      <DialogContent className="theme-admin max-w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Manage Services - {branchName || `Branch ${branchId}`}</DialogTitle>
-          <DialogDescription>
-            Update price, duration, and status for services at this branch.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="p-8 space-y-8 theme-admin mx-auto rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/branches')}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Manage Services</h1>
+          <p className="text-muted-foreground">{branchName}</p>
+        </div>
+      </div>
 
-        <div className="space-y-6">
-          {/* Search */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="search-services" className="text-sm font-medium">
-                Search Services
-              </Label>
-              <Input
-                id="search-services"
-                placeholder="Search by service name or category..."
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="filter-configured" className="text-sm font-medium">
-                  Filter by Configuration
-                </Label>
-                <Select value={filterConfigured} onValueChange={handleConfiguredFilterChange}>
-                  <SelectTrigger id="filter-configured" className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[2000] bg-white">
-                    <SelectItem value="all">All Services</SelectItem>
-                    <SelectItem value="configured">Configured Only</SelectItem>
-                    <SelectItem value="notConfigured">Not Configured</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="filter-active" className="text-sm font-medium">
-                  Filter by Status
-                </Label>
-                <Select value={filterActive} onValueChange={handleActiveFilterChange}>
-                  <SelectTrigger id="filter-active" className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-[2000] bg-white">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active Only</SelectItem>
-                    <SelectItem value="inactive">Disabled Only</SelectItem>
-                  </SelectContent>
-                </Select>
+      <Card className="shadow-none border-border/60">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex-1 space-y-4">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Scissors className="w-5 h-5" />
+                Branch Services
+              </CardTitle>
+              <CardDescription>
+                Update price, duration, and status for services at this branch.
+              </CardDescription>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="search-services">Search</Label>
+                  <Input
+                    id="search-services"
+                    placeholder="Search services..."
+                    value={search}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filter-configured">Configuration</Label>
+                  <Select value={filterConfigured} onValueChange={handleConfiguredFilterChange}>
+                    <SelectTrigger id="filter-configured">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="all">All Services</SelectItem>
+                      <SelectItem value="configured">Configured Only</SelectItem>
+                      <SelectItem value="notConfigured">Not Configured</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="filter-active">Status</Label>
+                  <Select value={filterActive} onValueChange={handleActiveFilterChange}>
+                    <SelectTrigger id="filter-active">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active Only</SelectItem>
+                      <SelectItem value="inactive">Disabled Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
-
+        </CardHeader>
+        <CardContent>
           <LoadingGate
             loading={loading}
             error={error}
@@ -299,7 +262,7 @@ export default function BranchServiceModal({
             }
             emptyIcon="hugeicons:service"
           >
-            <div className="overflow-x-auto border rounded-md">
+            <div className="overflow-x-auto border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -328,7 +291,7 @@ export default function BranchServiceModal({
                               }
                               setEditPrice(val);
                             }}
-                            className="w-24"
+                            className="w-24 h-8"
                             min="0"
                             step="0.01"
                           />
@@ -350,7 +313,7 @@ export default function BranchServiceModal({
                               }
                               setEditDuration(val);
                             }}
-                            className="w-24"
+                            className="w-24 h-8"
                             min="1"
                           />
                         ) : svc.duration === null ? (
@@ -368,12 +331,12 @@ export default function BranchServiceModal({
                             Not Configured
                           </Badge>
                         ) : (
-                          <Badge variant={svc.isActive ? 'default' : 'destructive'}>
+                          <Badge variant={svc.isActive ? 'default' : 'destructive'} className="px-3">
                             {svc.isActive ? 'Active' : 'Disabled'}
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="space-x-2 text-right">
+                      <TableCell className="space-x-2 text-right whitespace-nowrap">
                         {editingService?.serviceId === svc.serviceId ? (
                           <>
                             <Button
@@ -420,9 +383,8 @@ export default function BranchServiceModal({
               </Table>
             </div>
 
-            {/* ✅ NEW: Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="pt-4 border-t">
+              <div className="pt-6 flex justify-center">
                 <Pagination
                   currentPage={pagination.currentPage}
                   totalPages={pagination.totalPages}
@@ -431,19 +393,12 @@ export default function BranchServiceModal({
               </div>
             )}
 
-            {/* ✅ NEW: Metadata */}
-            <div className="text-xs text-muted-foreground">
+            <div className="mt-4 text-sm text-muted-foreground">
               Showing {services.length} of {pagination.totalItems} services
             </div>
           </LoadingGate>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

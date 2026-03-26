@@ -7,6 +7,7 @@ import type {
   CreateBookingDto,
   RescheduleBookingDto,
   PaginationMetadata,
+  StylistStats,
 } from './booking.types';
 
 export const createBooking = createAsyncThunk<
@@ -146,25 +147,24 @@ export const applyCoupon = createAsyncThunk<
     const res = await bookingService.applyCoupon(bookingId, code);
     return res.data;
   } catch (err) {
-    return handleThunkError(err, rejectWithValue, 'Failed to apply coupon');
+    return handleThunkError(err, rejectWithValue, BOOKING_MESSAGES.APPLY_COUPON_FAILED);
   }
 });
 
-export const removeCoupon = createAsyncThunk<
-  BookingItem,
-  string,
-  { rejectValue: string }
->('booking/removeCoupon', async (bookingId, { rejectWithValue }) => {
-  try {
-    const res = await bookingService.removeCoupon(bookingId);
-    return res.data;
-  } catch (err) {
-    return handleThunkError(err, rejectWithValue, 'Failed to remove coupon');
-  }
-});
+export const removeCoupon = createAsyncThunk<BookingItem, string, { rejectValue: string }>(
+  'booking/removeCoupon',
+  async (bookingId, { rejectWithValue }) => {
+    try {
+      const res = await bookingService.removeCoupon(bookingId);
+      return res.data;
+    } catch (err) {
+      return handleThunkError(err, rejectWithValue, BOOKING_MESSAGES.REMOVE_COUPON_FAILED);
+    }
+  },
+);
 
 export const fetchStylistStats = createAsyncThunk<
-  any,
+  StylistStats,
   { period?: string; date?: string } | void,
   { rejectValue: string }
 >('booking/fetchStylistStats', async (params, { rejectWithValue }) => {
@@ -173,6 +173,6 @@ export const fetchStylistStats = createAsyncThunk<
     const res = await bookingService.getStylistStats(period, date);
     return res.data;
   } catch (err) {
-    return handleThunkError(err, rejectWithValue, 'Failed to fetch dashboard statistics');
+    return handleThunkError(err, rejectWithValue, BOOKING_MESSAGES.FETCH_STATS_FAILED);
   }
 });

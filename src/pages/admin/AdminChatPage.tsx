@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { chatApiService } from '@/features/chat/services/chat.service';
-import type { ChatRoom, ChatMessage } from '@/features/chat/types/chat.types';
+import ChatService from '@/services/chat.service';
+import { MessageType, SenderType } from '@/features/chat/chat.types';
+import type { ChatRoom, ChatMessage } from '@/features/chat/chat.types';
 import { format } from 'date-fns';
 import { showApiError } from '@/common/utils/swal.utils';
 
@@ -39,7 +40,7 @@ export default function AdminChatPage() {
   const fetchRooms = async () => {
     try {
       setIsLoadingRooms(true);
-      const data = await chatApiService.getAdminRooms();
+      const data = await ChatService.getAdminRooms();
       setRooms(data);
     } catch (error) {
       showApiError(error, 'Failed to fetch chat rooms');
@@ -51,7 +52,7 @@ export default function AdminChatPage() {
   const fetchMessages = async (roomId: string) => {
     try {
       setIsLoadingMessages(true);
-      const data = await chatApiService.getRoomMessages(roomId);
+      const data = await ChatService.getRoomMessages(roomId);
       setMessages(data);
     } catch (error) {
       showApiError(error, 'Failed to fetch messages');
@@ -61,12 +62,13 @@ export default function AdminChatPage() {
   };
 
   const getSenderName = (message: ChatMessage) => {
-    if (message.senderType === 'SYSTEM') return 'System';
-    if (message.senderType === 'STYLIST') return activeRoom?.stylist?.name || activeRoom?.stylistName || 'Stylist';
-    if (message.senderType === 'USER') return activeRoom?.user?.name || activeRoom?.userName || 'User';
+    if (message.senderType === SenderType.SYSTEM) return 'System';
+    if (message.senderType === SenderType.STYLIST)
+      return activeRoom?.stylist?.name || activeRoom?.stylistName || 'Stylist';
+    if (message.senderType === SenderType.USER)
+      return activeRoom?.user?.name || activeRoom?.userName || 'User';
     return 'Unknown';
   };
-
 
   const isChatExpired = (room: ChatRoom) => {
     if (!room.booking) return false;
@@ -92,12 +94,18 @@ export default function AdminChatPage() {
           <ScrollArea className="h-full">
             {isLoadingRooms ? (
               <div className="p-8 text-center">
-                <Icon icon="solar:restart-bold" className="size-8 animate-spin mx-auto text-muted-foreground" />
+                <Icon
+                  icon="solar:restart-bold"
+                  className="size-8 animate-spin mx-auto text-muted-foreground"
+                />
                 <p className="mt-2 text-sm text-muted-foreground">Loading rooms...</p>
               </div>
             ) : rooms.length === 0 ? (
               <div className="p-8 text-center">
-                <Icon icon="solar:chat-square-broken" className="size-12 mx-auto text-muted-foreground/30" />
+                <Icon
+                  icon="solar:chat-square-broken"
+                  className="size-12 mx-auto text-muted-foreground/30"
+                />
                 <p className="mt-2 text-sm text-muted-foreground">No active chats found</p>
               </div>
             ) : (
@@ -125,13 +133,22 @@ export default function AdminChatPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm truncate">{room.user?.name} & {room.stylist?.name}</p>
+                          <p className="font-semibold text-sm truncate">
+                            {room.user?.name} & {room.stylist?.name}
+                          </p>
                           {isChatExpired(room) && (
-                            <Badge variant="outline" className="text-[9px] h-4 px-1 bg-gray-100 text-gray-500 border-gray-200">Closed</Badge>
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] h-4 px-1 bg-gray-100 text-gray-500 border-gray-200"
+                            >
+                              Closed
+                            </Badge>
                           )}
                         </div>
                         <span className="text-[10px] text-muted-foreground shrink-0">
-                          {room.lastMessageAt ? format(new Date(room.lastMessageAt), 'MMM d, p') : ''}
+                          {room.lastMessageAt
+                            ? format(new Date(room.lastMessageAt), 'MMM d, p')
+                            : ''}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -160,14 +177,27 @@ export default function AdminChatPage() {
                   <AvatarFallback>{activeRoom.user?.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-base">{activeRoom.user?.name} x {activeRoom.stylist?.name}</CardTitle>
+                  <CardTitle className="text-base">
+                    {activeRoom.user?.name} x {activeRoom.stylist?.name}
+                  </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    Booking: <Badge variant="outline" className="text-[10px] px-1 h-4">#{activeRoom.booking?.bookingNumber}</Badge>
+                    Booking:{' '}
+                    <Badge variant="outline" className="text-[10px] px-1 h-4">
+                      #{activeRoom.booking?.bookingNumber}
+                    </Badge>
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => fetchMessages(activeRoom.id)} disabled={isLoadingMessages}>
-                <Icon icon="solar:restart-bold" className={`size-4 mr-2 ${isLoadingMessages ? 'animate-spin' : ''}`} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchMessages(activeRoom.id)}
+                disabled={isLoadingMessages}
+              >
+                <Icon
+                  icon="solar:restart-bold"
+                  className={`size-4 mr-2 ${isLoadingMessages ? 'animate-spin' : ''}`}
+                />
                 Refresh
               </Button>
             </CardHeader>
@@ -179,8 +209,11 @@ export default function AdminChatPage() {
                     <div
                       key={msg.id}
                       className={`flex flex-col ${
-                        msg.senderType === 'USER' ? 'items-start' : 
-                        msg.senderType === 'STYLIST' ? 'items-end' : 'items-center'
+                        msg.senderType === SenderType.USER
+                          ? 'items-start'
+                          : msg.senderType === SenderType.STYLIST
+                            ? 'items-end'
+                            : 'items-center'
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1 px-1">
@@ -191,36 +224,49 @@ export default function AdminChatPage() {
                           {format(new Date(msg.createdAt), 'p')}
                         </span>
                       </div>
-                      
+
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
-                          msg.senderType === 'USER' 
-                            ? 'bg-muted rounded-tl-none' 
-                            : msg.senderType === 'STYLIST' 
-                            ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                            : 'bg-orange-100 text-orange-800 text-xs italic border border-orange-200'
+                          msg.senderType === SenderType.USER
+                            ? 'bg-muted rounded-tl-none'
+                            : msg.senderType === SenderType.STYLIST
+                              ? 'bg-primary text-primary-foreground rounded-tr-none'
+                              : 'bg-orange-100 text-orange-800 text-xs italic border border-orange-200'
                         }`}
                       >
-                        {msg.messageType === 'TEXT' && <p>{msg.content}</p>}
-                        {msg.messageType === 'SYSTEM' && <p>{msg.content}</p>}
-                        {msg.messageType === 'IMAGE' && (
+                        {msg.messageType === MessageType.TEXT && <p>{msg.content}</p>}
+                        {msg.messageType === MessageType.SYSTEM && <p>{msg.content}</p>}
+                        {msg.messageType === MessageType.IMAGE && (
                           <div className="rounded-lg overflow-hidden border border-black/5">
-                            <img src={msg.mediaUrl} alt="Shared image" className="max-w-full h-auto" />
+                            <img
+                              src={msg.mediaUrl}
+                              alt="Shared image"
+                              className="max-w-full h-auto"
+                            />
                           </div>
                         )}
-                        {msg.messageType === 'VOICE' && (
-                          <div className={`flex items-center gap-3 px-2 py-1 ${msg.senderType === 'STYLIST' ? 'text-white' : ''}`}>
+                        {msg.messageType === MessageType.VOICE && (
+                          <div
+                            className={`flex items-center gap-3 px-2 py-1 ${msg.senderType === SenderType.STYLIST ? 'text-white' : ''}`}
+                          >
                             <Icon icon="solar:play-circle-bold" className="size-8" />
                             <div className="flex-1">
                               <div className="h-1 bg-current/20 rounded-full w-24 overflow-hidden">
                                 <div className="h-full bg-current w-1/3" />
                               </div>
-                              <p className="text-[10px] mt-1 opacity-70">Voice message ({msg.duration}s)</p>
+                              <p className="text-[10px] mt-1 opacity-70">
+                                Voice message ({msg.duration}s)
+                              </p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10" asChild>
-                                <a href={msg.mediaUrl} target="_blank" rel="noopener noreferrer">
-                                    <Icon icon="solar:download-bold" className="size-4" />
-                                </a>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-white/10"
+                              asChild
+                            >
+                              <a href={msg.mediaUrl} target="_blank" rel="noopener noreferrer">
+                                <Icon icon="solar:download-bold" className="size-4" />
+                              </a>
                             </Button>
                           </div>
                         )}
@@ -230,7 +276,7 @@ export default function AdminChatPage() {
                   <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
-              
+
               {isLoadingMessages && (
                 <div className="absolute inset-0 bg-background/50 flex items-center justify-center backdrop-blur-[1px]">
                   <Icon icon="solar:restart-bold" className="size-10 animate-spin text-primary" />

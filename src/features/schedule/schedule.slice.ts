@@ -1,5 +1,5 @@
-import { createSlice, isAnyOf } from '@reduxjs/toolkit';
-import type { WeeklySchedule, DailyOverride, StylistBreak } from './schedule.types';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { ScheduleState, WeeklySchedule, DailyOverride, StylistBreak } from './schedule.types';
 import {
   fetchWeeklySchedule,
   updateWeeklySchedule,
@@ -10,14 +10,6 @@ import {
   createBreak,
   deleteBreak,
 } from './schedule.thunks';
-
-interface ScheduleState {
-  weeklySchedule: WeeklySchedule[];
-  dailyOverrides: DailyOverride[];
-  breaks: StylistBreak[];
-  loading: boolean;
-  error: string | null;
-}
 
 const initialState: ScheduleState = {
   weeklySchedule: [],
@@ -37,11 +29,13 @@ const scheduleSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchWeeklySchedule.fulfilled, (state, action) => {
-        state.weeklySchedule = action.payload;
+      // ── Weekly Schedule ─────────────────────────────────
+      .addCase(fetchWeeklySchedule.fulfilled, (state, action: PayloadAction<WeeklySchedule[]>) => {
         state.loading = false;
+        state.weeklySchedule = action.payload;
       })
-      .addCase(updateWeeklySchedule.fulfilled, (state, action) => {
+      .addCase(updateWeeklySchedule.fulfilled, (state, action: PayloadAction<WeeklySchedule>) => {
+        state.loading = false;
         const index = state.weeklySchedule.findIndex(
           (s) => s.dayOfWeek === action.payload.dayOfWeek,
         );
@@ -50,13 +44,15 @@ const scheduleSlice = createSlice({
         } else {
           state.weeklySchedule.push(action.payload);
         }
-        state.loading = false;
       })
-      .addCase(fetchDailyOverrides.fulfilled, (state, action) => {
+
+      // ── Daily Overrides ─────────────────────────────────
+      .addCase(fetchDailyOverrides.fulfilled, (state, action: PayloadAction<DailyOverride[]>) => {
+        state.loading = false;
         state.dailyOverrides = action.payload;
-        state.loading = false;
       })
-      .addCase(createDailyOverride.fulfilled, (state, action) => {
+      .addCase(createDailyOverride.fulfilled, (state, action: PayloadAction<DailyOverride>) => {
+        state.loading = false;
         const index = state.dailyOverrides.findIndex(
           (o) => o.id === action.payload.id || o.date === action.payload.date,
         );
@@ -65,54 +61,39 @@ const scheduleSlice = createSlice({
         } else {
           state.dailyOverrides.push(action.payload);
         }
-        state.loading = false;
       })
-      .addCase(deleteDailyOverride.fulfilled, (state, action) => {
+      .addCase(deleteDailyOverride.fulfilled, (state, action: PayloadAction<string>) => {
+        state.loading = false;
         state.dailyOverrides = state.dailyOverrides.filter((o) => o.id !== action.payload);
-        state.loading = false;
       })
-      .addCase(fetchBreaks.fulfilled, (state, action) => {
+
+      // ── Breaks ──────────────────────────────────────────
+      .addCase(fetchBreaks.fulfilled, (state, action: PayloadAction<StylistBreak[]>) => {
+        state.loading = false;
         state.breaks = action.payload;
-        state.loading = false;
       })
-      .addCase(createBreak.fulfilled, (state, action) => {
+      .addCase(createBreak.fulfilled, (state, action: PayloadAction<StylistBreak>) => {
+        state.loading = false;
         state.breaks.push(action.payload);
-        state.loading = false;
       })
-      .addCase(deleteBreak.fulfilled, (state, action) => {
+      .addCase(deleteBreak.fulfilled, (state, action: PayloadAction<string>) => {
+        state.loading = false;
         state.breaks = state.breaks.filter((b) => b.id !== action.payload);
-        state.loading = false;
       })
+
+      // ── Shared Matchers ─────────────────────────────────
       .addMatcher(
-        isAnyOf(
-          fetchWeeklySchedule.pending,
-          updateWeeklySchedule.pending,
-          fetchDailyOverrides.pending,
-          createDailyOverride.pending,
-          deleteDailyOverride.pending,
-          fetchBreaks.pending,
-          createBreak.pending,
-          deleteBreak.pending,
-        ),
+        (action) => action.type.endsWith('/pending') && action.type.startsWith('schedule/'),
         (state) => {
           state.loading = true;
           state.error = null;
         },
       )
       .addMatcher(
-        isAnyOf(
-          fetchWeeklySchedule.rejected,
-          updateWeeklySchedule.rejected,
-          fetchDailyOverrides.rejected,
-          createDailyOverride.rejected,
-          deleteDailyOverride.rejected,
-          fetchBreaks.rejected,
-          createBreak.rejected,
-          deleteBreak.rejected,
-        ),
-        (state, action) => {
+        (action) => action.type.endsWith('/rejected') && action.type.startsWith('schedule/'),
+        (state, action: PayloadAction<string>) => {
           state.loading = false;
-          state.error = (action.payload as string) || 'Something went wrong';
+          state.error = action.payload || 'Something went wrong';
         },
       );
   },

@@ -56,10 +56,7 @@ export function VoicePlayer({ src, duration }: VoicePlayerProps) {
       </button>
       <div className="flex-1 flex flex-col gap-0.5">
         <div className="h-1 rounded-full bg-current/20 overflow-hidden">
-          <div
-            className="h-full bg-current/60 transition-all"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-current/60 transition-all" style={{ width: `${progress}%` }} />
         </div>
         <span className="text-[10px] opacity-60">{formatDur(duration)}</span>
       </div>

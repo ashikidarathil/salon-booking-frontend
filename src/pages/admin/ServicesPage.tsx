@@ -36,6 +36,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Pagination from '@/components/pagination/Pagination';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import {
   showSuccess,
   showError,
@@ -128,10 +129,6 @@ export default function ServicesPage() {
     formState: { errors },
   } = form;
 
-  /*
-   * FIXED: Use useWatch to subscribe to form updates efficiently and avoid
-   * "incompatible library" warnings from React Compiler regarding watch().
-   */
   const whatIncluded =
     useWatch({
       control: form.control,
@@ -162,16 +159,13 @@ export default function ServicesPage() {
   const onSubmit = async (data: ServiceFormData) => {
     showLoading(editingService ? 'Updating service...' : 'Creating service...');
 
-    let result;
-    if (editingService) {
-      result = await dispatch(updateService({ id: editingService.id, data }));
-    } else {
-      result = await dispatch(createService(data));
-    }
+    const result = editingService
+      ? await dispatch(updateService({ id: editingService.id, data }))
+      : await dispatch(createService(data));
 
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (createService.fulfilled.match(result) || updateService.fulfilled.match(result)) {
       showSuccess(
         editingService ? 'Service Updated' : 'Service Created',
         editingService ? 'Changes saved successfully' : 'New service added',
@@ -180,20 +174,10 @@ export default function ServicesPage() {
       setEditingService(null);
       setIsAddDialogOpen(false);
       setWhatIncludedInput('');
-
-      dispatch(
-        fetchPaginatedServices({
-          page: 1,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
       setCurrentPage(1);
-    } else if (result.meta.requestStatus === 'rejected') {
-      const errorMessage = result.payload as string;
-      showError('Failed', errorMessage);
+      loadServices();
+    } else {
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.OPERATION_FAILED);
     }
   };
 
@@ -282,24 +266,15 @@ export default function ServicesPage() {
     );
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (uploadServiceImage.fulfilled.match(result)) {
       showSuccess('Success', 'Image uploaded successfully');
-      dispatch(
-        fetchPaginatedServices({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
+      loadServices();
       setIsImageDialogOpen(false);
       setSelectedServiceForImage(null);
       setImagePreview(null);
       setSelectedImageFile(null);
-    } else if (result.meta.requestStatus === 'rejected') {
-      const errorMessage = result.payload as string;
-      showError('Failed', errorMessage);
+    } else {
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.UPLOAD_PICTURE_FAILED);
     }
   };
 
@@ -318,20 +293,11 @@ export default function ServicesPage() {
     const result = await dispatch(deleteServiceImage(serviceId));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (deleteServiceImage.fulfilled.match(result)) {
       showSuccess('Deleted', 'Image deleted successfully');
-      dispatch(
-        fetchPaginatedServices({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
-    } else if (result.meta.requestStatus === 'rejected') {
-      const errorMessage = result.payload as string;
-      showError('Failed', errorMessage);
+      loadServices();
+    } else {
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.DELETE_FAILED);
     }
   };
 
@@ -352,20 +318,11 @@ export default function ServicesPage() {
     const result = await dispatch(toggleServiceStatus({ id, status: newStatus }));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (toggleServiceStatus.fulfilled.match(result)) {
       showSuccess('Success', `Service ${action.toLowerCase()}d`);
-      dispatch(
-        fetchPaginatedServices({
-          page: 1,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
-    } else if (result.meta.requestStatus === 'rejected') {
-      const errorMessage = result.payload as string;
-      showError('Failed', errorMessage);
+      loadServices();
+    } else {
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.UPDATE_FAILED);
     }
   };
 
@@ -384,20 +341,11 @@ export default function ServicesPage() {
     const result = await dispatch(softDeleteService(id));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (softDeleteService.fulfilled.match(result)) {
       showSuccess('Deleted', 'Service soft-deleted');
-      dispatch(
-        fetchPaginatedServices({
-          page: 1,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
-    } else if (result.meta.requestStatus === 'rejected') {
-      const errorMessage = result.payload as string;
-      showError('Failed', errorMessage);
+      loadServices();
+    } else {
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.DELETE_FAILED);
     }
   };
 
@@ -406,20 +354,11 @@ export default function ServicesPage() {
     const result = await dispatch(restoreService(id));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (restoreService.fulfilled.match(result)) {
       showSuccess('Restored', 'Service restored successfully');
-      dispatch(
-        fetchPaginatedServices({
-          page: 1,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
-    } else if (result.meta.requestStatus === 'rejected') {
-      const errorMessage = result.payload as string;
-      showError('Failed', errorMessage);
+      loadServices();
+    } else {
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.OPERATION_FAILED);
     }
   };
 

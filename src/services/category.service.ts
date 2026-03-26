@@ -1,13 +1,18 @@
 import { api } from '@/services/api/api';
 import { API_ROUTES } from '@/common/constants/api.routes';
 import type { ApiResponse } from '@/common/types/api.types';
-import type { Category } from '@/features/category/category.types';
-import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+import type {
+  Category,
+  CategoryQuery,
+  PaginatedCategoryResponse,
+  CategoryStatus,
+} from '@/features/category/category.types';
 
 export const categoryService = {
   listCategories(includeDeleted = false) {
-    const qs = includeDeleted ? '?includeDeleted=true' : '';
-    return api.get<ApiResponse<Category[]>>(`${API_ROUTES.CATEGORY.ADMIN_LIST}${qs}`);
+    return api.get<ApiResponse<Category[]>>(API_ROUTES.CATEGORY.ADMIN_LIST, {
+      params: { includeDeleted },
+    });
   },
 
   createCategory(data: { name: string; description?: string }) {
@@ -16,7 +21,7 @@ export const categoryService = {
 
   updateCategory(
     id: string,
-    data: Partial<{ name: string; description?: string; status?: string }>,
+    data: Partial<{ name: string; description?: string; status?: CategoryStatus }>,
   ) {
     return api.patch<ApiResponse<Category>>(
       `${API_ROUTES.CATEGORY.UPDATE.replace(':id', id)}`,
@@ -34,31 +39,10 @@ export const categoryService = {
     return api.patch<ApiResponse<Category>>(`${API_ROUTES.CATEGORY.RESTORE.replace(':id', id)}`);
   },
 
-  getPaginatedCategories(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    status?: 'ACTIVE' | 'INACTIVE';
-    isDeleted?: boolean;
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.isDeleted !== undefined)
-      queryParams.append('isDeleted', params.isDeleted.toString());
-
-    return api.get<
-      ApiResponse<{
-        data: Category[];
-        pagination: PaginationMetadata;
-      }>
-    >(`${API_ROUTES.CATEGORY.PAGINATED}?${queryParams.toString()}`);
+  getPaginatedCategories(params?: CategoryQuery) {
+    return api.get<ApiResponse<PaginatedCategoryResponse>>(API_ROUTES.CATEGORY.PAGINATED, {
+      params,
+    });
   },
 
   async listPublic() {

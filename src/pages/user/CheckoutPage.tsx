@@ -14,6 +14,7 @@ import { showError } from '@/common/utils/swal.utils';
 import { PaymentCountdown } from '@/components/common/PaymentCountdown';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { PAYMENT_MESSAGES as PM } from '@/features/payment/payment.constants';
 
 export default function CheckoutPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -40,7 +41,6 @@ export default function CheckoutPage() {
     dispatch(fetchAvailableCoupons());
   }, [dispatch]);
 
-  // Guard: if booking is already confirmed/paid, redirect to success page
   useEffect(() => {
     if (!currentBooking || !bookingId) return;
     if (
@@ -52,9 +52,9 @@ export default function CheckoutPage() {
     }
   }, [currentBooking, bookingId, navigate]);
 
-  // Expiry navigation only — display handled by <PaymentCountdown>
   useEffect(() => {
-    if (!currentBooking?.paymentWindowExpiresAt || currentBooking.status !== 'PENDING_PAYMENT') return;
+    if (!currentBooking?.paymentWindowExpiresAt || currentBooking.status !== 'PENDING_PAYMENT')
+      return;
     const expiry = new Date(currentBooking.paymentWindowExpiresAt).getTime();
     const tick = () => {
       if (Date.now() >= expiry) {
@@ -72,8 +72,8 @@ export default function CheckoutPage() {
     try {
       await dispatch(applyCoupon({ bookingId, code: couponCode })).unwrap();
       toast.success('Coupon applied successfully!');
-    } catch (error: any) {
-      toast.error(error || 'Failed to apply coupon');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -83,8 +83,8 @@ export default function CheckoutPage() {
       await dispatch(removeCoupon(bookingId)).unwrap();
       setCouponCode('');
       toast.success('Coupon removed');
-    } catch (error: any) {
-      toast.error(error || 'Failed to remove coupon');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -94,13 +94,11 @@ export default function CheckoutPage() {
     const result = await dispatch(processRazorpayPayment({ bookingId }));
 
     if (processRazorpayPayment.fulfilled.match(result)) {
-      const { status } = result.payload;
-      if (status === 'success') {
+      if (result.payload.status === 'success') {
+        toast.success(PM.SUCCESS);
         navigate(`/payment/success/${bookingId}`);
       }
-      // status === 'cancelled' means user closed the modal — stay on checkout page
     } else {
-      // Real failure (verification error, SDK error, etc.) — go to failure page
       navigate(`/payment/failure/${bookingId}`);
     }
   };
@@ -115,9 +113,10 @@ export default function CheckoutPage() {
 
     const result = await dispatch(payWithWallet({ bookingId }));
     if (payWithWallet.fulfilled.match(result)) {
+      toast.success(PM.SUCCESS);
       navigate(`/payment/success/${bookingId}`);
     } else {
-      showError('Payment Failed', (result.payload as string) || 'Wallet payment failed');
+      showError('Payment Failed', (result.payload as string) || PM.WALLET_PAY_FAILED);
     }
   };
 
@@ -198,16 +197,15 @@ export default function CheckoutPage() {
                       <span className="text-sm font-bold uppercase tracking-tight">
                         Advance to Pay (20%)
                       </span>
-                      <span className="text-2xl font-black">
-                        ₹{currentBooking.advanceAmount}
-                      </span>
+                      <span className="text-2xl font-black">₹{currentBooking.advanceAmount}</span>
                     </div>
                     <div className="flex justify-between text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
                       <span>Remaining at Salon (80%)</span>
                       <span>₹{currentBooking.payableAmount - currentBooking.advanceAmount}</span>
                     </div>
                     <p className="text-[10px] text-muted-foreground/60 mt-2 border-t border-primary/10 pt-2 leading-relaxed">
-                      Secure your slot by paying the 20% advance now. The remaining 80% balance is payable after your service.
+                      Secure your slot by paying the 20% advance now. The remaining 80% balance is
+                      payable after your service.
                     </p>
                   </div>
                 </div>
@@ -256,51 +254,56 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                {availableCoupons.filter(c => currentBooking.totalPrice >= c.minBookingAmount).length > 0 && (
+                {availableCoupons.filter((c) => currentBooking.totalPrice >= c.minBookingAmount)
+                  .length > 0 && (
                   <div className="space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                       Applicable Coupons
                     </p>
                     <div className="grid gap-2">
                       {availableCoupons
-                        .filter(coupon => currentBooking.totalPrice >= coupon.minBookingAmount)
+                        .filter((coupon) => currentBooking.totalPrice >= coupon.minBookingAmount)
                         .map((coupon) => (
-                        <div
-                          key={coupon.id}
-                          onClick={async () => {
-                            if (!isExpired && bookingId && !currentBooking.couponId) {
-                               setCouponCode(coupon.code);
-                              try {
-                                await dispatch(applyCoupon({ bookingId, code: coupon.code })).unwrap();
-                                toast.success('Coupon applied successfully!');
-                              } catch (error: any) {
-                                toast.error(error || 'Failed to apply coupon');
+                          <div
+                            key={coupon.id}
+                            onClick={async () => {
+                              if (!isExpired && bookingId && !currentBooking.couponId) {
+                                setCouponCode(coupon.code);
+                                try {
+                                  await dispatch(
+                                    applyCoupon({ bookingId, code: coupon.code }),
+                                  ).unwrap();
+                                  toast.success('Coupon applied successfully!');
+                                } catch (error: unknown) {
+                                  toast.error(
+                                    error instanceof Error ? error.message : String(error),
+                                  );
+                                }
                               }
-                            }
-                          }}
-                          className={`p-3 border rounded-xl transition-all ${
-                            currentBooking.couponId === coupon.id
-                              ? 'border-primary bg-primary/5 ring-1 ring-primary cursor-default'
-                              : isExpired || currentBooking.couponId
-                                ? 'opacity-50 cursor-not-allowed'
-                                : 'border-dashed cursor-pointer hover:bg-primary/5 group'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-sm tracking-tight group-hover:text-primary">
-                              {coupon.code}
-                            </span>
-                            <Badge variant="secondary" className="text-[10px] h-4">
-                              {coupon.discountType === 'PERCENTAGE'
-                                ? `${coupon.discountValue}% OFF`
-                                : `₹${coupon.discountValue} OFF`}
-                            </Badge>
+                            }}
+                            className={`p-3 border rounded-xl transition-all ${
+                              currentBooking.couponId === coupon.id
+                                ? 'border-primary bg-primary/5 ring-1 ring-primary cursor-default'
+                                : isExpired || currentBooking.couponId
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : 'border-dashed cursor-pointer hover:bg-primary/5 group'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="font-bold text-sm tracking-tight group-hover:text-primary">
+                                {coupon.code}
+                              </span>
+                              <Badge variant="secondary" className="text-[10px] h-4">
+                                {coupon.discountType === 'PERCENTAGE'
+                                  ? `${coupon.discountValue}% OFF`
+                                  : `₹${coupon.discountValue} OFF`}
+                              </Badge>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                              Min order: ₹{coupon.minBookingAmount}
+                            </p>
                           </div>
-                          <p className="text-[10px] text-muted-foreground">
-                            Min order: ₹{coupon.minBookingAmount}
-                          </p>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}

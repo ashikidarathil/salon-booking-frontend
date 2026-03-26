@@ -8,7 +8,7 @@ import type {
 import type { StylistService } from '@/features/booking/booking.types';
 import type { PaginationMetadata } from '@/common/types/pagination.metadata';
 
-export const stylistBranchService = {
+const StylistBranchService = {
   listBranchStylists(branchId: string) {
     return api.get<ApiResponse<BranchStylist[]>>(
       API_ROUTES.STYLIST_BRANCH.PUBLIC.LIST_BRANCH_STYLISTS(branchId),
@@ -111,3 +111,5 @@ export const stylistBranchService = {
     );
   },
 };
+
+export default StylistBranchService;

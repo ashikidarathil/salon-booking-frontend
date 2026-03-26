@@ -12,6 +12,7 @@ export interface Coupon {
   expiryDate: string;
   maxUsage: number;
   usedCount: number;
+  maxDiscountAmount: number;
   isActive: boolean;
   isDeleted: boolean;
   applicableServices?: string[];
@@ -37,6 +38,20 @@ export interface CouponState {
   error: string | null;
 }
 
+export interface CouponQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  status?: 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED';
+}
+
+export interface PaginatedCouponResponse {
+  data: Coupon[];
+  pagination: PaginationInfo;
+}
+
 export interface CreateCouponRequest {
   code: string;
   discountType: DiscountType;
@@ -44,5 +59,6 @@ export interface CreateCouponRequest {
   minBookingAmount?: number;
   expiryDate: string;
   maxUsage: number;
+  maxDiscountAmount: number;
   applicableServices?: string[];
 }

@@ -1,27 +1,52 @@
 import { api as axiosInstance } from './api/api';
 import { API_ROUTES } from '../common/constants/api.routes';
-import type { PaymentVerificationDto } from '../features/payment/payment.types';
+import type {
+  PaymentVerificationDto,
+  OrderResponse,
+  Payment,
+} from '../features/payment/payment.types';
+import type { ApiResponse } from '@/common/types/api.types';
 
-class PaymentService {
-  async createOrder(bookingId: string) {
-    return axiosInstance.post(API_ROUTES.PAYMENTS.CREATE_ORDER, { bookingId });
-  }
+const PaymentService = {
+  createOrder: async (bookingId: string) => {
+    const response = await axiosInstance.post<ApiResponse<OrderResponse>>(
+      API_ROUTES.PAYMENTS.CREATE_ORDER,
+      { bookingId },
+    );
+    return response.data.data;
+  },
 
-  async verifyPayment(data: PaymentVerificationDto) {
-    return axiosInstance.post(API_ROUTES.PAYMENTS.VERIFY, data);
-  }
+  verifyPayment: async (data: PaymentVerificationDto) => {
+    const response = await axiosInstance.post<ApiResponse<Payment>>(
+      API_ROUTES.PAYMENTS.VERIFY,
+      data,
+    );
+    return response.data.data;
+  },
 
-  async payWithWallet(bookingId: string) {
-    return axiosInstance.post(API_ROUTES.PAYMENTS.PAY_WITH_WALLET, { bookingId });
-  }
+  payWithWallet: async (bookingId: string) => {
+    const response = await axiosInstance.post<ApiResponse<Payment>>(
+      API_ROUTES.PAYMENTS.PAY_WITH_WALLET,
+      { bookingId },
+    );
+    return response.data.data;
+  },
 
-  async createRemainingOrder(bookingId: string) {
-    return axiosInstance.post(API_ROUTES.PAYMENTS.PAY_REMAINING_ORDER, { bookingId });
-  }
+  createRemainingOrder: async (bookingId: string) => {
+    const response = await axiosInstance.post<ApiResponse<OrderResponse>>(
+      API_ROUTES.PAYMENTS.PAY_REMAINING_ORDER,
+      { bookingId },
+    );
+    return response.data.data;
+  },
 
-  async payRemainingWithWallet(bookingId: string) {
-    return axiosInstance.post(API_ROUTES.PAYMENTS.PAY_REMAINING_WALLET, { bookingId });
-  }
-}
+  payRemainingWithWallet: async (bookingId: string) => {
+    const response = await axiosInstance.post<ApiResponse<Payment>>(
+      API_ROUTES.PAYMENTS.PAY_REMAINING_WALLET,
+      { bookingId },
+    );
+    return response.data.data;
+  },
+};
 
-export default new PaymentService();
+export default PaymentService;

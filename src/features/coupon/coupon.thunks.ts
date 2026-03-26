@@ -1,20 +1,21 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import CouponService from '../../services/coupon.service';
-import type { CreateCouponRequest } from './coupon.types';
+import type { CreateCouponRequest, CouponQuery, PaginatedCouponResponse } from './coupon.types';
 import { handleThunkError } from '../../common/utils/thunk.utils';
 import { COUPON_MESSAGES } from './coupon.constants';
 
-export const fetchAllCoupons = createAsyncThunk(
-  'coupon/fetchAll',
-  async (params: any, { rejectWithValue }) => {
-    try {
-      const response = await CouponService.listAllCoupons(params);
-      return response.data.data;
-    } catch (error) {
-      return handleThunkError(error, rejectWithValue, COUPON_MESSAGES.FETCH_ERROR);
-    }
-  },
-);
+export const fetchAllCoupons = createAsyncThunk<
+  PaginatedCouponResponse,
+  CouponQuery | undefined,
+  { rejectValue: string }
+>('coupon/fetchAll', async (params, { rejectWithValue }) => {
+  try {
+    const response = await CouponService.listAllCoupons(params);
+    return response.data.data;
+  } catch (error) {
+    return handleThunkError(error, rejectWithValue, COUPON_MESSAGES.FETCH_ERROR);
+  }
+});
 
 export const fetchAvailableCoupons = createAsyncThunk(
   'coupon/fetchAvailable',

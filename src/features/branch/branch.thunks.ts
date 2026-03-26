@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { branchService } from '@/services/branch.service';
-import type { Branch, NearestBranch } from './branch.types';
+import type { Branch, NearestBranch, BranchQuery, PaginatedBranchResponse } from './branch.types';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import { handleThunkError } from '@/common/utils/thunk.utils';
 
@@ -18,7 +18,7 @@ export const fetchBranches = createAsyncThunk<Branch[], undefined, { rejectValue
 
 export const createBranch = createAsyncThunk<
   Branch,
-  { name: string; address: string; phone?: string },
+  { name: string; address: string; phone?: string; latitude: number; longitude: number },
   { rejectValue: string }
 >('branch/createBranch', async (data, { rejectWithValue }) => {
   try {
@@ -37,6 +37,8 @@ export const updateBranch = createAsyncThunk<
       name: string;
       address: string;
       phone?: string;
+      latitude: number;
+      longitude: number;
       defaultBreaks?: Array<{ startTime: string; endTime: string; description: string }>;
     }>;
   },
@@ -75,25 +77,8 @@ export const restoreBranch = createAsyncThunk<Branch, string, { rejectValue: str
 );
 
 export const fetchPaginatedBranches = createAsyncThunk<
-  {
-    data: Branch[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-      itemsPerPage: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
-  },
-  {
-    page?: number;
-    limit?: number;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    isDeleted?: boolean;
-  },
+  PaginatedBranchResponse,
+  BranchQuery,
   { rejectValue: string }
 >('branch/fetchPaginatedBranches', async (params, { rejectWithValue }) => {
   try {
@@ -143,18 +128,9 @@ export const fetchBranchById = createAsyncThunk<Branch, string, { rejectValue: s
     }
   },
 );
+
 export const fetchPublicPaginatedBranches = createAsyncThunk<
-  {
-    data: Branch[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-      itemsPerPage: number;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
-  },
+  PaginatedBranchResponse,
   {
     page?: number;
     limit?: number;

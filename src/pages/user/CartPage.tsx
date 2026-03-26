@@ -12,7 +12,8 @@ import {
   updateItemSlot,
 } from '@/features/cart/cart.slice';
 import { Card } from '@/components/ui/card';
-import { stylistBranchService } from '@/services/stylistBranch.service';
+import StylistBranchService from '@/services/stylistBranch.service';
+
 import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
 import { SlotBookingDialog } from '@/components/booking/SlotBookingDialog';
 import { createBooking as createBookingThunk } from '@/features/booking/booking.thunks';
@@ -67,9 +68,7 @@ export default function CartPage() {
 
   const fetchStylists = useCallback(async () => {
     try {
-      const promises = items.map((item) =>
-        stylistBranchService.getStylistsByService(item.serviceId),
-      );
+      const promises = items.map((item) => StylistBranchService.getStylistsByService(item.serviceId));
       const results = await Promise.all(promises);
       const newStylistsMap: Record<string, BranchStylist[]> = {};
 

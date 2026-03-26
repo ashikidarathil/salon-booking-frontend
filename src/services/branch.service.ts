@@ -1,11 +1,21 @@
 import { api } from '@/services/api/api';
 import { API_ROUTES } from '@/common/constants/api.routes';
 import type { ApiResponse } from '@/common/types/api.types';
-import type { Branch, NearestBranch } from '@/features/branch/branch.types';
-import type { PaginationMetadata } from '@/common/types/pagination.metadata';
+import type {
+  Branch,
+  NearestBranch,
+  BranchQuery,
+  PaginatedBranchResponse,
+} from '@/features/branch/branch.types';
 
 export const branchService = {
-  create(data: { name: string; address: string; phone?: string }) {
+  create(data: {
+    name: string;
+    address: string;
+    phone?: string;
+    latitude: number;
+    longitude: number;
+  }) {
     return api.post<ApiResponse<Branch>>(API_ROUTES.BRANCH.BASE, data);
   },
 
@@ -21,6 +31,8 @@ export const branchService = {
       name: string;
       address: string;
       phone?: string;
+      latitude: number;
+      longitude: number;
       defaultBreaks?: Array<{ startTime: string; endTime: string; description: string }>;
     }>,
   ) {
@@ -54,42 +66,15 @@ export const branchService = {
     return api.patch<ApiResponse<Branch>>(url);
   },
 
-  getPaginatedBranches(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    isDeleted?: boolean;
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-    if (params?.isDeleted !== undefined)
-      queryParams.append('isDeleted', params.isDeleted.toString());
-
-    return api.get<
-      ApiResponse<{
-        data: Branch[];
-        pagination: PaginationMetadata;
-      }>
-    >(`${API_ROUTES.BRANCH.ADMIN_PAGINATED}?${queryParams.toString()}`);
+  getPaginatedBranches(params?: BranchQuery) {
+    return api.get<ApiResponse<PaginatedBranchResponse>>(API_ROUTES.BRANCH.ADMIN_PAGINATED, {
+      params,
+    });
   },
 
   listPublicPaginated(params?: { page?: number; limit?: number; search?: string }) {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-
-    return api.get<
-      ApiResponse<{
-        data: Branch[];
-        pagination: PaginationMetadata;
-      }>
-    >(`${API_ROUTES.BRANCH.PUBLIC_PAGINATED}?${queryParams.toString()}`);
+    return api.get<ApiResponse<PaginatedBranchResponse>>(API_ROUTES.BRANCH.PUBLIC_PAGINATED, {
+      params,
+    });
   },
 };

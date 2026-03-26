@@ -7,22 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
-import { stylistBranchService } from '@/services/stylistBranch.service';
+import StylistBranchService from '@/services/stylistBranch.service';
 import { showSuccess, showError, showLoading } from '@/common/utils/swal.utils';
 import { cn } from '@/lib/utils';
+import type { WeeklySchedule } from '@/features/schedule/schedule.types';
+import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-import type { WeeklySchedule } from '@/features/schedule/schedule.types';
-import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
+interface WeeklyRoutineProps {
+  stylistId?: string;
+  branchId?: string;
+}
 
 export default function WeeklyRoutine({
   stylistId: propStylistId,
   branchId: propBranchId,
-}: {
-  stylistId?: string;
-  branchId?: string;
-}) {
+}: WeeklyRoutineProps) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { weeklySchedule, loading } = useAppSelector((state) => state.schedule);
@@ -37,7 +38,7 @@ export default function WeeklyRoutine({
     const fetchStylistBranch = async () => {
       if (!propBranchId && !user?.branchId && effectiveStylistId && user?.role === 'STYLIST') {
         try {
-          const response = await stylistBranchService.getStylistBranches(effectiveStylistId);
+          const response = await StylistBranchService.getStylistBranches(effectiveStylistId);
           const branches = response.data.data;
           if (branches.length > 0) {
             const activeBranch = branches.find((b: BranchStylist) => b.mappingId);
@@ -58,6 +59,7 @@ export default function WeeklyRoutine({
     }
   }, [dispatch, effectiveStylistId, effectiveBranchId]);
 
+  // Sync Redux schedule to local state for editing
   useEffect(() => {
     if (weeklySchedule.length > 0) {
       const scheduleMap = weeklySchedule.reduce(
@@ -67,7 +69,6 @@ export default function WeeklyRoutine({
         },
         {} as Record<number, WeeklySchedule>,
       );
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEditedSchedule(scheduleMap);
     }
   }, [weeklySchedule]);
@@ -85,10 +86,10 @@ export default function WeeklyRoutine({
     const updatedDay = { ...currentDay, isWorkingDay: newIsWorkingDay, shifts: newShifts };
 
     // Update local state immediately for snappy UI
-    setEditedSchedule({
-      ...editedSchedule,
+    setEditedSchedule((prev) => ({
+      ...prev,
       [day]: updatedDay,
-    });
+    }));
 
     // AUTO-SAVE on toggle
     if (effectiveStylistId && effectiveBranchId) {
@@ -108,7 +109,8 @@ export default function WeeklyRoutine({
         showSuccess('Success', `${DAYS[day]} status updated`);
       } catch (error: unknown) {
         showError('Error', (error as string) || 'Failed to update schedule');
-        setEditedSchedule(editedSchedule);
+        // Revert local state on error
+        setEditedSchedule((prev) => ({ ...prev })); // or trigger a re-sync from Redux
       }
     }
   };
@@ -123,10 +125,10 @@ export default function WeeklyRoutine({
     }
     newShifts[0] = { ...newShifts[0], [field]: value };
 
-    setEditedSchedule({
-      ...editedSchedule,
+    setEditedSchedule((prev) => ({
+      ...prev,
       [day]: { ...currentDay, shifts: newShifts },
-    });
+    }));
   };
 
   const handleSave = async (day: number) => {
@@ -154,7 +156,6 @@ export default function WeeklyRoutine({
 
   return (
     <div className="space-y-6">
-      {/* Header Card matching DailyAdjustments style */}
       <Card className="border-none shadow-lg overflow-hidden">
         <CardHeader className="pb-6 bg-primary/5 border-b">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -198,7 +199,6 @@ export default function WeeklyRoutine({
             >
               <CardContent className="p-5 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  {/* Day Toggle Section */}
                   <div className="flex items-center gap-5 min-w-[180px]">
                     <Switch
                       checked={schedule.isWorkingDay}
@@ -220,7 +220,6 @@ export default function WeeklyRoutine({
                     </div>
                   </div>
 
-                  {/* Time Input Section */}
                   <div className="flex-1 flex items-center justify-center">
                     {schedule.isWorkingDay ? (
                       <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
@@ -262,7 +261,6 @@ export default function WeeklyRoutine({
                     )}
                   </div>
 
-                  {/* Action Section */}
                   <div className="flex justify-end sm:min-w-[100px]">
                     <Button
                       size="sm"
@@ -289,21 +287,6 @@ export default function WeeklyRoutine({
           );
         })}
       </div>
-
-      {/* <div className="p-6 bg-amber-50 rounded-[2.5rem] border border-amber-100 flex items-start gap-4 mx-2">
-        <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
-          <Icon icon="solar:info-square-bold" className="size-6" />
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-amber-800 uppercase tracking-widest mb-1">
-            Schedule Priority
-          </p>
-          <p className="text-sm font-medium text-amber-700/80 leading-relaxed">
-            These hours are your <strong>recurring base schedule</strong>. Any adjustments made in
-            the "Daily Adjustments" section will override these settings for specific dates.
-          </p>
-        </div>
-      </div> */}
     </div>
   );
 }

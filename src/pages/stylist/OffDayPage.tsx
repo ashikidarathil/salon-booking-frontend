@@ -72,9 +72,8 @@ export default function OffDayPage() {
       setEndDate(addDays(startOfToday(), 3));
       setSelectedType(OffDayType.PERSONAL);
     } catch (error: unknown) {
-      showError('Submission Failed', (error as string) || OFF_DAY_MESSAGES.REQUEST_ERROR);
-    } finally {
       closeLoading();
+      showError('Submission Failed', (error as string) || OFF_DAY_MESSAGES.REQUEST_ERROR);
     }
   };
 
@@ -91,9 +90,8 @@ export default function OffDayPage() {
       await dispatch(deleteOffDay(id)).unwrap();
       showSuccess('Cancelled', OFF_DAY_MESSAGES.DELETE_SUCCESS);
     } catch (error: unknown) {
-      showError('Error', (error as string) || OFF_DAY_MESSAGES.DELETE_ERROR);
-    } finally {
       closeLoading();
+      showError('Error', (error as string) || OFF_DAY_MESSAGES.DELETE_ERROR);
     }
   };
 

@@ -29,10 +29,13 @@ const adminSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchAdminDashboardStats.fulfilled, (state, action: PayloadAction<AdminDashboardStats>) => {
-        state.loading = false;
-        state.stats = action.payload;
-      })
+      .addCase(
+        fetchAdminDashboardStats.fulfilled,
+        (state, action: PayloadAction<AdminDashboardStats>) => {
+          state.loading = false;
+          state.stats = action.payload;
+        },
+      )
       .addCase(fetchAdminDashboardStats.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;

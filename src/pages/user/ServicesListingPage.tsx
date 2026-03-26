@@ -265,6 +265,29 @@ export default function ServicesListingPage() {
                       )}
                     </div>
 
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Icon
+                            key={i}
+                            icon="solar:star-bold"
+                            className={cn(
+                              'size-4',
+                              i < Math.floor(service.rating || 0)
+                                ? 'text-yellow-400'
+                                : 'text-muted-foreground/30',
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm font-bold">
+                        {service.rating?.toFixed(1) || '0.0'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({service.reviewCount || 0} reviews)
+                      </span>
+                    </div>
+
                     {service.description && (
                       <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
                         {service.description}

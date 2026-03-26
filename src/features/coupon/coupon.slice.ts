@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { CouponState, Coupon } from './coupon.types';
+import type { CouponState, Coupon, PaginationInfo } from './coupon.types';
 import {
   fetchAllCoupons,
   fetchAvailableCoupons,
@@ -41,11 +41,14 @@ const couponSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchAllCoupons.fulfilled, (state, action: PayloadAction<{ data: Coupon[]; pagination: any }>) => {
-        state.loading = false;
-        state.coupons = action.payload.data;
-        state.pagination = action.payload.pagination;
-      })
+      .addCase(
+        fetchAllCoupons.fulfilled,
+        (state, action: PayloadAction<{ data: Coupon[]; pagination: PaginationInfo }>) => {
+          state.loading = false;
+          state.coupons = action.payload.data;
+          state.pagination = action.payload.pagination;
+        },
+      )
       .addCase(fetchAllCoupons.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;

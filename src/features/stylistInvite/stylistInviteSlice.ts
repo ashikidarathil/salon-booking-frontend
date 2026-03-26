@@ -5,7 +5,6 @@ import {
   fetchStylists,
   approveStylist,
   rejectStylist,
-  toggleBlockStylist,
   validateInvite,
   acceptInvite,
   sendInviteToApplied,
@@ -109,15 +108,6 @@ const slice = createSlice({
           stylist.status = 'INACTIVE';
           stylist.userStatus = 'REJECTED';
           stylist.isBlocked = true;
-        }
-      })
-
-      // ===== TOGGLE BLOCK =====
-      .addCase(toggleBlockStylist.fulfilled, (state, action) => {
-        const { userId, block } = action.payload;
-        const stylist = state.stylists.find((s) => s.userId === userId);
-        if (stylist) {
-          stylist.isBlocked = block;
         }
       })
 

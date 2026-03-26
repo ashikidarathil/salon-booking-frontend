@@ -7,18 +7,19 @@ import {
   fetchRoomMessages,
   uploadChatMedia,
   markRoomMessagesAsRead,
-} from '@/features/chat/state/chat.thunks';
-import { resetUnreadCount } from '@/features/chat/state/chat.slice';
+} from '@/features/chat/chat.thunks';
+import { fetchTotalUnreadCount } from '@/features/chat/chat.thunks';
 import { markAllNotificationsAsRead } from '@/features/notification/state/notification.thunks';
 import { useChat } from '@/features/chat/hooks/useChat';
-import type { ChatRoom, SendMessagePayload } from '@/features/chat/types/chat.types';
+import type { ChatRoom, SendMessagePayload } from '@/features/chat/chat.types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
 import { ChatSidebar } from '@/features/chat/components/ChatSidebar';
 import { ChatMessageList } from '@/features/chat/components/ChatMessageList';
 import { ChatInput } from '@/features/chat/components/ChatInput';
-import { CHAT_UI } from '@/features/chat/constants/chat.constants';
+import { CHAT_UI } from '@/features/chat/chat.constants';
+import type { RootState } from '@/app/store';
 
 export default function ChatPage() {
   const dispatch = useAppDispatch();
@@ -27,54 +28,71 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAppSelector((state) => state.auth);
-  const { rooms, messagesByRoom, isLoadingMessages } = useAppSelector((state) => state.chat);
+  const { rooms, messagesByRoom, isLoadingMessages } = useAppSelector(
+    (state: RootState) => state.chat,
+  );
 
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(() => {
+    return new URLSearchParams(location.search).get('roomId');
+  });
 
   const isStylist = user?.role === 'STYLIST';
   const isUser = user?.role === 'USER';
 
   const { isConnected, sendMessage, joinRoom } = useChat(user?.id) as ReturnType<typeof useChat>;
 
-  const activeRoom = rooms.find((r) => r.id === activeRoomId);
+  const activeRoom = rooms.find((r: ChatRoom) => r.id === activeRoomId);
   const currentMessages = activeRoomId ? messagesByRoom[activeRoomId] || [] : [];
   const isClosed = activeRoom?.status === 'CLOSED';
 
-  // Parse ?roomId from URL
-  useEffect(() => {
-    const roomIdQuery = new URLSearchParams(location.search).get('roomId');
-    if (roomIdQuery) setActiveRoomId(roomIdQuery);
-  }, [location.search]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  // Fetch rooms on mount
   useEffect(() => {
-    if (isStylist) dispatch(fetchStylistRooms());
-    else if (isUser) dispatch(fetchUserRooms());
-  }, [dispatch, isStylist, isUser]);
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Fetch rooms on mount and when search changes
+  useEffect(() => {
+    if (isStylist) {
+      dispatch(fetchStylistRooms(debouncedQuery));
+    } else if (isUser) {
+      dispatch(fetchUserRooms(debouncedQuery));
+    }
+  }, [dispatch, isStylist, isUser, debouncedQuery]);
 
   // Handle room state on selection
   useEffect(() => {
     if (activeRoomId) {
       dispatch(fetchRoomMessages({ roomId: activeRoomId }));
-      dispatch(markRoomMessagesAsRead(activeRoomId));
-      dispatch(resetUnreadCount());
+      dispatch(markRoomMessagesAsRead(activeRoomId)).then(() => {
+        dispatch(fetchTotalUnreadCount());
+      });
       dispatch(markAllNotificationsAsRead());
     }
   }, [activeRoomId, dispatch]);
 
-  // Join socket room
   useEffect(() => {
     if (activeRoomId && isConnected) joinRoom(activeRoomId);
   }, [activeRoomId, isConnected, joinRoom]);
 
-  const handleSendMessage = useCallback((payload: SendMessagePayload) => {
-    sendMessage(payload);
-  }, [sendMessage]);
+  const handleSendMessage = useCallback(
+    (payload: SendMessagePayload) => {
+      sendMessage(payload);
+    },
+    [sendMessage],
+  );
 
-  const handleUploadMedia = useCallback(async (file: File) => {
-    if (!activeRoomId) throw new Error('No active room');
-    return await dispatch(uploadChatMedia({ roomId: activeRoomId, file })).unwrap();
-  }, [dispatch, activeRoomId]);
+  const handleUploadMedia = useCallback(
+    async (file: File) => {
+      if (!activeRoomId) throw new Error('No active room');
+      return await dispatch(uploadChatMedia({ roomId: activeRoomId, file })).unwrap();
+    },
+    [dispatch, activeRoomId],
+  );
 
   const getPartnerDetails = (room: ChatRoom) => {
     if (isStylist) {
@@ -92,18 +110,23 @@ export default function ChatPage() {
   const bookingRef = activeRoom?.bookingNumber || activeRoom?.booking?.bookingNumber;
 
   return (
-    <div className={`flex h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)] bg-background${isStylist ? ' rounded-lg bg-muted/30 border border-border/40 overflow-hidden' : ''}`}>
+    <div
+      className={`flex h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)] bg-background${isStylist ? ' rounded-lg bg-muted/30 border border-border/40 overflow-hidden' : ''}`}
+    >
       <ChatSidebar
         rooms={rooms}
         activeRoomId={activeRoomId}
         isStylist={isStylist}
+        onSearch={setSearchQuery}
         onRoomSelect={(id) => {
           setActiveRoomId(id);
           navigate(`?roomId=${id}`, { replace: true });
         }}
       />
 
-      <div className={`flex-1 flex flex-col w-full h-full bg-muted/10 relative ${!activeRoomId ? 'hidden md:flex' : 'flex'}`}>
+      <div
+        className={`flex-1 flex flex-col w-full h-full bg-muted/10 relative ${!activeRoomId ? 'hidden md:flex' : 'flex'}`}
+      >
         {!activeRoomId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
             <div className="size-24 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
@@ -128,32 +151,33 @@ export default function ChatPage() {
                 >
                   <Icon icon="solar:arrow-left-bold" className="size-5" />
                 </Button>
-                {activeRoom && (() => {
-                  const partner = getPartnerDetails(activeRoom);
-                  return (
-                    <>
-                      <Avatar className="size-10 rounded-full shrink-0 border border-border/50">
-                        <AvatarImage src={partner.pic} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {partner.name?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold text-sm leading-none">{partner.name}</h3>
-                        {bookingRef && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Booking #{bookingRef}
-                            {isClosed && (
-                              <span className="ml-2 text-[10px] bg-red-50 text-red-500 border border-red-200 px-1.5 py-0.5 rounded-full">
-                                Closed
-                              </span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  );
-                })()}
+                {activeRoom &&
+                  (() => {
+                    const partner = getPartnerDetails(activeRoom);
+                    return (
+                      <>
+                        <Avatar className="size-10 rounded-full shrink-0 border border-border/50">
+                          <AvatarImage src={partner.pic} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {partner.name?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold text-sm leading-none">{partner.name}</h3>
+                          {bookingRef && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Booking #{bookingRef}
+                              {isClosed && (
+                                <span className="ml-2 text-[10px] bg-red-50 text-red-500 border border-red-200 px-1.5 py-0.5 rounded-full">
+                                  Closed
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
               </div>
             </div>
 

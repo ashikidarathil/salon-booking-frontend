@@ -26,6 +26,7 @@ import {
 
 import { clearError } from '@/features/user/userSlice';
 import { LoadingGate } from '@/components/common/LoadingGate';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 
 const ADMIN_COLOR = '#10B981';
 
@@ -66,27 +67,23 @@ export default function UserManagementPage() {
     if (!confirmed) return;
 
     showLoading(`${action}ing user...`);
-
     const result = await dispatch(toggleBlockUser({ userId, block: !isBlocked }));
-
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (toggleBlockUser.fulfilled.match(result)) {
       await showSuccess(`${action}ed!`, `${name} has been ${action.toLowerCase()}ed`);
     } else {
-      await showError('Failed', result.payload as string);
+      await showError('Failed', (result.payload as string) || ERROR_MESSAGES.UPDATE_FAILED);
     }
   };
 
   return (
     <div className="p-8 space-y-10">
-      {/* Header */}
       <div>
         <h1 className="text-4xl font-bold">User Management</h1>
         <p className="mt-2 text-muted-foreground">Manage all registered customers</p>
       </div>
 
-      {/* Search Bar - ✨ NEW */}
       <div className="max-w-md">
         <Input
           placeholder="Search by name or email..."

@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { Icon } from '@iconify/react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,25 +11,35 @@ import {
   fetchNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
-} from '../state/notification.thunks';
+} from '@/features/notification/state/notification.thunks';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { NotificationType } from '../types/notification.types';
+import type { INotification } from '@/features/notification/types/notification.types';
+import { NotificationType } from '@/features/notification/types/notification.types';
 
 export const NotificationCenter: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { notifications, unreadCount, isLoading } = useAppSelector((state) => state.notification);
+  const user = useAppSelector((state) => state.auth.user);
   const [activeTab, setActiveTab] = useState<'unread' | 'read'>('unread');
 
+  const getThemeClass = () => {
+    if (user?.role === 'ADMIN') return 'theme-admin';
+    if (user?.role === 'STYLIST') return 'theme-stylist';
+    return '';
+  };
+
   useEffect(() => {
-    dispatch(fetchNotifications({ 
-      isRead: activeTab === 'unread' ? false : true, 
-      limit: 20 
-    }));
+    dispatch(
+      fetchNotifications({
+        isRead: activeTab === 'unread' ? false : true,
+        limit: 20,
+      }),
+    );
   }, [dispatch, activeTab]);
 
-  const handleNotificationClick = (notification: any) => {
+  const handleNotificationClick = (notification: INotification) => {
     if (!notification.isRead) {
       dispatch(markNotificationAsRead(notification.id));
     }
@@ -46,8 +52,6 @@ export const NotificationCenter: React.FC = () => {
     switch (type) {
       case NotificationType.CHAT_MESSAGE:
         return 'solar:chat-round-line-bold';
-      case NotificationType.BOOKING_CONFIRMED:
-        return 'solar:calendar-check-bold';
       case NotificationType.BOOKING_CANCELLED:
         return 'solar:calendar-minimalistic-bold';
       case NotificationType.BOOKING_COMPLETED:
@@ -59,8 +63,6 @@ export const NotificationCenter: React.FC = () => {
 
   const getIconColor = (type: NotificationType) => {
     switch (type) {
-      case NotificationType.BOOKING_CONFIRMED:
-        return 'text-green-500';
       case NotificationType.BOOKING_CANCELLED:
         return 'text-red-500';
       case NotificationType.BOOKING_COMPLETED:
@@ -81,8 +83,8 @@ export const NotificationCenter: React.FC = () => {
     }
 
     // Local filtering ensures that when a notification is marked read, it leaves the unread tab immediately
-    const filteredNotifications = notifications.filter((n) => 
-      activeTab === 'unread' ? !n.isRead : n.isRead
+    const filteredNotifications = notifications.filter((n) =>
+      activeTab === 'unread' ? !n.isRead : n.isRead,
     );
 
     if (filteredNotifications.length === 0) {
@@ -102,27 +104,31 @@ export const NotificationCenter: React.FC = () => {
             onClick={() => handleNotificationClick(notification)}
             className={cn(
               'flex items-start gap-3 p-4 text-left transition-colors hover:bg-accent/50 border-b border-border/40 last:border-0',
-              !notification.isRead && 'bg-primary/5'
+              !notification.isRead && 'bg-primary/5',
             )}
           >
-            <div className={cn(
-              'mt-1 flex-shrink-0 size-8 rounded-full flex items-center justify-center bg-background border border-border/50',
-              getIconColor(notification.type)
-            )}>
+            <div
+              className={cn(
+                'mt-1 flex-shrink-0 size-8 rounded-full flex items-center justify-center bg-background border border-border/50',
+                getIconColor(notification.type),
+              )}
+            >
               <Icon icon={getIcon(notification.type)} className="size-4" />
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <p className={cn(
-                  'text-sm font-semibold leading-none',
-                  !notification.isRead ? 'text-foreground' : 'text-muted-foreground font-medium'
-                )}>
+                <p
+                  className={cn(
+                    'text-sm font-semibold leading-none',
+                    !notification.isRead ? 'text-foreground' : 'text-muted-foreground font-medium',
+                  )}
+                >
                   {notification.title}
                 </p>
                 <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                   {new Date(notification.createdAt).toLocaleDateString([], {
                     month: 'short',
-                    day: 'numeric'
+                    day: 'numeric',
                   })}
                 </span>
               </div>
@@ -132,7 +138,9 @@ export const NotificationCenter: React.FC = () => {
               {!notification.isRead && (
                 <div className="flex items-center gap-1 mt-1">
                   <div className="size-1.5 rounded-full bg-primary" />
-                  <span className="text-[10px] font-medium text-primary uppercase tracking-wider">New</span>
+                  <span className="text-[10px] font-medium text-primary uppercase tracking-wider">
+                    New
+                  </span>
                 </div>
               )}
             </div>
@@ -161,7 +169,7 @@ export const NotificationCenter: React.FC = () => {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 sm:w-96" align="end">
+      <PopoverContent className={cn('w-80 p-0 sm:w-96', getThemeClass())} align="end">
         <div className="p-4 pb-2 space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-lg">Notifications</h4>
@@ -176,11 +184,11 @@ export const NotificationCenter: React.FC = () => {
               </Button>
             )}
           </div>
-          
-          <Tabs 
-            defaultValue="unread" 
-            value={activeTab} 
-            onValueChange={(v) => setActiveTab(v as any)}
+
+          <Tabs
+            defaultValue="unread"
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as 'unread' | 'read')}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2">
@@ -191,7 +199,7 @@ export const NotificationCenter: React.FC = () => {
                 Read
               </TabsTrigger>
             </TabsList>
-            
+
             <ScrollArea className="h-[400px] mt-4 -mx-4 border-t">
               <TabsContent value="unread" className="m-0 focus-visible:ring-0">
                 {renderNotificationList()}
@@ -202,13 +210,21 @@ export const NotificationCenter: React.FC = () => {
             </ScrollArea>
           </Tabs>
         </div>
-        
+
         <Separator />
         <div className="p-2">
           <Button
             variant="ghost"
             className="w-full text-xs h-9 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate('/notifications')}
+            onClick={() => {
+              if (user?.role === 'ADMIN') {
+                navigate('/admin/notifications');
+              } else if (user?.role === 'STYLIST') {
+                navigate('/stylist/notifications');
+              } else {
+                navigate('/profile/notifications');
+              }
+            }}
           >
             See all notifications
           </Button>

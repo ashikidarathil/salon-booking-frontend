@@ -35,11 +35,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import Pagination from '@/components/pagination/Pagination';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 import {
   showSuccess,
   showError,
@@ -102,16 +104,13 @@ export default function CategoriesPage() {
   const onSubmit = async (data: CategoryFormData) => {
     showLoading(editingCategory ? 'Updating category...' : 'Creating category...');
 
-    let result;
-    if (editingCategory) {
-      result = await dispatch(updateCategory({ id: editingCategory.id, data }));
-    } else {
-      result = await dispatch(createCategory(data));
-    }
+    const result = editingCategory
+      ? await dispatch(updateCategory({ id: editingCategory.id, data }))
+      : await dispatch(createCategory(data));
 
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (createCategory.fulfilled.match(result) || updateCategory.fulfilled.match(result)) {
       showSuccess(
         editingCategory ? 'Category Updated' : 'Category Created',
         editingCategory ? 'Changes saved successfully' : 'New category added',
@@ -122,18 +121,10 @@ export default function CategoriesPage() {
       });
       setEditingCategory(null);
       setIsAddDialogOpen(false);
-      dispatch(
-        fetchPaginatedCategories({
-          page: 1,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
       setCurrentPage(1);
+      loadCategories();
     } else {
-      const errorMessage = result.payload as string;
-      showError('Failed', errorMessage);
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.OPERATION_FAILED);
     }
   };
 
@@ -163,18 +154,11 @@ export default function CategoriesPage() {
     const result = await dispatch(toggleCategoryStatus({ id, status: newStatus }));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (toggleCategoryStatus.fulfilled.match(result)) {
       showSuccess('Success', `Category ${action.toLowerCase()}d`);
-      dispatch(
-        fetchPaginatedCategories({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
+      loadCategories();
     } else {
-      showError('Failed', 'Could not update status');
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.OPERATION_FAILED);
     }
   };
 
@@ -193,18 +177,11 @@ export default function CategoriesPage() {
     const result = await dispatch(softDeleteCategory(id));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (softDeleteCategory.fulfilled.match(result)) {
       showSuccess('Deleted', 'Category soft-deleted');
-      dispatch(
-        fetchPaginatedCategories({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
+      loadCategories();
     } else {
-      showError('Failed', 'Could not delete category');
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.DELETE_FAILED);
     }
   };
 
@@ -213,18 +190,11 @@ export default function CategoriesPage() {
     const result = await dispatch(restoreCategory(id));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (restoreCategory.fulfilled.match(result)) {
       showSuccess('Restored', 'Category restored successfully');
-      dispatch(
-        fetchPaginatedCategories({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        }),
-      );
+      loadCategories();
     } else {
-      showError('Failed', 'Could not restore category');
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.OPERATION_FAILED);
     }
   };
 
@@ -265,6 +235,9 @@ export default function CategoriesPage() {
           <DialogContent className="theme-admin">
             <DialogHeader>
               <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+              <DialogDescription className="sr-only">
+                {editingCategory ? 'Edit the details of this category' : 'Add a new category to the salon'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>

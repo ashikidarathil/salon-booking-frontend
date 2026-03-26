@@ -13,6 +13,7 @@ import {
 } from '@/features/stylistInvite/stylistInviteThunks';
 import { clearInviteLink, clearError } from '@/features/stylistInvite/stylistInviteSlice';
 import { LoadingGate } from '@/components/common/LoadingGate';
+import { ERROR_MESSAGES } from '@/common/constants/error.messages';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -126,25 +127,17 @@ export default function StylistManagementPage() {
 
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (createStylistInvite.fulfilled.match(result)) {
       await showSuccess('Invitation Sent!', 'Stylist has been invited successfully');
-      setTimeout(
-        () =>
-          dispatch(
-            fetchPaginatedStylists({
-              page: currentPage,
-              limit: ITEMS_PER_PAGE,
-              search: searchTerm || undefined,
-            }),
-          ),
-        500,
-      );
+      loadStylists();
       setIsManualInviteOpen(false);
+      setManualForm({ email: '', specialization: '', experience: 0 });
     } else {
-      await showError('Failed to Send Invite', error || 'Please try again');
+      await showError(
+        'Failed to Send Invite',
+        (result.payload as string) || ERROR_MESSAGES.CREATE_FAILED,
+      );
     }
-
-    setManualForm({ email: '', specialization: '', experience: 0 });
   };
 
   const handleToggleBlock = async (stylistId: string, name: string, isBlocked: boolean) => {
@@ -159,22 +152,14 @@ export default function StylistManagementPage() {
     if (!confirmed) return;
 
     showLoading(`${action}ing stylist...`);
-
     const result = await dispatch(blockUnblockStylist({ stylistId, isBlocked: !isBlocked }));
-
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (blockUnblockStylist.fulfilled.match(result)) {
       await showSuccess(`${action}ed!`, `${name || 'Stylist'} has been ${action.toLowerCase()}ed`);
-      dispatch(
-        fetchPaginatedStylists({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-        }),
-      );
+      loadStylists();
     } else {
-      await showError('Failed', `Could not ${action.toLowerCase()} stylist`);
+      await showError('Failed', (result.payload as string) || ERROR_MESSAGES.UPDATE_FAILED);
     }
   };
 
@@ -189,29 +174,17 @@ export default function StylistManagementPage() {
     if (!confirmed) return;
 
     showLoading('Sending invitation...');
-
     const result = await dispatch(sendInviteToApplied({ userId }));
-
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (sendInviteToApplied.fulfilled.match(result)) {
       await showSuccess('Invitation Sent!', `${name || 'Stylist'} has been invited`);
-      setTimeout(
-        () =>
-          dispatch(
-            fetchPaginatedStylists({
-              page: currentPage,
-              limit: ITEMS_PER_PAGE,
-              search: searchTerm || undefined,
-            }),
-          ),
-        500,
-      );
+      loadStylists();
       if (viewInviteDialog?.userId === userId) {
         setViewInviteDialog(null);
       }
     } else {
-      await showError('Failed', 'Could not send invitation');
+      await showError('Failed', (result.payload as string) || ERROR_MESSAGES.CREATE_FAILED);
     }
   };
 
@@ -226,22 +199,14 @@ export default function StylistManagementPage() {
     if (!confirmed) return;
 
     showLoading('Approving stylist...');
-
     const result = await dispatch(approveStylist({ userId }));
-
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (approveStylist.fulfilled.match(result)) {
       await showSuccess('Approved!', `${name || 'Stylist'} is now active`);
-      dispatch(
-        fetchPaginatedStylists({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-        }),
-      );
+      loadStylists();
     } else {
-      await showError('Failed', 'Could not approve stylist');
+      await showError('Failed', (result.payload as string) || ERROR_MESSAGES.UPDATE_FAILED);
     }
   };
 
@@ -256,22 +221,14 @@ export default function StylistManagementPage() {
     if (!confirmed) return;
 
     showLoading('Rejecting stylist...');
-
     const result = await dispatch(rejectStylist({ userId }));
-
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (rejectStylist.fulfilled.match(result)) {
       await showSuccess('Rejected', `${name || 'Stylist'} has been rejected`);
-      dispatch(
-        fetchPaginatedStylists({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          search: searchTerm || undefined,
-        }),
-      );
+      loadStylists();
     } else {
-      await showError('Failed', 'Could not reject stylist');
+      await showError('Failed', (result.payload as string) || ERROR_MESSAGES.DELETE_FAILED);
     }
   };
 
@@ -280,40 +237,12 @@ export default function StylistManagementPage() {
     const result = await dispatch(updateStylistPosition({ stylistId, position }));
     closeLoading();
 
-    if (result.meta.requestStatus === 'fulfilled') {
+    if (updateStylistPosition.fulfilled.match(result)) {
       showSuccess('Updated', 'Stylist position updated successfully');
     } else {
-      showError('Failed', 'Could not update position');
+      showError('Failed', (result.payload as string) || ERROR_MESSAGES.UPDATE_FAILED);
     }
   };
-
-  /*
-  const handleToggleBlock = async (userId: string, name: string, isBlocked: boolean) => {
-    const action = isBlocked ? 'Unblock' : 'Block';
-    const confirmed = await showConfirm(
-      `${action} Stylist?`,
-      `Are you sure you want to ${action.toLowerCase()} ${name || 'this stylist'}?`,
-      `Yes, ${action}`,
-      'Cancel',
-      isBlocked ? ADMIN_COLOR : '#ef4444',
-    );
-
-    if (!confirmed) return;
-
-    showLoading(`${action}ing stylist...`);
-
-    const result = await dispatch(toggleBlockStylist({ userId, block: !isBlocked }));
-
-    closeLoading();
-
-    if (result.meta.requestStatus === 'fulfilled') {
-      await showSuccess(`${action}ed!`, `${name || 'Stylist'} has been ${action.toLowerCase()}ed`);
-      dispatch(fetchStylists());
-    } else {
-      await showError('Failed', `Could not ${action.toLowerCase()} stylist`);
-    }
-  };
-  */
 
   const handleCopyLink = (link: string) => {
     navigator.clipboard.writeText(link);
@@ -450,6 +379,7 @@ export default function StylistManagementPage() {
           <DialogContent className="theme-admin">
             <DialogHeader>
               <DialogTitle>Invite New Stylist</DialogTitle>
+              <DialogDescription>Send an invitation link to a stylist's email.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleManualInvite} className="space-y-6">
               <div>

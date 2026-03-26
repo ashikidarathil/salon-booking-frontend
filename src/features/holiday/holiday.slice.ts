@@ -1,5 +1,5 @@
-import { createSlice, isPending, isRejected } from '@reduxjs/toolkit';
-import type { HolidayState } from './holiday.types';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { HolidayState, Holiday } from './holiday.types';
 import { fetchHolidays, createHoliday, deleteHoliday } from './holiday.thunks';
 
 const initialState: HolidayState = {
@@ -18,26 +18,32 @@ const holidaySlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchHolidays.fulfilled, (state, action) => {
+      .addCase(fetchHolidays.fulfilled, (state, action: PayloadAction<Holiday[]>) => {
         state.loading = false;
         state.holidays = action.payload;
       })
-      .addCase(createHoliday.fulfilled, (state, action) => {
+      .addCase(createHoliday.fulfilled, (state, action: PayloadAction<Holiday>) => {
         state.loading = false;
         state.holidays.unshift(action.payload);
       })
-      .addCase(deleteHoliday.fulfilled, (state, action) => {
+      .addCase(deleteHoliday.fulfilled, (state, action: PayloadAction<string>) => {
         state.loading = false;
         state.holidays = state.holidays.filter((h) => h.id !== action.payload);
       })
-      .addMatcher(isPending(fetchHolidays, createHoliday, deleteHoliday), (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addMatcher(isRejected(fetchHolidays, createHoliday, deleteHoliday), (state, action) => {
-        state.loading = false;
-        state.error = (action.payload as string) || 'Something went wrong';
-      });
+      .addMatcher(
+        (action) => action.type.endsWith('/pending') && action.type.startsWith('holiday/'),
+        (state) => {
+          state.loading = true;
+          state.error = null;
+        },
+      )
+      .addMatcher(
+        (action) => action.type.endsWith('/rejected') && action.type.startsWith('holiday/'),
+        (state, action: PayloadAction<string>) => {
+          state.loading = false;
+          state.error = action.payload || 'Something went wrong';
+        },
+      );
   },
 });
 

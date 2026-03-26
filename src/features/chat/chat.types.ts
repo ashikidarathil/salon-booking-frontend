@@ -68,3 +68,11 @@ export interface SendMessagePayload {
   mediaUrl?: string;
   duration?: number;
 }
+
+export interface ChatUnreadCount {
+  count: number;
+}
+
+export interface ChatMediaUploadResponse {
+  mediaUrl: string;
+}

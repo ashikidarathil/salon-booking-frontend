@@ -1,86 +1,58 @@
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchBreaks, createBreak, deleteBreak } from '@/features/schedule/schedule.thunks';
-import { branchService } from '@/services/branch.service';
-import { stylistBranchService } from '@/services/stylistBranch.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { showSuccess, showError, showConfirm, showLoading } from '@/common/utils/swal.utils';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Icon } from '@iconify/react';
-import { Badge } from '../ui/badge';
+import { format, isBefore, startOfToday } from 'date-fns';
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import type { StylistBreak, CreateStylistBreakDto } from '@/features/schedule/schedule.types';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { showSuccess, showError, showLoading, showConfirm } from '@/common/utils/swal.utils';
+import StylistBranchService from '@/services/stylistBranch.service';
 import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
 
-interface DefaultBreak {
-  startTime: string;
-  endTime: string;
-  description: string;
+
+interface BreakManagementProps {
+  stylistId?: string;
+  branchId?: string;
 }
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-const BREAK_PRESETS = [
-  { label: 'Lunch Break (1h)', startTime: '13:00', endTime: '14:00', description: 'Lunch Break' },
-  { label: 'Tea Break (30m)', startTime: '16:00', endTime: '16:30', description: 'Tea Break' },
-  { label: 'Custom', startTime: '12:00', endTime: '12:30', description: '' },
-];
 
 export default function BreakManagement({
   stylistId: propStylistId,
   branchId: propBranchId,
-}: {
-  stylistId?: string;
-  branchId?: string;
-}) {
+}: BreakManagementProps) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { breaks, loading: thunkLoading } = useAppSelector((state) => state.schedule);
-  const [defaultBreaks, setDefaultBreaks] = useState<DefaultBreak[]>([]);
-  const [internalLoading, setInternalLoading] = useState(false);
-
-  const timeToMinutes = (time: string) => {
-    const [h, m] = time.split(':').map(Number);
-    return h * 60 + m;
-  };
-
-  const calculateTotalMinutes = (breakList: StylistBreak[]) => {
-    return breakList.reduce((total, b) => {
-      return total + (timeToMinutes(b.endTime) - timeToMinutes(b.startTime));
-    }, 0);
-  };
+  const { breaks, loading } = useAppSelector((state) => state.schedule);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startTime, setStartTime] = useState('13:00');
+  const [endTime, setEndTime] = useState('14:00');
+  const [description, setDescription] = useState('Lunch Break');
   const [fetchedBranchId, setFetchedBranchId] = useState<string | null>(null);
 
   const effectiveStylistId = propStylistId || user?.id;
   const effectiveBranchId = propBranchId || user?.branchId || fetchedBranchId;
 
-  const [newBreak, setNewBreak] = useState<Partial<CreateStylistBreakDto>>({
-    startTime: '13:00',
-    endTime: '14:00',
-    dayOfWeek: 1,
-    description: 'Lunch Break',
-  });
-
-  const [activeTab, setActiveTab] = useState<'recurring' | 'one-off'>('recurring');
-
   useEffect(() => {
     const fetchStylistBranch = async () => {
       if (!propBranchId && !user?.branchId && effectiveStylistId && user?.role === 'STYLIST') {
         try {
-          const response = await stylistBranchService.getStylistBranches(effectiveStylistId);
+          const response = await StylistBranchService.getStylistBranches(effectiveStylistId);
           const branches = response.data.data;
           if (branches.length > 0) {
-            const activeBranch = branches.find((b: BranchStylist) => b.mappingId); // Use mappingId or similar to check focus
-            setFetchedBranchId(activeBranch?.branchId || branches[0].branchId);
+            const activeBranch = branches.find((b: BranchStylist) => b.mappingId);
+            const branchId = activeBranch?.branchId || branches[0].branchId;
+            setFetchedBranchId(branchId);
           }
         } catch (error) {
           console.error('Failed to fetch stylist branch:', error);
@@ -90,535 +62,250 @@ export default function BreakManagement({
     fetchStylistBranch();
   }, [propBranchId, user?.branchId, effectiveStylistId, user?.role]);
 
-  const loadData = async () => {
-    if (!effectiveStylistId || !effectiveBranchId) return;
-    setInternalLoading(true);
-    try {
-      const branchRes = await branchService.getPublic(effectiveBranchId);
-      setDefaultBreaks(branchRes.data.data.defaultBreaks || []);
-      await dispatch(
-        fetchBreaks({ stylistId: effectiveStylistId, branchId: effectiveBranchId }),
-      ).unwrap();
-    } catch {
-      showError('Error', 'Failed to fetch schedule data');
-    } finally {
-      setInternalLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveStylistId, effectiveBranchId]);
+    if (effectiveStylistId && effectiveBranchId) {
+      dispatch(fetchBreaks({ stylistId: effectiveStylistId, branchId: effectiveBranchId }));
+    }
+  }, [dispatch, effectiveStylistId, effectiveBranchId]);
 
   const handleCreateBreak = async () => {
     if (!effectiveStylistId || !effectiveBranchId) return;
 
-    if (!newBreak.startTime || !newBreak.endTime) {
-      showError('Error', 'Please select both start and end times');
-      return;
-    }
-
-    const duration = timeToMinutes(newBreak.endTime!) - timeToMinutes(newBreak.startTime!);
-    const dailyCustom = breaks.filter((b) =>
-      activeTab === 'recurring' ? b.dayOfWeek === newBreak.dayOfWeek : b.date === newBreak.date,
-    );
-    const existingMinsForDay = calculateTotalMinutes(dailyCustom);
-
-    if (existingMinsForDay + duration > 90) {
-      showError(
-        'Limit Exceeded',
-        `Total break time for this day cannot exceed 90 minutes. You already have ${existingMinsForDay} mins of overrides.`,
-      );
-      return;
-    }
-
     showLoading('Adding break...');
     try {
-      const payload: CreateStylistBreakDto = {
-        stylistId: effectiveStylistId!,
-        branchId: effectiveBranchId!,
-        startTime: newBreak.startTime!,
-        endTime: newBreak.endTime!,
-        description: newBreak.description,
-        ...(activeTab === 'recurring'
-          ? { dayOfWeek: newBreak.dayOfWeek }
-          : { date: newBreak.date }),
-      };
+      await dispatch(
+        createBreak({
+          stylistId: effectiveStylistId,
+          branchId: effectiveBranchId,
+          date,
+          startTime,
+          endTime,
+          description,
+        }),
+      ).unwrap();
 
-      await dispatch(createBreak(payload)).unwrap();
-      showSuccess('Success', 'Break added successfully');
-    } catch (error) {
+      showSuccess('Success', 'Break added to your schedule');
+      setIsDialogOpen(false);
+    } catch (error: unknown) {
       showError('Error', (error as string) || 'Failed to add break');
     }
   };
 
-  const handleDeleteBreak = async (id: string) => {
+  const handleDeleteBreak = async (breakId: string) => {
     const confirmed = await showConfirm(
-      'Delete Break?',
-      'Are you sure you want to remove this break?',
+      'Remove break?',
+      'This time slot will become available for bookings again.',
+      'Yes, remove',
     );
 
-    if (!confirmed) return;
-
-    showLoading('Deleting break...');
-    try {
-      await dispatch(deleteBreak(id)).unwrap();
-      showSuccess('Success', 'Break deleted');
-    } catch (error) {
-      showError('Error', (error as string) || 'Failed to delete break');
+    if (confirmed) {
+      showLoading('Removing break...');
+      try {
+        await dispatch(deleteBreak(breakId)).unwrap();
+        showSuccess('Success', 'Break removed');
+      } catch (error: unknown) {
+        showError('Error', (error as string) || 'Failed to remove break');
+      }
     }
   };
 
-  const recurringBreaks = breaks.filter((b) => b.dayOfWeek !== undefined);
-  const oneOffBreaks = breaks.filter((b) => b.date !== undefined);
+  const upcomingBreaks = breaks
+    .filter((b) => !isBefore(new Date(b.date!), startOfToday()))
+    .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
 
   return (
     <div className="space-y-6">
-      {/* Top Creation Section */}
       <Card className="border-none shadow-lg overflow-hidden">
-        <CardHeader className="pb-3 bg-primary/5 border-b mb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <CardHeader className="pb-6 bg-primary/5 border-b">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <CardTitle className="text-xl font-semibold flex items-center gap-2 text-primary">
-                <Icon icon="solar:tea-cup-bold" className="size-6" />
-                Special Adjustments / Emergency Breaks
+              <CardTitle className="text-xl font-semibold flex items-center gap-2 text-primary tracking-tight">
+                <Icon icon="solar:tea-cup-linear" className="size-7" />
+                Break Management
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Add temporary or recurring breaks to your schedule.
-              </p>
+              <CardDescription className="text-xs font-medium opacity-60">
+                Schedule personal time or lunch breaks to block your calendar.
+              </CardDescription>
             </div>
-            <div className="text-[10px] uppercase font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 w-fit">
-              Note: Lunch/Tea breaks are automatic.
-            </div>
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              className="rounded-2xl h-11 px-6 bg-primary hover:bg-primary/95 text-white font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Icon icon="solar:add-circle-linear" className="size-5" />
+              Schedule New Break
+            </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-2">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as 'recurring' | 'one-off')}
-            className="w-full"
-          >
-            <TabsList className="mb-6 h-12 p-1 bg-muted/50 rounded-2xl w-full sm:w-fit">
-              <TabsTrigger
-                value="recurring"
-                className="rounded-xl px-8 font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all focus-visible:ring-0"
-              >
-                Recurring
-              </TabsTrigger>
-              <TabsTrigger
-                value="one-off"
-                className="rounded-xl px-8 font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all focus-visible:ring-0"
-              >
-                Specific Date
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 items-end">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                  Break Type
-                </label>
-                <div className="relative">
-                  <Icon
-                    icon="solar:hamburger-menu-linear"
-                    className="absolute left-3 top-3 size-4 text-muted-foreground"
-                  />
-                  <select
-                    className="w-full h-11 pl-9 pr-3 py-2 rounded-2xl border border-input bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                    onChange={(e) => {
-                      const preset = BREAK_PRESETS[parseInt(e.target.value)];
-                      if (preset) {
-                        setNewBreak({ ...newBreak, ...preset });
-                      }
-                    }}
-                  >
-                    {BREAK_PRESETS.map((p, idx) => (
-                      <option key={p.label} value={idx}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {activeTab === 'recurring' ? (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                    Day of Week
-                  </label>
-                  <div className="relative">
-                    <Icon
-                      icon="solar:calendar-minimalistic-linear"
-                      className="absolute left-3 top-3 size-4 text-muted-foreground"
-                    />
-                    <select
-                      className="w-full h-11 pl-9 pr-3 py-2 rounded-2xl border border-input bg-background focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                      value={newBreak.dayOfWeek}
-                      onChange={(e) =>
-                        setNewBreak({ ...newBreak, dayOfWeek: parseInt(e.target.value) })
-                      }
-                    >
-                      {DAYS.map((day, idx) => (
-                        <option key={day} value={idx}>
-                          {day}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                    Date
-                  </label>
-                  <div className="relative">
-                    <Icon
-                      icon="solar:calendar-date-linear"
-                      className="absolute left-3 top-3 size-4 text-muted-foreground"
-                    />
-                    <Input
-                      type="date"
-                      className="h-11 pl-9 rounded-2xl"
-                      value={newBreak.date || ''}
-                      onChange={(e) => setNewBreak({ ...newBreak, date: e.target.value })}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                  Start Time
-                </label>
-                <div className="relative">
-                  <Icon
-                    icon="solar:clock-circle-linear"
-                    className="absolute left-3 top-3 size-4 text-muted-foreground"
-                  />
-                  <Input
-                    type="time"
-                    className="h-11 pl-9 rounded-2xl"
-                    value={newBreak.startTime}
-                    onChange={(e) => setNewBreak({ ...newBreak, startTime: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                  End Time
-                </label>
-                <div className="relative">
-                  <Icon
-                    icon="solar:clock-circle-linear"
-                    className="absolute left-3 top-3 size-4 text-muted-foreground"
-                  />
-                  <Input
-                    type="time"
-                    className="h-11 pl-9 rounded-2xl"
-                    value={newBreak.endTime}
-                    onChange={(e) => setNewBreak({ ...newBreak, endTime: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-                  Description
-                </label>
-                <Input
-                  placeholder="e.g. Lunch"
-                  className="h-11 rounded-2xl"
-                  value={newBreak.description}
-                  onChange={(e) => setNewBreak({ ...newBreak, description: e.target.value })}
-                />
-              </div>
-
-              <div className="md:col-span-2 lg:col-span-5 flex justify-end">
-                <Button
-                  onClick={handleCreateBreak}
-                  className="h-12 px-10 rounded-2xl text-base font-semibold shadow-lg shadow-primary/20 transition-all active:scale-95"
-                  disabled={thunkLoading || internalLoading}
-                >
-                  <Icon icon="solar:add-circle-bold" className="size-5 mr-2" />
-                  Add Break
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
-              <Icon icon="solar:info-square-bold" className="size-5 text-primary shrink-0 mt-0.5" />
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                <span className="font-semibold text-primary uppercase mr-1">Policy:</span>
-                Stylists are limited to 2 breaks per day (e.g., Lunch and Tea). Adding a custom
-                break for a specific day will override any branch default breaks for that date.
-                {user?.role === 'ADMIN' && (
-                  <span className="ml-1 text-green-600 font-semibold">(Admin Bypass Active)</span>
-                )}
-              </p>
-            </div>
-          </Tabs>
-        </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Sidebar: Branch Defaults */}
-        <div className="xl:col-span-1 space-y-6">
-          <Card className="border-none shadow-lg bg-muted/30 border-dashed h-fit">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Icon icon="solar:lock-keyhole-minimalistic-bold" className="text-primary" />
-                Branch Defaults
-              </CardTitle>
-              <p className="text-xs text-muted-foreground font-medium">
-                Standard rules for this branch.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-[10px] font-semibold text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-100 leading-relaxed">
-                <strong>NOTE:</strong> If you add ANY custom break for a day, these defaults are
-                skipped for that day.
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {upcomingBreaks.length > 0 ? (
+          upcomingBreaks.map((item) => (
+            <Card
+              key={item.id}
+              className="group border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-[2rem] overflow-hidden bg-white"
+            >
+              <CardContent className="p-0">
+                <div className="p-6 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full w-fit">
+                        {format(new Date(item.date!), 'EEEE')}
+                      </p>
+                      <h4 className="text-base font-bold text-slate-800 tracking-tight">
+                        {format(new Date(item.date!), 'MMMM do, yyyy')}
+                      </h4>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteBreak(item.id)}
+                      className="h-9 w-9 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Icon icon="solar:trash-bin-trash-linear" className="size-5" />
+                    </Button>
+                  </div>
 
-              <div className="space-y-2">
-                {defaultBreaks.map((gb, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-center p-3 bg-white rounded-xl border shadow-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-sm text-slate-700">{gb.description}</p>
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-tighter">
-                        Standard Rule
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="size-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary">
+                      <Icon icon="solar:clock-circle-bold" className="size-6" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-slate-700">
+                        {item.startTime} - {item.endTime}
+                      </span>
+                      <span className="text-[10px] font-medium text-slate-400">
+                        Duration Scheduled
+                      </span>
+                    </div>
+                  </div>
+
+                  {item.description && (
+                    <div className="flex items-center gap-2 px-1">
+                      <Icon icon="solar:notes-linear" className="size-3.5 text-slate-400" />
+                      <p className="text-xs font-medium text-slate-500 italic truncate italic">
+                        "{item.description}"
                       </p>
                     </div>
-                    <Badge variant="secondary" className="font-semibold text-[10px] h-6">
-                      {gb.startTime}-{gb.endTime}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-4 border-t mt-4 space-y-2.5">
-                <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-muted-foreground font-semibold uppercase tracking-wider">
-                    Branch Total:
-                  </span>
-                  <span className="font-semibold">
-                    {calculateTotalMinutes(
-                      defaultBreaks.map(
-                        (db) =>
-                          ({ ...db, id: 'temp', stylistId: '', branchId: '' }) as StylistBreak,
-                      ),
-                    )}{' '}
-                    mins
-                  </span>
+                  )}
                 </div>
-                <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-muted-foreground font-semibold uppercase tracking-wider">
-                    Custom Edits:
-                  </span>
-                  <span className="font-semibold text-primary">
-                    {calculateTotalMinutes(
-                      breaks.filter((b) =>
-                        activeTab === 'recurring'
-                          ? b.dayOfWeek === newBreak.dayOfWeek
-                          : b.date === newBreak.date,
-                      ),
-                    )}{' '}
-                    mins
-                  </span>
-                </div>
-                <div className="pt-3 border-t flex justify-between items-center text-xs font-semibold">
-                  <span className="uppercase tracking-widest text-slate-800">Active Total:</span>
-                  <span className="text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                    {(() => {
-                      const dailyCustom = breaks.filter((b) =>
-                        activeTab === 'recurring'
-                          ? b.dayOfWeek === newBreak.dayOfWeek
-                          : b.date === newBreak.date,
-                      );
-                      const total =
-                        dailyCustom.length > 0
-                          ? calculateTotalMinutes(dailyCustom)
-                          : calculateTotalMinutes(
-                              defaultBreaks.map(
-                                (db) =>
-                                  ({
-                                    ...db,
-                                    id: 'temp',
-                                    stylistId: '',
-                                    branchId: '',
-                                  }) as StylistBreak,
-                              ),
-                            );
-                      return `${total} / 90 mins`;
-                    })()}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Area: Tables with full width */}
-        <div className="xl:col-span-3 space-y-6">
-          <Card className="border-none shadow-lg">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <Icon icon="solar:restart-bold" className="text-primary" />
-                  Recurring Breaks
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Fixed breaks based on days of the week.
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-2xl border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="font-semibold text-xs uppercase tracking-widest h-10">
-                        Day
-                      </TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-widest h-10">
-                        Time Window
-                      </TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-widest h-10">
-                        Description
-                      </TableHead>
-                      <TableHead className="h-10 text-right pr-6"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recurringBreaks.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-center text-muted-foreground py-12 italic"
-                        >
-                          No recurring breaks defined
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      recurringBreaks.map((b) => (
-                        <TableRow
-                          key={b.id}
-                          className="hover:bg-muted/20 transition-colors border-muted/50"
-                        >
-                          <TableCell className="font-semibold text-sm">
-                            {DAYS[b.dayOfWeek!]}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-xs bg-muted px-2 py-1 rounded-lg border">
-                              {b.startTime} - {b.endTime}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground font-medium">
-                            {b.description || '-'}
-                          </TableCell>
-                          <TableCell className="text-right pr-4">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive transition-all"
-                              onClick={() => handleDeleteBreak(b.id)}
-                            >
-                              <Icon icon="solar:trash-bin-trash-bold" className="size-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-lg">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <Icon icon="solar:calendar-date-bold" className="text-primary" />
-                  One-off Breaks
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Adjustments for specific dates only.
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-2xl border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="font-semibold text-xs uppercase tracking-widest h-10">
-                        Date
-                      </TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-widest h-10">
-                        Time Window
-                      </TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-widest h-10">
-                        Description
-                      </TableHead>
-                      <TableHead className="h-10 text-right pr-6"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {oneOffBreaks.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-center text-muted-foreground py-12 italic"
-                        >
-                          No specific date breaks defined
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      oneOffBreaks.map((b) => (
-                        <TableRow
-                          key={b.id}
-                          className="hover:bg-muted/20 transition-colors border-muted/50"
-                        >
-                          <TableCell className="font-semibold text-sm">
-                            {new Date(b.date!).toLocaleDateString('en-US', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-xs bg-muted px-2 py-1 rounded-lg border">
-                              {b.startTime} - {b.endTime}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground font-medium">
-                            {b.description || '-'}
-                          </TableCell>
-                          <TableCell className="text-right pr-4">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive transition-all"
-                              onClick={() => handleDeleteBreak(b.id)}
-                            >
-                              <Icon icon="solar:trash-bin-trash-bold" className="size-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
+            <div className="size-20 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-200">
+              <Icon icon="solar:tea-cup-bold-duotone" className="size-10" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-slate-400">No breaks scheduled</h3>
+              <p className="text-sm text-slate-400/60 font-medium">
+                Your upcoming schedule is fully open.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[420px] rounded-[2rem] gap-0 p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="p-8 bg-slate-50 border-b border-slate-100 text-left">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                <Icon icon="solar:tea-cup-linear" className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-800 tracking-tight">
+                  Schedule Break
+                </DialogTitle>
+                <DialogDescription className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wide">
+                  Block your calendar for personal time
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="p-8 space-y-6 bg-white">
+            <div className="space-y-3">
+              <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                Date
+              </Label>
+              <div className="relative">
+                <Icon
+                  icon="solar:calendar-linear"
+                  className="absolute left-4 top-3.5 size-5 text-primary/50"
+                />
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                  className="pl-11 h-12 rounded-xl border-slate-100 bg-slate-50 font-bold text-slate-700 focus-visible:ring-primary/20"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                  From
+                </Label>
+                <div className="relative">
+                  <Icon
+                    icon="solar:clock-circle-linear"
+                    className="absolute left-4 top-3.5 size-5 text-primary/50"
+                  />
+                  <Input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="pl-11 h-12 rounded-xl border-slate-100 bg-slate-50 font-bold text-slate-700 focus-visible:ring-primary/20"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                  To
+                </Label>
+                <div className="relative">
+                  <Icon
+                    icon="solar:clock-circle-linear"
+                    className="absolute left-4 top-3.5 size-5 text-primary/50"
+                  />
+                  <Input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="pl-11 h-12 rounded-xl border-slate-100 bg-slate-50 font-bold text-slate-700 focus-visible:ring-primary/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                Reason / Note
+              </Label>
+              <Input
+                placeholder="e.g. Lunch, Private Appointment"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="h-12 rounded-xl border-slate-100 bg-slate-50 font-medium placeholder:text-slate-300 focus-visible:ring-primary/10"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="p-8 bg-slate-50 border-t border-slate-100">
+            <Button
+              onClick={handleCreateBreak}
+              disabled={loading}
+              className="flex-1 rounded-xl h-12 bg-primary hover:bg-primary/95 text-white font-bold shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+            >
+              Add Break to Schedule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -3,15 +3,16 @@ import { Icon } from '@iconify/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { showError } from '@/common/utils/swal.utils';
-import { MessageType, SenderType } from '../types/chat.types';
+import { MessageType, SenderType } from '../chat.types';
+import type { SendMessagePayload } from '../chat.types';
 
 interface ChatInputProps {
   isConnected: boolean;
-  activeRoomId: string;
+  activeRoomId: string | null;
   userId: string;
   isStylist: boolean;
   isClosed: boolean;
-  onSendMessage: (payload: any) => void;
+  onSendMessage: (payload: SendMessagePayload) => void;
   onUploadMedia: (file: File) => Promise<string>;
 }
 
@@ -35,7 +36,7 @@ export function ChatInput({
   const recordingTimerRef = useRef<number | null>(null);
 
   const handleSend = () => {
-    if (!inputText.trim() || isClosed) return;
+    if (!inputText.trim() || isClosed || !activeRoomId) return;
     onSendMessage({
       chatRoomId: activeRoomId,
       senderId: userId,
@@ -60,6 +61,7 @@ export function ChatInput({
     try {
       setIsUploading(true);
       const mediaUrl = await onUploadMedia(file);
+      if (!activeRoomId) return;
       onSendMessage({
         chatRoomId: activeRoomId,
         senderId: userId,
@@ -67,8 +69,8 @@ export function ChatInput({
         messageType: MessageType.IMAGE,
         mediaUrl,
       });
-    } catch (err: any) {
-      showError('Upload Failed', err.message || 'Image upload failed');
+    } catch (err: unknown) {
+      showError('Upload Failed', (err as Error).message || 'Image upload failed');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -98,7 +100,7 @@ export function ChatInput({
       recordingTimerRef.current = window.setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
-    } catch (err) {
+    } catch {
       showError('Microphone Error', 'Could not access microphone. Please check permissions.');
     }
   };
@@ -116,6 +118,7 @@ export function ChatInput({
       setIsUploading(true);
       const file = new File([blob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
       const mediaUrl = await onUploadMedia(file);
+      if (!activeRoomId) return;
       onSendMessage({
         chatRoomId: activeRoomId,
         senderId: userId,
@@ -124,8 +127,8 @@ export function ChatInput({
         mediaUrl,
         duration: recordingDuration,
       });
-    } catch (err: any) {
-      showError('Upload Failed', err.message || 'Voice upload failed');
+    } catch (err: unknown) {
+      showError('Upload Failed', (err as Error).message || 'Voice upload failed');
     } finally {
       setIsUploading(false);
     }
@@ -202,10 +205,7 @@ export function ChatInput({
             disabled={!isConnected}
             className="shrink-0 h-11 w-11 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-95 transition-all animate-in zoom-in"
           >
-            <Icon
-              icon="solar:plain-bold"
-              className="size-5 transform rotate-45 mr-0.5 mt-0.5"
-            />
+            <Icon icon="solar:plain-bold" className="size-5 transform rotate-45 mr-0.5 mt-0.5" />
           </Button>
         ) : (
           <Button

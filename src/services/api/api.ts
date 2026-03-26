@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { getTabId } from '@/common/utils/api.utils';
 
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL as string ?? 'http://localhost:5001/api';
+export const BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string) ?? 'http://localhost:5001/api';
 export const SOCKET_BASE_URL = BASE_URL.replace('/api', '');
 
 export const api = axios.create({

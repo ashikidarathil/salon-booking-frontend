@@ -114,20 +114,20 @@ export default function AdminBookingsPage() {
   };
 
   const getStatusColor = (status: BookingStatus) => {
-    switch (status as string) {
-      case 'CONFIRMED':
+    switch (status) {
+      case BookingStatus.CONFIRMED:
         return 'bg-green-100 text-green-700 border-green-200';
-      case 'PENDING_PAYMENT':
+      case BookingStatus.PENDING_PAYMENT:
         return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'CANCELLED':
+      case BookingStatus.CANCELLED:
         return 'bg-red-100 text-red-700 border-red-200';
-      case 'COMPLETED':
+      case BookingStatus.COMPLETED:
         return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'NO_SHOW':
+      case BookingStatus.NO_SHOW:
         return 'bg-gray-200 text-gray-600 border-gray-300';
-      case 'SPECIAL':
+      case BookingStatus.SPECIAL:
         return 'bg-primary/20 text-primary border-primary/30';
-      case 'FAILED':
+      case BookingStatus.FAILED:
         return 'bg-red-50 text-red-500 border-red-100';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
@@ -135,7 +135,7 @@ export default function AdminBookingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-foreground">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight font-heading">Booking Management</h1>
@@ -202,11 +202,9 @@ export default function AdminBookingsPage() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Icon icon="solar:hashtag-bold" className="size-4 text-primary" />
-                        <span className="text-lg font-bold">
-                          {booking.bookingNumber}
-                        </span>
+                        <span className="text-lg font-bold">{booking.bookingNumber}</span>
                         <Badge className={getStatusColor(booking.status)}>
-                          {(booking.status as string) === 'SPECIAL' ? '⚡ Special' : booking.status}
+                          {booking.status === BookingStatus.SPECIAL ? '⚡ Special' : booking.status}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">

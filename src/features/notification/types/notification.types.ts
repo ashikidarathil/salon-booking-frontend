@@ -6,7 +6,7 @@ export enum NotificationType {
   SYSTEM = 'SYSTEM',
 }
 
-export interface Notification {
+export interface INotification {
   id: string;
   recipientId: string;
   senderId?: string;
@@ -18,11 +18,17 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface FetchNotificationsParams {
+  isRead?: boolean;
+  limit?: number;
+  skip?: number;
+}
+
 export interface NotificationResponse {
   success: boolean;
   message: string;
   data: {
-    notifications: Notification[];
+    notifications: INotification[];
     unreadCount: number;
   };
 }

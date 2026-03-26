@@ -3,7 +3,6 @@
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
 import { HeroSection } from '@/components/user/HeroSection';
-import { SearchBar } from '@/components/user/SearchBar';
 import { PopularServices } from '@/components/user/PopularServices';
 import { TopStylists } from '@/components/user/TopStylists';
 import { TrendingHairstyles } from '@/components/user/TrendingHairstyles';
@@ -18,7 +17,6 @@ export default function HomePage() {
 
       <main className="flex-1">
         <HeroSection />
-        <SearchBar />
         <PopularServices />
         <TopStylists />
         <TrendingHairstyles />

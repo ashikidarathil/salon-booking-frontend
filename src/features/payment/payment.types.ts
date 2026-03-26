@@ -28,6 +28,15 @@ export interface PaymentVerificationDto {
   orderId: string;
   paymentId: string;
   signature: string;
+  bookingId: string;
+}
+
+export interface CreateOrderPayload {
+  bookingId: string;
+}
+
+export interface WalletPayPayload {
+  bookingId: string;
 }
 
 export interface PaymentState {

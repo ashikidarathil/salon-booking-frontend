@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   fetchAllCoupons,
@@ -10,13 +10,7 @@ import {
   updateCoupon,
 } from '@/features/coupon/coupon.thunks';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -48,50 +42,62 @@ import { Icon } from '@iconify/react';
 import { cn } from '@/lib/utils';
 import { DiscountType, type Coupon } from '@/features/coupon/coupon.types';
 import { showSuccess, showError, showConfirm } from '@/common/utils/swal.utils';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import Pagination from '@/components/pagination/Pagination';
 
 export default function CouponManagementPage() {
   const dispatch = useAppDispatch();
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>(
+    'ALL',
+  );
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { coupons, loading, pagination } = useAppSelector((state) => state.coupon);
-  
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
-  const initialFormData = {
-    code: '',
-    discountType: DiscountType.PERCENTAGE,
-    discountValue: 0,
-    minBookingAmount: 0,
-    expiryDate: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
-    maxUsage: 100,
-  };
+
+  const initialFormData = useMemo(
+    () => ({
+      code: '',
+      discountType: DiscountType.PERCENTAGE,
+      discountValue: 0,
+      minBookingAmount: 0,
+      expiryDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+      maxUsage: 100,
+      maxDiscountAmount: 0,
+    }),
+    [],
+  );
 
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const loadCoupons = useCallback(() => {
-    dispatch(fetchAllCoupons({
-      page: currentPage,
-      limit: itemsPerPage,
-      search: searchTerm || undefined,
-      status: statusFilter !== 'ALL' ? statusFilter : undefined
-    }));
-  }, [dispatch, currentPage, itemsPerPage, searchTerm, statusFilter]);
+    dispatch(
+      fetchAllCoupons({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearchTerm || undefined,
+        status: statusFilter !== 'ALL' ? statusFilter : undefined,
+      }),
+    );
+  }, [dispatch, currentPage, itemsPerPage, debouncedSearchTerm, statusFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadCoupons();
-    }, 500); // Debounce search
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 500);
     return () => clearTimeout(timer);
-  }, [loadCoupons]);
+  }, [searchTerm]);
 
-  // Removed local filteredCoupons logic as it's now handled by backend
+  useEffect(() => {
+    loadCoupons();
+  }, [loadCoupons]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -116,12 +122,18 @@ export default function CouponManagementPage() {
 
     if (!formData.expiryDate) {
       newErrors.expiryDate = 'Expiry date is required';
-    } else if (new Date(formData.expiryDate) <= new Date(new Date().setHours(0,0,0,0))) {
+    } else if (new Date(formData.expiryDate) <= new Date(new Date().setHours(0, 0, 0, 0))) {
       newErrors.expiryDate = 'Expiry date must be in the future';
     }
 
     if (!formData.maxUsage || formData.maxUsage <= 0) {
       newErrors.maxUsage = 'Max usage must be at least 1';
+    }
+
+    if (formData.maxDiscountAmount === undefined || formData.maxDiscountAmount === null) {
+      newErrors.maxDiscountAmount = 'Max discount amount is required';
+    } else if (formData.maxDiscountAmount < 0) {
+      newErrors.maxDiscountAmount = 'Max discount amount cannot be negative';
     }
 
     setErrors(newErrors);
@@ -130,20 +142,23 @@ export default function CouponManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
-    try {
-      if (isEditing && editingId) {
-        await dispatch(updateCoupon({ id: editingId, data: formData })).unwrap();
-        showSuccess('Updated!', 'Coupon updated successfully', 2000);
-      } else {
-        await dispatch(createCoupon(formData)).unwrap();
-        showSuccess('Created!', 'Coupon created successfully', 2000);
-      }
+    const result =
+      isEditing && editingId
+        ? await dispatch(updateCoupon({ id: editingId, data: formData }))
+        : await dispatch(createCoupon(formData));
+
+    if (createCoupon.fulfilled.match(result) || updateCoupon.fulfilled.match(result)) {
+      showSuccess(
+        'Success',
+        isEditing ? 'Coupon updated successfully' : 'Coupon created successfully',
+        2000,
+      );
       handleCloseDialog();
-    } catch (error: any) {
-      showError('Error', error || `Failed to ${isEditing ? 'update' : 'create'} coupon`);
+    } else if (createCoupon.rejected.match(result) || updateCoupon.rejected.match(result)) {
+      showError('Error', (result.payload as string) || 'Failed to save coupon');
     }
   };
 
@@ -157,6 +172,7 @@ export default function CouponManagementPage() {
       minBookingAmount: coupon.minBookingAmount,
       expiryDate: format(new Date(coupon.expiryDate), 'yyyy-MM-dd'),
       maxUsage: coupon.maxUsage,
+      maxDiscountAmount: coupon.maxDiscountAmount || 0,
     });
     setIsAddDialogOpen(true);
   };
@@ -171,7 +187,7 @@ export default function CouponManagementPage() {
 
   const handleToggleStatus = async (id: string, currentActive: boolean) => {
     const action = !currentActive ? 'activate' : 'deactivate';
-    
+
     const isConfirmed = await showConfirm(
       'Are you sure?',
       `Do you want to ${action} this coupon?`,
@@ -179,36 +195,36 @@ export default function CouponManagementPage() {
     );
 
     if (isConfirmed) {
-      try {
-        await dispatch(toggleCouponStatus(id)).unwrap();
+      const result = await dispatch(toggleCouponStatus(id));
+      if (toggleCouponStatus.fulfilled.match(result)) {
         showSuccess('Success', `Coupon ${action}d successfully`, 1500);
-      } catch (error: any) {
-        showError('Error', error || 'Failed to update status');
+      } else {
+        showError('Error', (result.payload as string) || 'Failed to update status');
       }
     }
   };
 
   const handleToggleDelete = async (coupon: Coupon) => {
     const action = coupon.isDeleted ? 'restore' : 'delete';
-    
+
     const isConfirmed = await showConfirm(
       'Are you sure?',
       `Do you want to ${action} this coupon?`,
       `Yes, ${action} it!`,
       'Cancel',
-      action === 'delete' ? '#d33' : '#3085d6'
+      action === 'delete' ? '#d33' : '#3085d6',
     );
 
     if (isConfirmed) {
-      try {
-        await dispatch(deleteCoupon(coupon.id)).unwrap();
+      const result = await dispatch(deleteCoupon(coupon.id));
+      if (deleteCoupon.fulfilled.match(result)) {
         showSuccess(
-          action === 'delete' ? 'Deleted!' : 'Restored!',
+          'Success',
           `Coupon has been ${action === 'delete' ? 'deleted' : 'restored'}.`,
-          1500
+          1500,
         );
-      } catch (error: any) {
-        showError('Error', error || `Failed to ${action} coupon`);
+      } else {
+        showError('Error', (result.payload as string) || `Failed to ${action} coupon`);
       }
     }
   };
@@ -223,10 +239,13 @@ export default function CouponManagementPage() {
           </p>
         </div>
         <div className="flex gap-4">
-          <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-            if (!open) handleCloseDialog();
-            else setIsAddDialogOpen(true);
-          }}>
+          <Dialog
+            open={isAddDialogOpen}
+            onOpenChange={(open) => {
+              if (!open) handleCloseDialog();
+              else setIsAddDialogOpen(true);
+            }}
+          >
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Icon icon="solar:add-circle-bold" className="size-5" />
@@ -237,13 +256,11 @@ export default function CouponManagementPage() {
               <form onSubmit={handleSubmit} noValidate>
                 <DialogHeader>
                   <DialogTitle>{isEditing ? 'Edit Coupon' : 'Create New Coupon'}</DialogTitle>
-                  <DialogDescription>
-                    Enter the details for the discount coupon.
-                  </DialogDescription>
+                  <DialogDescription>Enter the details for the discount coupon.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="code" className="text-right mt-3">
+                  <div className="grid items-start grid-cols-4 gap-4">
+                    <Label htmlFor="code" className="mt-3 text-right">
                       Code
                     </Label>
                     <div className="col-span-3">
@@ -254,21 +271,25 @@ export default function CouponManagementPage() {
                           setFormData({ ...formData, code: e.target.value.toUpperCase() });
                           if (errors.code) setErrors({ ...errors, code: '' });
                         }}
-                        className={cn(errors.code && "border-destructive")}
+                        className={cn(errors.code && 'border-destructive')}
                         placeholder="E.g. SUMMER24"
                         disabled={isEditing}
                       />
-                      {errors.code && <p className="text-[12px] text-destructive mt-1">{errors.code}</p>}
+                      {errors.code && (
+                        <p className="text-[12px] text-destructive mt-1">{errors.code}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="type" className="text-right mt-3">
+                  <div className="grid items-start grid-cols-4 gap-4">
+                    <Label htmlFor="type" className="mt-3 text-right">
                       Type
                     </Label>
                     <div className="col-span-3">
                       <Select
                         value={formData.discountType}
-                        onValueChange={(v) => setFormData({ ...formData, discountType: v as DiscountType })}
+                        onValueChange={(v) =>
+                          setFormData({ ...formData, discountType: v as DiscountType })
+                        }
                         disabled={isEditing}
                       >
                         <SelectTrigger>
@@ -281,8 +302,8 @@ export default function CouponManagementPage() {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="value" className="text-right mt-3">
+                  <div className="grid items-start grid-cols-4 gap-4">
+                    <Label htmlFor="value" className="mt-3 text-right">
                       Value
                     </Label>
                     <div className="col-span-3">
@@ -294,15 +315,21 @@ export default function CouponManagementPage() {
                           setFormData({ ...formData, discountValue: Number(e.target.value) });
                           if (errors.discountValue) setErrors({ ...errors, discountValue: '' });
                         }}
-                        className={cn(errors.discountValue && "border-destructive")}
+                        className={cn(errors.discountValue && 'border-destructive')}
                         min={0}
-                        placeholder={formData.discountType === DiscountType.PERCENTAGE ? "e.g. 10 for 10%" : "e.g. 150 for ₹150"}
+                        placeholder={
+                          formData.discountType === DiscountType.PERCENTAGE
+                            ? 'e.g. 10 for 10%'
+                            : 'e.g. 150 for ₹150'
+                        }
                       />
-                      {errors.discountValue && <p className="text-[12px] text-destructive mt-1">{errors.discountValue}</p>}
+                      {errors.discountValue && (
+                        <p className="text-[12px] text-destructive mt-1">{errors.discountValue}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="minAmount" className="text-right mt-3 text-xs leading-tight">
+                  <div className="grid items-start grid-cols-4 gap-4">
+                    <Label htmlFor="minAmount" className="mt-3 text-xs leading-tight text-right">
                       Min Booking
                     </Label>
                     <div className="col-span-3">
@@ -312,17 +339,22 @@ export default function CouponManagementPage() {
                         value={formData.minBookingAmount ?? ''}
                         onChange={(e) => {
                           setFormData({ ...formData, minBookingAmount: Number(e.target.value) });
-                          if (errors.minBookingAmount) setErrors({ ...errors, minBookingAmount: '' });
+                          if (errors.minBookingAmount)
+                            setErrors({ ...errors, minBookingAmount: '' });
                         }}
-                        className={cn(errors.minBookingAmount && "border-destructive")}
+                        className={cn(errors.minBookingAmount && 'border-destructive')}
                         min={1}
                         placeholder="e.g. 500"
                       />
-                      {errors.minBookingAmount && <p className="text-[12px] text-destructive mt-1">{errors.minBookingAmount}</p>}
+                      {errors.minBookingAmount && (
+                        <p className="text-[12px] text-destructive mt-1">
+                          {errors.minBookingAmount}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="expiry" className="text-right mt-3">
+                  <div className="grid items-start grid-cols-4 gap-4">
+                    <Label htmlFor="expiry" className="mt-3 text-right">
                       Expiry
                     </Label>
                     <div className="col-span-3">
@@ -334,13 +366,15 @@ export default function CouponManagementPage() {
                           setFormData({ ...formData, expiryDate: e.target.value });
                           if (errors.expiryDate) setErrors({ ...errors, expiryDate: '' });
                         }}
-                        className={cn(errors.expiryDate && "border-destructive")}
+                        className={cn(errors.expiryDate && 'border-destructive')}
                       />
-                      {errors.expiryDate && <p className="text-[12px] text-destructive mt-1">{errors.expiryDate}</p>}
+                      {errors.expiryDate && (
+                        <p className="text-[12px] text-destructive mt-1">{errors.expiryDate}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="maxUsage" className="text-right mt-3">
+                  <div className="grid items-start grid-cols-4 gap-4">
+                    <Label htmlFor="maxUsage" className="mt-3 text-right">
                       Max Usage
                     </Label>
                     <div className="col-span-3">
@@ -352,16 +386,56 @@ export default function CouponManagementPage() {
                           setFormData({ ...formData, maxUsage: Number(e.target.value) });
                           if (errors.maxUsage) setErrors({ ...errors, maxUsage: '' });
                         }}
-                        className={cn(errors.maxUsage && "border-destructive")}
+                        className={cn(errors.maxUsage && 'border-destructive')}
                         min={1}
                       />
-                      {errors.maxUsage && <p className="text-[12px] text-destructive mt-1">{errors.maxUsage}</p>}
+                      {errors.maxUsage && (
+                        <p className="text-[12px] text-destructive mt-1">{errors.maxUsage}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid items-start grid-cols-4 gap-4">
+                    <Label htmlFor="maxDiscount" className="mt-3 text-right text-xs leading-tight">
+                      Max Discount (₹)
+                    </Label>
+                    <div className="col-span-3">
+                      <Input
+                        id="maxDiscount"
+                        type="number"
+                        value={formData.maxDiscountAmount || ''}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            maxDiscountAmount: Number(e.target.value),
+                          });
+                          if (errors.maxDiscountAmount)
+                            setErrors({ ...errors, maxDiscountAmount: '' });
+                        }}
+                        className={cn(errors.maxDiscountAmount && 'border-destructive')}
+                        min={0}
+                        placeholder={
+                          formData.discountType === DiscountType.FIXED
+                            ? 'Set equal to discount value'
+                            : 'Limit for percentage discount'
+                        }
+                      />
+                      {errors.maxDiscountAmount && (
+                        <p className="text-[12px] text-destructive mt-1">
+                          {errors.maxDiscountAmount}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={loading}>
-                    {loading ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Coupon' : 'Create Coupon')}
+                    {loading
+                      ? isEditing
+                        ? 'Updating...'
+                        : 'Creating...'
+                      : isEditing
+                        ? 'Update Coupon'
+                        : 'Create Coupon'}
                   </Button>
                 </DialogFooter>
               </form>
@@ -371,26 +445,26 @@ export default function CouponManagementPage() {
       </div>
 
       {/* Filters Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 relative">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="relative md:col-span-2">
           <Icon
             icon="solar:magnifer-linear"
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400"
+            className="absolute -translate-y-1/2 left-3 top-1/2 size-4 text-slate-400"
           />
           <Input
             placeholder="Search by coupon code..."
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v: any) => {
-          setStatusFilter(v);
-          setCurrentPage(1);
-        }}>
+        <Select
+          value={statusFilter}
+          onValueChange={(v: string) => {
+            setStatusFilter(v as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED');
+            setCurrentPage(1);
+          }}
+        >
           <SelectTrigger className="bg-white">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -417,6 +491,7 @@ export default function CouponManagementPage() {
                 <TableHead>Code</TableHead>
                 <TableHead>Discount</TableHead>
                 <TableHead>Min. Amount</TableHead>
+                <TableHead>Max Discount</TableHead>
                 <TableHead>Usage</TableHead>
                 <TableHead>Expiry</TableHead>
                 <TableHead>Status</TableHead>
@@ -427,7 +502,7 @@ export default function CouponManagementPage() {
             <TableBody>
               {coupons.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                     No coupons found.
                   </TableCell>
                 </TableRow>
@@ -440,7 +515,9 @@ export default function CouponManagementPage() {
                           {coupon.code}
                         </span>
                         {coupon.isDeleted && (
-                          <span className="text-[10px] text-destructive font-normal italic">Archived</span>
+                          <span className="text-[10px] text-destructive font-normal italic">
+                            Archived
+                          </span>
                         )}
                       </div>
                     </TableCell>
@@ -450,6 +527,9 @@ export default function CouponManagementPage() {
                         : `₹${coupon.discountValue}`}
                     </TableCell>
                     <TableCell>₹{coupon.minBookingAmount}</TableCell>
+                    <TableCell>
+                      {coupon.maxDiscountAmount ? `₹${coupon.maxDiscountAmount}` : '—'}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <span className="text-xs">
@@ -468,16 +548,16 @@ export default function CouponManagementPage() {
                     <TableCell>{format(new Date(coupon.expiryDate), 'MMM dd, yyyy')}</TableCell>
                     <TableCell>
                       {coupon.isDeleted ? (
-                        <Badge className="bg-yellow-500 text-white cursor-default hover:bg-yellow-500">
+                        <Badge className="text-white bg-yellow-500 cursor-default hover:bg-yellow-500">
                           DELETED
                         </Badge>
                       ) : (
                         <Badge
                           className={cn(
-                            "cursor-default",
-                            coupon.isActive 
-                              ? "bg-green-500 text-white hover:bg-green-500" 
-                              : "bg-red-500 text-white hover:bg-red-500"
+                            'cursor-default',
+                            coupon.isActive
+                              ? 'bg-green-500 text-white hover:bg-green-500'
+                              : 'bg-red-500 text-white hover:bg-red-500',
                           )}
                         >
                           {coupon.isActive ? 'ACTIVE' : 'INACTIVE'}
@@ -497,13 +577,21 @@ export default function CouponManagementPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={coupon.isActive ? "text-amber-500 hover:bg-amber-500/10" : "text-green-500 hover:bg-green-500/10"}
+                            className={
+                              coupon.isActive
+                                ? 'text-amber-500 hover:bg-amber-500/10'
+                                : 'text-green-500 hover:bg-green-500/10'
+                            }
                             onClick={() => handleToggleStatus(coupon.id, coupon.isActive)}
-                            title={coupon.isActive ? "Deactivate Coupon" : "Activate Coupon"}
+                            title={coupon.isActive ? 'Deactivate Coupon' : 'Activate Coupon'}
                           >
-                            <Icon 
-                              icon={coupon.isActive ? "solar:close-circle-bold" : "solar:check-circle-bold"} 
-                              className="size-5" 
+                            <Icon
+                              icon={
+                                coupon.isActive
+                                  ? 'solar:close-circle-bold'
+                                  : 'solar:check-circle-bold'
+                              }
+                              className="size-5"
                             />
                           </Button>
                         )}
@@ -521,13 +609,19 @@ export default function CouponManagementPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={coupon.isDeleted ? "text-primary hover:bg-primary/10" : "text-destructive hover:bg-destructive/10"}
+                          className={
+                            coupon.isDeleted
+                              ? 'text-primary hover:bg-primary/10'
+                              : 'text-destructive hover:bg-destructive/10'
+                          }
                           onClick={() => handleToggleDelete(coupon)}
-                          title={coupon.isDeleted ? "Restore Coupon" : "Delete Coupon"}
+                          title={coupon.isDeleted ? 'Restore Coupon' : 'Delete Coupon'}
                         >
-                          <Icon 
-                            icon={coupon.isDeleted ? "solar:refresh-bold" : "solar:trash-bin-trash-bold"} 
-                            className="size-5" 
+                          <Icon
+                            icon={
+                              coupon.isDeleted ? 'solar:refresh-bold' : 'solar:trash-bin-trash-bold'
+                            }
+                            className="size-5"
                           />
                         </Button>
                       </div>

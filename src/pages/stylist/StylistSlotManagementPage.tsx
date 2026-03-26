@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAppSelector } from '@/app/hooks';
 import { slotService } from '@/services/slot.service';
-import { stylistBranchService } from '@/services/stylistBranch.service';
+import StylistBranchService from '@/services/stylistBranch.service';
+
 import type { SlotItem } from '@/features/slot/slot.types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,8 @@ export default function StylistSlotManagementPage() {
     const fetchStylistBranch = async () => {
       if (!user?.branchId && user?.id && user?.role === 'STYLIST') {
         try {
-          const response = await stylistBranchService.getStylistBranches(user.id);
+          const response = await StylistBranchService.getStylistBranches(user.id);
+
           const branches = response.data.data;
           if (branches.length > 0) {
             const activeBranch = branches.find((b) => b.isActive);

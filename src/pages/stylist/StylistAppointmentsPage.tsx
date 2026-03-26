@@ -12,9 +12,11 @@ import { format } from 'date-fns';
 import Pagination from '@/components/pagination/Pagination';
 import { showSuccess, showApiError } from '@/common/utils/swal.utils';
 import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
-import { fetchStylistRooms, initializeChatRoom } from '@/features/chat/state/chat.thunks';
+import { fetchStylistRooms, initializeChatRoom } from '@/features/chat/chat.thunks';
+import type { ChatRoom } from '@/features/chat/chat.types';
+import type { RootState } from '@/app/store';
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: BookingStatus) => {
   switch (status) {
     case BookingStatus.CONFIRMED:
       return 'bg-green-100 text-green-700 border-green-200';
@@ -24,7 +26,7 @@ const getStatusColor = (status: string) => {
       return 'bg-red-100 text-red-700 border-red-200';
     case BookingStatus.NO_SHOW:
       return 'bg-gray-200 text-gray-600 border-gray-300';
-    case 'SPECIAL':
+    case BookingStatus.SPECIAL:
       return 'bg-primary/20 text-primary border-primary/30';
     case BookingStatus.FAILED:
       return 'bg-red-50 text-red-500 border-red-100';
@@ -46,20 +48,19 @@ export default function StylistAppointmentsPage() {
   const [page, setPage] = useState(1);
   const limit = 5;
 
-  const { rooms } = useAppSelector((state) => state.chat);
+  const { rooms } = useAppSelector((state: RootState) => state.chat);
 
   useEffect(() => {
     dispatch(fetchStylistRooms());
   }, [dispatch]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
     return () => clearTimeout(timer);
   }, [search]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filterMode, debouncedSearch, customDate]);
 
   const fetchBookings = useCallback(() => {
     let dateToFetch;
@@ -83,55 +84,57 @@ export default function StylistAppointmentsPage() {
     fetchBookings();
   }, [fetchBookings]);
 
-  const handleStatusUpdate = async (bookingId: string, status: string, label: string) => {
+  const handleStatusUpdate = async (bookingId: string, status: BookingStatus, label: string) => {
     const result = await dispatch(updateBookingStatus({ bookingId, status }));
     if (updateBookingStatus.fulfilled.match(result)) {
-      showSuccess('Updated!', `${BOOKING_MESSAGES.STATUS_UPDATE_SUCCESS}`);
+      showSuccess('Updated!', BOOKING_MESSAGES.STATUS_UPDATE_SUCCESS);
       fetchBookings();
     } else {
       showApiError(BOOKING_MESSAGES.STATUS_UPDATE_FAILED, `Failed to mark ${label}`);
     }
   };
 
-  const handleOpenChat = async (booking: any) => {
-    let room = rooms.find((r) => r.bookingId === booking.id);
-    
+  const handleOpenChat = async (bookingId: string) => {
+    let room = rooms.find((r: ChatRoom) => r.bookingId === bookingId);
+
     if (!room) {
       try {
-        const action = await dispatch(initializeChatRoom(booking.id)).unwrap();
+        const action = await dispatch(initializeChatRoom(bookingId)).unwrap();
         room = action;
         showSuccess('Room Ready', 'Chat room initialized successfully.');
-      } catch (err) {
+      } catch {
         showApiError('Chat room not ready yet.', 'Please try again later.');
         return;
       }
     }
-    
-    navigate(`/stylist/chat?roomId=${room.id}`);
+
+    if (room && room.id) {
+      navigate(`/stylist/chat?roomId=${room.id}`);
+    } else {
+      showApiError('Chat room not ready yet.', 'Please try again later.');
+    }
   };
 
   useEffect(() => {
     const shouldOpenChat = searchParams.get('openChat') === 'true';
     if (shouldOpenChat) {
-      // Find the first confirmed/completed appointment and open chat
-      const firstValidBooking = bookingsList.find(b => 
-        b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.COMPLETED
+      const firstValidBooking = bookingsList.find(
+        (b) => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.COMPLETED,
       );
-      
+
       if (firstValidBooking) {
-        let room = rooms.find(r => r.bookingId === firstValidBooking.id);
-        
-        const openWidget = (r: any) => {
+        const room = rooms.find((r: ChatRoom) => r.bookingId === firstValidBooking.id);
+
+        const openWidget = (r: { id: string }) => {
           navigate(`/stylist/chat?roomId=${r.id}`);
         };
 
         if (room) {
           openWidget(room);
         } else {
-          // Room missing, initialize it
           dispatch(initializeChatRoom(firstValidBooking.id))
             .unwrap()
-            .then(newRoom => openWidget(newRoom))
+            .then((newRoom) => openWidget(newRoom))
             .catch(() => setSearchParams({}));
         }
       } else {
@@ -141,7 +144,7 @@ export default function StylistAppointmentsPage() {
   }, [searchParams, rooms, bookingsList, dispatch, setSearchParams, navigate]);
 
   return (
-    <div className="p-6 space-y-6 rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md">
+    <div className="p-6 space-y-6 rounded-lg bg-muted/40 border border-border/40 transition-all hover:shadow-md text-foreground">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-heading">Appointments</h1>
@@ -160,6 +163,7 @@ export default function StylistAppointmentsPage() {
             onClick={() => {
               setFilterMode('today');
               setCustomDate('');
+              setPage(1);
             }}
             className={`flex-1 sm:flex-none ${filterMode === 'today' ? 'bg-background shadow-sm' : ''}`}
           >
@@ -171,6 +175,7 @@ export default function StylistAppointmentsPage() {
             onClick={() => {
               setFilterMode('all');
               setCustomDate('');
+              setPage(1);
             }}
             className={`flex-1 sm:flex-none ${filterMode === 'all' && !customDate ? 'bg-background shadow-sm' : ''}`}
           >
@@ -185,6 +190,7 @@ export default function StylistAppointmentsPage() {
             onChange={(e) => {
               setCustomDate(e.target.value);
               if (e.target.value) setFilterMode('all');
+              setPage(1);
             }}
             className="w-full sm:w-40 text-sm"
           />
@@ -244,7 +250,7 @@ export default function StylistAppointmentsPage() {
                         <Badge
                           className={`text-[10px] h-5 border ${getStatusColor(booking.status)}`}
                         >
-                          {(booking.status as string) === 'SPECIAL'
+                          {booking.status === BookingStatus.SPECIAL
                             ? 'Special'
                             : booking.status.replace('_', ' ')}
                         </Badge>
@@ -274,12 +280,13 @@ export default function StylistAppointmentsPage() {
                       Details
                     </Button>
 
-                    {(booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.COMPLETED) && (
+                    {(booking.status === BookingStatus.CONFIRMED ||
+                      booking.status === BookingStatus.COMPLETED) && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="gap-1.5 text-xs text-primary hover:bg-primary/5"
-                        onClick={() => handleOpenChat(booking)}
+                        onClick={() => handleOpenChat(booking.id)}
                       >
                         <Icon icon="solar:chat-round-bold-duotone" className="size-4" />
                         Chat
@@ -335,7 +342,6 @@ export default function StylistAppointmentsPage() {
           </div>
         )}
       </LoadingGate>
-
     </div>
   );
 }

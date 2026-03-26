@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Icon } from '@iconify/react';
-import { stylistBranchService } from '@/services/stylistBranch.service';
+import StylistBranchService from '@/services/stylistBranch.service';
+
 import { branchService } from '@/services/branch.service';
 import StylistServiceManagement from './StylistServiceManagement';
 import StylistScheduleManagement from './StylistScheduleManagement';
@@ -21,9 +22,9 @@ export default function StylistDetailsView({ stylist, onClose }: StylistDetailsV
   useEffect(() => {
     const fetchBranch = async () => {
       try {
-        const res = await stylistBranchService.getStylistBranches(stylist.id);
-        if (res.data.data && res.data.data.length > 0) {
-          const branchId = res.data.data[0].branchId;
+        const response = await StylistBranchService.getStylistBranches(stylist.id);
+        if (response.data.data && response.data.data.length > 0) {
+          const branchId = response.data.data[0].branchId;
           const branchRes = await branchService.list();
           const found = branchRes.data.data.find((b: Branch) => b.id === branchId);
           if (found) {

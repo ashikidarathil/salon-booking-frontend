@@ -44,3 +44,17 @@ export interface BranchState {
   error: string | null;
   pagination: PaginationMetadata;
 }
+
+export interface BranchQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  isDeleted?: boolean;
+}
+
+export interface PaginatedBranchResponse {
+  data: Branch[];
+  pagination: PaginationMetadata;
+}

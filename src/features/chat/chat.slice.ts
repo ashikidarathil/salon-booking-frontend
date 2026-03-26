@@ -1,10 +1,11 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { ChatRoom, ChatMessage } from '../types/chat.types';
+import type { ChatRoom, ChatMessage } from './chat.types';
 import {
   fetchUserRooms,
   fetchStylistRooms,
   fetchRoomMessages,
   initializeChatRoom,
+  fetchTotalUnreadCount,
 } from './chat.thunks';
 
 interface ChatState {
@@ -39,7 +40,7 @@ const chatSlice = createSlice({
       if (!state.messagesByRoom[chatRoomId]) {
         state.messagesByRoom[chatRoomId] = [];
       }
-      
+
       const exists = state.messagesByRoom[chatRoomId].some((m) => m.id === action.payload.id);
       if (!exists) {
         state.messagesByRoom[chatRoomId].push(action.payload);
@@ -47,7 +48,7 @@ const chatSlice = createSlice({
     },
     updateRoomLastMessage: (
       state,
-      action: PayloadAction<{ roomId: string; lastMessage: string; lastMessageAt: string }>
+      action: PayloadAction<{ roomId: string; lastMessage: string; lastMessageAt: string }>,
     ) => {
       const room = state.rooms.find((r) => r.id === action.payload.roomId);
       if (room) {
@@ -70,32 +71,7 @@ const chatSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchUserRooms.pending, (state) => {
-        state.isLoadingRooms = true;
-        state.error = null;
-      })
-      .addCase(fetchUserRooms.fulfilled, (state, action) => {
-        state.isLoadingRooms = false;
-        state.rooms = action.payload;
-      })
-      .addCase(fetchUserRooms.rejected, (state, action) => {
-        state.isLoadingRooms = false;
-        state.error = action.payload || null;
-      })
-
-      .addCase(fetchStylistRooms.pending, (state) => {
-        state.isLoadingRooms = true;
-        state.error = null;
-      })
-      .addCase(fetchStylistRooms.fulfilled, (state, action) => {
-        state.isLoadingRooms = false;
-        state.rooms = action.payload;
-      })
-      .addCase(fetchStylistRooms.rejected, (state, action) => {
-        state.isLoadingRooms = false;
-        state.error = action.payload || null;
-      })
-
+      // Fetch Messages
       .addCase(fetchRoomMessages.pending, (state) => {
         state.isLoadingMessages = true;
         state.error = null;
@@ -106,15 +82,45 @@ const chatSlice = createSlice({
       })
       .addCase(fetchRoomMessages.rejected, (state, action) => {
         state.isLoadingMessages = false;
-        state.error = action.payload || null;
+        state.error = (action.payload as string) || null;
       })
-
+      // Initialize Room
       .addCase(initializeChatRoom.fulfilled, (state, action) => {
-        const exists = state.rooms.find((r) => r.id === action.payload.id);
+        const exists = state.rooms.find((r: ChatRoom) => r.id === action.payload.id);
         if (!exists) {
           state.rooms.unshift(action.payload);
         }
-      });
+      })
+      .addCase(fetchTotalUnreadCount.fulfilled, (state, action) => {
+        state.totalUnreadCount = action.payload;
+      })
+      .addMatcher(
+        (action) =>
+          action.type === fetchUserRooms.pending.type ||
+          action.type === fetchStylistRooms.pending.type,
+        (state) => {
+          state.isLoadingRooms = true;
+          state.error = null;
+        },
+      )
+      .addMatcher(
+        (action) =>
+          action.type === fetchUserRooms.fulfilled.type ||
+          action.type === fetchStylistRooms.fulfilled.type,
+        (state, action: PayloadAction<ChatRoom[]>) => {
+          state.isLoadingRooms = false;
+          state.rooms = action.payload;
+        },
+      )
+      .addMatcher(
+        (action) =>
+          action.type === fetchUserRooms.rejected.type ||
+          action.type === fetchStylistRooms.rejected.type,
+        (state, action: PayloadAction<string | undefined>) => {
+          state.isLoadingRooms = false;
+          state.error = action.payload || null;
+        },
+      );
   },
 });
 

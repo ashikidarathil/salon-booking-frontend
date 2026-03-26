@@ -15,7 +15,9 @@ import { format } from 'date-fns';
 import { showApiError, showSuccess, showCancellationConfirm } from '@/common/utils/swal.utils';
 import Swal from 'sweetalert2';
 import { SlotBookingDialog } from '@/components/booking/SlotBookingDialog';
-import { fetchUserRooms, initializeChatRoom } from '@/features/chat/state/chat.thunks';
+import { fetchUserRooms, initializeChatRoom } from '@/features/chat/chat.thunks';
+import type { ChatRoom } from '@/features/chat/chat.types';
+import type { RootState } from '@/app/store';
 import type { BookingItem, BookingDetailsItem } from '@/features/booking/booking.types';
 import {
   BookingStatus,
@@ -29,9 +31,8 @@ export default function BookingsPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { myBookings, loading, error } = useAppSelector((state) => state.booking);
-  const { rooms } = useAppSelector((state) => state.chat);
+  const { rooms } = useAppSelector((state: RootState) => state.chat);
   const [searchParams, setSearchParams] = useSearchParams();
-  
 
   // State for rescheduling
   const [rescheduleData, setRescheduleData] = useState<{
@@ -53,45 +54,47 @@ export default function BookingsPage() {
     dispatch(fetchUserRooms());
   }, [dispatch]);
 
-  const handleOpenChat = async (booking: BookingItem) => {
-    let room = rooms.find(r => r.bookingId === booking.id);
-    
+  const handleOpenChat = async (bookingId: string) => {
+    let room = rooms.find((r: ChatRoom) => r.bookingId === bookingId);
+
     if (!room) {
       try {
-        const action = await dispatch(initializeChatRoom(booking.id)).unwrap();
+        const action = await dispatch(initializeChatRoom(bookingId)).unwrap();
         room = action;
         showSuccess('Room Ready', 'Chat room initialized successfully.');
-      } catch (err) {
+      } catch {
         showApiError('Chat room not ready yet.', 'Please try again later.');
         return;
       }
     }
-    
-    navigate(`/profile/chat?roomId=${room.id}`);
+
+    if (room && room.id) {
+      navigate(`/profile/chat?roomId=${room.id}`);
+    } else {
+      showApiError('Chat room not ready yet.', 'Please try again later.');
+    }
   };
 
   useEffect(() => {
     const shouldOpenChat = searchParams.get('openChat') === 'true';
     if (shouldOpenChat) {
-      // Find the first confirmed/completed booking and open chat
-      const firstValidBooking = myBookings.find(b => 
-        b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.COMPLETED
+      const firstValidBooking = myBookings.find(
+        (b) => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.COMPLETED,
       );
-      
+
       if (firstValidBooking) {
-        let room = rooms.find(r => r.bookingId === firstValidBooking.id);
-        
-        const openWidget = (r: any) => {
+        const room = rooms.find((r: ChatRoom) => r.bookingId === firstValidBooking.id);
+
+        const openWidget = (r: { id: string }) => {
           navigate(`/profile/chat?roomId=${r.id}`);
         };
 
         if (room) {
           openWidget(room);
         } else {
-          // Room missing, initialize it
           dispatch(initializeChatRoom(firstValidBooking.id))
             .unwrap()
-            .then(newRoom => openWidget(newRoom))
+            .then((newRoom) => openWidget(newRoom))
             .catch(() => setSearchParams({}));
         }
       } else {
@@ -239,7 +242,7 @@ export default function BookingsPage() {
   };
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 p-8 text-foreground">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold font-heading">My Bookings</h1>
@@ -277,12 +280,7 @@ export default function BookingsPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
-                      {/* {booking.rescheduleCount && booking.rescheduleCount > 0 && (
-                        <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-blue-100">
-                           Rescheduled Once
-                        </Badge>
-                      )} */}
+                      <Badge className={getStatusColor(booking.status as BookingStatus)}>{booking.status}</Badge>
                     </div>
                   </div>
 
@@ -347,7 +345,7 @@ export default function BookingsPage() {
                         </Badge>
                       </div>
                       <div className="text-right">
-                      {booking.status === BookingStatus.PENDING_PAYMENT ? (
+                        {booking.status === BookingStatus.PENDING_PAYMENT ? (
                           <>
                             <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                               Advance Due (20%)
@@ -434,11 +432,12 @@ export default function BookingsPage() {
                     View Details
                   </Button>
 
-                  {(booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.COMPLETED) && (
+                  {(booking.status === BookingStatus.CONFIRMED ||
+                    booking.status === BookingStatus.COMPLETED) && (
                     <Button
                       variant="outline"
                       className="w-full justify-start gap-2 h-10 text-primary hover:text-primary/90 hover:bg-primary/5 border-primary/10"
-                      onClick={() => handleOpenChat(booking)}
+                      onClick={() => handleOpenChat(booking.id)}
                     >
                       <Icon icon="solar:chat-round-bold-duotone" className="size-4" />
                       Chat with Stylist
@@ -489,11 +488,10 @@ export default function BookingsPage() {
             duration: s.duration,
           }))}
           initialStylistId={rescheduleData.stylistId || undefined}
-          isCartMode={true} // Reusing cart mode for multistep selection
+          isCartMode={true}
           onSelect={handleRescheduleSubmit}
         />
       )}
-
     </div>
   );
 }

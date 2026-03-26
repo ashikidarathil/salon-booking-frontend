@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   SidebarProvider,
@@ -18,11 +18,20 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAppSelector, useAppDispatch } from '@/app/hooks';
 import { logout } from '@/features/auth/authThunks';
+import { fetchTotalUnreadCount } from '@/features/chat/chat.thunks';
 
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 import type { User } from '@/features/auth/auth.types';
 import { NotificationCenter } from '@/features/notification/components/NotificationCenter';
+import type { RootState } from '@/app/store';
 
 interface MenuItem {
   icon: string;
@@ -55,6 +64,7 @@ function ProfileSidebarContent({
           { icon: 'solar:calendar-bold', label: 'My Bookings', path: '/profile/bookings' },
           { icon: 'solar:chat-round-bold', label: 'Messages', path: '/profile/chat' },
           { icon: 'solar:heart-bold', label: 'Favorites', path: '/profile/favorites' },
+          { icon: 'solar:bell-bold', label: 'Notifications', path: '/profile/notifications' },
           // { icon: 'solar:ticket-bold', label: 'Coupons', path: '/profile/coupons' },
           // { icon: 'solar:star-bold', label: 'Salon Points', path: 'points' },
           { icon: 'solar:wallet-bold', label: 'My Wallet', path: 'wallet' },
@@ -149,10 +159,16 @@ export default function ProfileLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const { user } = useAppSelector((state) => state.auth);
-  const totalUnreadCount = useAppSelector((state) => state.chat.totalUnreadCount);
+  const { totalUnreadCount } = useAppSelector((state: RootState) => state.chat);
 
   const themeClass =
     user?.role === 'STYLIST' ? 'theme-stylist' : user?.role === 'ADMIN' ? 'theme-admin' : '';
+
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchTotalUnreadCount());
+    }
+  }, [dispatch, user]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -181,6 +197,10 @@ export default function ProfileLayout() {
                   <SidebarTrigger className="-ml-1" />
                 </SheetTrigger>
                 <SheetContent side="left" className={`p-0 w-72 ${themeClass}`}>
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Navigation Sidebar</SheetTitle>
+                    <SheetDescription>User profile navigation and menu</SheetDescription>
+                  </SheetHeader>
                   <div className="flex flex-col h-full bg-[var(--color-sidebar)]">
                     {user && (
                       <ProfileSidebarContent
@@ -202,9 +222,11 @@ export default function ProfileLayout() {
                     ? 'My Bookings'
                     : location.pathname === '/profile/favorites'
                       ? 'My Favorites'
-                      : location.pathname === '/profile/wallet'
-                        ? 'My Wallet'
-                        : 'Profile Settings'}
+                      : location.pathname === '/profile/notifications'
+                        ? 'Notifications'
+                        : location.pathname === '/profile/wallet'
+                          ? 'My Wallet'
+                          : 'Profile Settings'}
               </h1>
             </div>
 

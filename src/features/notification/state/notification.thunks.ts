@@ -1,19 +1,20 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { notificationService } from '../../../services/notification.service';
-// import type { NotificationResponse } from '../types/notification.types';
+import { notificationService } from '@/services/notification.service';
+import { handleThunkError } from '@/common/utils/thunk.utils';
+import { NOTIFICATION_MESSAGES } from '../constants/notification.messages';
 
 export const fetchNotifications = createAsyncThunk(
   'notification/fetchAll',
   async (
-    { isRead, limit, skip }: { isRead?: boolean; limit?: number; skip?: number } = {},
-    { rejectWithValue }
+    params: { isRead?: boolean; limit?: number; skip?: number } = {},
+    { rejectWithValue },
   ) => {
     try {
-      return await notificationService.getMyNotifications(isRead, limit, skip);
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch notifications');
+      return await notificationService.getMyNotifications(params.isRead, params.limit, params.skip);
+    } catch (error: unknown) {
+      return handleThunkError(error, rejectWithValue, NOTIFICATION_MESSAGES.FETCH_ERROR);
     }
-  }
+  },
 );
 
 export const markNotificationAsRead = createAsyncThunk(
@@ -22,10 +23,10 @@ export const markNotificationAsRead = createAsyncThunk(
     try {
       await notificationService.markAsRead(id);
       return id;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to mark notification as read');
+    } catch (error: unknown) {
+      return handleThunkError(error, rejectWithValue, NOTIFICATION_MESSAGES.MARK_READ_ERROR);
     }
-  }
+  },
 );
 
 export const markAllNotificationsAsRead = createAsyncThunk(
@@ -33,8 +34,8 @@ export const markAllNotificationsAsRead = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await notificationService.markAllAsRead();
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to mark all as read');
+    } catch (error: unknown) {
+      return handleThunkError(error, rejectWithValue, NOTIFICATION_MESSAGES.MARK_ALL_READ_ERROR);
     }
-  }
+  },
 );

@@ -125,6 +125,12 @@ export interface StylistStats {
   };
 }
 
+export interface StylistStatsResponse {
+  success: boolean;
+  data: StylistStats;
+  message: string;
+}
+
 export interface BookingState {
   myBookings: BookingItem[];
   todayBookings: BookingItem[];

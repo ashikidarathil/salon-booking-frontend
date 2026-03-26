@@ -12,27 +12,27 @@ import { showSuccess, showError } from '@/common/utils/swal.utils';
 import { type WalletTransaction, TransactionType } from '@/features/wallet/wallet.types';
 import { getThemeColorByRole } from '@/features/wallet/wallet.constants';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+import { Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
 
-const typeConfig: Record<TransactionType, { icon: string; color: string; bg: string; label: string }> = {
+const typeConfig: Record<
+  TransactionType,
+  { icon: string; color: string; bg: string; label: string }
+> = {
   [TransactionType.CREDIT]: {
     icon: 'solar:arrow-down-bold',
     color: 'text-green-600',
     bg: 'bg-green-50',
     label: 'Credit',
   },
-  [TransactionType.DEBIT]: { 
-    icon: 'solar:arrow-up-bold', 
-    color: 'text-red-500', 
-    bg: 'bg-red-50', 
-    label: 'Debit' 
+  [TransactionType.DEBIT]: {
+    icon: 'solar:arrow-up-bold',
+    color: 'text-red-500',
+    bg: 'bg-red-50',
+    label: 'Debit',
   },
 };
 
@@ -55,6 +55,12 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
     minute: '2-digit',
   });
 
+  const cleanDescription = tx.description
+    .replace(/[a-fA-F0-9]{24}/g, '')
+    .replace(/\s*for booking\s*$/i, '')
+    .replace(/\s*booking\s*$/i, '')
+    .trim();
+
   return (
     <div className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors">
       <div
@@ -63,7 +69,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
         <Icon icon={type.icon} className={`size-5 ${type.color}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-slate-800 text-sm truncate">{tx.description}</p>
+        <p className="font-medium text-slate-800 text-sm truncate">{cleanDescription}</p>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-[11px] text-slate-400">{date}</span>
           {refType && (
@@ -105,21 +111,21 @@ export default function WalletPage() {
       return;
     }
     setTopupLoading(true);
-    setIsTopupOpen(false); 
-    try {
-      const themeColor = getThemeColorByRole(user?.role);
-      await dispatch(topUpWallet({ amount: effectiveAmount, themeColor })).unwrap();
+    setIsTopupOpen(false);
+
+    const themeColor = getThemeColorByRole(user?.role);
+    const result = await dispatch(topUpWallet({ amount: effectiveAmount, themeColor }));
+
+    if (topUpWallet.fulfilled.match(result)) {
       setCustomAmount('');
       showSuccess('Top-Up Successful!', `₹${effectiveAmount} added to your wallet.`);
       dispatch(fetchTransactionHistory());
-    } catch (err: unknown) {
-      if (err !== 'DISMISSED') {
-        const error = err as string;
-        showError('Top-Up Failed', error || 'Payment could not be processed');
+    } else if (topUpWallet.rejected.match(result)) {
+      if (result.payload !== 'DISMISSED') {
+        showError('Top-Up Failed', (result.payload as string) || 'Payment could not be processed');
       }
-    } finally {
-      setTopupLoading(false);
     }
+    setTopupLoading(false);
   };
 
   return (
@@ -140,7 +146,9 @@ export default function WalletPage() {
           <CardContent className="p-8 relative z-10 mt-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-primary-foreground/80 text-sm font-medium mb-1">Available Balance</p>
+                <p className="text-primary-foreground/80 text-sm font-medium mb-1">
+                  Available Balance
+                </p>
                 {isLoading ? (
                   <div className="h-12 w-36 bg-white/20 rounded-lg animate-pulse" />
                 ) : (
@@ -157,7 +165,9 @@ export default function WalletPage() {
               <div
                 className={`size-2 rounded-full ${wallet?.isActive ? 'bg-green-300' : 'bg-red-300'}`}
               />
-              <p className="text-primary-foreground/80 text-sm">{wallet?.isActive ? 'Active' : 'Inactive'}</p>
+              <p className="text-primary-foreground/80 text-sm">
+                {wallet?.isActive ? 'Active' : 'Inactive'}
+              </p>
               <div className="ml-auto">
                 <Button
                   onClick={() => setIsTopupOpen(true)}
@@ -176,8 +186,9 @@ export default function WalletPage() {
         <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="p-6 border-b bg-muted/30">
             <DialogTitle className="text-xl font-bold font-heading">Add Money</DialogTitle>
+            <DialogDescription className="sr-only">Top up your wallet balance</DialogDescription>
           </DialogHeader>
-          
+
           <div className="p-6 space-y-6">
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-3">Select Amount</p>
@@ -203,9 +214,13 @@ export default function WalletPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-2">Or enter custom amount</p>
+              <p className="text-sm font-medium text-muted-foreground mb-2">
+                Or enter custom amount
+              </p>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                  ₹
+                </span>
                 <Input
                   type="number"
                   className="pl-8 h-12 bg-muted/20 border-border rounded-xl font-semibold focus:ring-primary/20"
@@ -226,7 +241,9 @@ export default function WalletPage() {
               ) : (
                 <Icon icon="solar:card-send-bold" className="size-6 mr-2" />
               )}
-              {topupLoading ? 'Processing...' : `Top-Up ₹${effectiveAmount.toLocaleString('en-IN')}`}
+              {topupLoading
+                ? 'Processing...'
+                : `Top-Up ₹${effectiveAmount.toLocaleString('en-IN')}`}
             </Button>
           </div>
         </DialogContent>
@@ -236,7 +253,9 @@ export default function WalletPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-xl font-heading">Recent Activity</h2>
-          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">View All</Button>
+          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">
+            View All
+          </Button>
         </div>
         <Card className="overflow-hidden border-none shadow-md">
           <CardContent className="p-0">

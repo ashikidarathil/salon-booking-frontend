@@ -22,9 +22,10 @@ import escrowReducer from '@/features/escrow/escrow.slice';
 import stylistWalletReducer from '@/features/stylistWallet/stylistWallet.slice';
 import couponReducer from '@/features/coupon/coupon.slice';
 import paymentReducer from '../features/payment/payment.slice';
-import chatReducer from '../features/chat/state/chat.slice';
+import chatReducer from '@/features/chat/chat.slice';
 import notificationReducer from '../features/notification/state/notification.slice';
 import adminReducer from '@/features/admin/state/admin.slice';
+import reviewReducer from '@/features/review/state/review.slice';
 
 export const store = configureStore({
   reducer: {
@@ -54,6 +55,7 @@ export const store = configureStore({
     chat: chatReducer,
     notification: notificationReducer,
     admin: adminReducer,
+    review: reviewReducer,
   },
 });
 
