@@ -147,9 +147,11 @@ const bookingSlice = createSlice({
       // Shared Results Matcher for Lists
       .addMatcher(
         (action) =>
-          [fetchAdminBookings.fulfilled.type, fetchTodayBookings.fulfilled.type, fetchStylistTodayBookings.fulfilled.type].includes(
-            action.type,
-          ),
+          [
+            fetchAdminBookings.fulfilled.type,
+            fetchTodayBookings.fulfilled.type,
+            fetchStylistTodayBookings.fulfilled.type,
+          ].includes(action.type),
         (state, action: PayloadAction<BookingItem[]>) => {
           state.loading = false;
           if (action.type === fetchAdminBookings.fulfilled.type) {

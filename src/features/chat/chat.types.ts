@@ -30,6 +30,7 @@ export interface ChatRoom {
   lastMessage?: string;
   lastMessageAt?: string;
   updatedAt: string;
+  unreadCount?: number;
   user?: {
     name: string;
     profilePicture?: string;

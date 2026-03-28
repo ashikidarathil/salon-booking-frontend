@@ -8,6 +8,7 @@ import {
   uploadChatMedia,
   markRoomMessagesAsRead,
 } from '@/features/chat/chat.thunks';
+import { resetRoomUnreadCount } from '@/features/chat/chat.slice';
 import { fetchTotalUnreadCount } from '@/features/chat/chat.thunks';
 import { markAllNotificationsAsRead } from '@/features/notification/state/notification.thunks';
 import { useChat } from '@/features/chat/hooks/useChat';
@@ -19,6 +20,7 @@ import { ChatSidebar } from '@/features/chat/components/ChatSidebar';
 import { ChatMessageList } from '@/features/chat/components/ChatMessageList';
 import { ChatInput } from '@/features/chat/components/ChatInput';
 import { CHAT_UI } from '@/features/chat/chat.constants';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { RootState } from '@/app/store';
 
 export default function ChatPage() {
@@ -46,14 +48,7 @@ export default function ChatPage() {
   const isClosed = activeRoom?.status === 'CLOSED';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  const debouncedQuery = useDebounce(searchQuery, 500);
 
   // Fetch rooms on mount and when search changes
   useEffect(() => {
@@ -68,6 +63,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (activeRoomId) {
       dispatch(fetchRoomMessages({ roomId: activeRoomId }));
+      dispatch(resetRoomUnreadCount(activeRoomId));
       dispatch(markRoomMessagesAsRead(activeRoomId)).then(() => {
         dispatch(fetchTotalUnreadCount());
       });

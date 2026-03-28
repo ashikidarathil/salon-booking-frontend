@@ -8,7 +8,6 @@ import DailyAdjustments from '@/components/schedule/DailyAdjustments';
 import BreakManagement from '@/components/schedule/BreakManagement';
 import StylistBranchService from '@/services/stylistBranch.service';
 
-
 interface StylistScheduleManagementProps {
   stylistId: string;
   stylistName: string;

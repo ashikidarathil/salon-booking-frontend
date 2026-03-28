@@ -1,17 +1,27 @@
-'use client';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useAppSelector } from '@/app/hooks';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export function HeroSection() {
   const navigate = useNavigate();
   const { selectedBranch } = useAppSelector((state) => state.branch);
+  const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
 
   const handleBookAppointment = () => {
     if (selectedBranch) {
       navigate('/services');
+    } else {
+      navigate('/branches');
+    }
+  };
+
+  const handleFindOnMap = () => {
+    if (selectedBranch) {
+      setIsMapDialogOpen(true);
     } else {
       navigate('/branches');
     }
@@ -32,7 +42,7 @@ export function HeroSection() {
         <div className="flex flex-wrap items-center gap-4 mb-12">
           <Button
             size="lg"
-            onClick={() => navigate('/branches')}
+            onClick={handleFindOnMap}
             className="gap-2 px-6 py-3 font-semibold text-white bg-primary hover:bg-primary/90"
           >
             <Icon icon="solar:map-point-bold" className="size-5" />
@@ -78,6 +88,44 @@ export function HeroSection() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon icon="solar:map-point-bold-duotone" className="size-5 text-primary" />
+              Salon Location
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/40 border border-border/40">
+              <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Icon icon="solar:shop-bold-duotone" className="size-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm truncate">{selectedBranch?.name || 'Salon Name'}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  {selectedBranch?.address || 'Address not available'}
+                </p>
+              </div>
+            </div>
+
+            {selectedBranch?.latitude && selectedBranch?.longitude && (
+              <Button
+                variant="default"
+                className="w-full gap-2 bg-primary hover:bg-primary/90 text-white font-bold h-11"
+                onClick={() => {
+                  const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedBranch.latitude},${selectedBranch.longitude}`;
+                  window.open(url, '_blank');
+                }}
+              >
+                <Icon icon="solar:routing-bold-duotone" className="size-5" />
+                Get Directions
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

@@ -48,12 +48,26 @@ const chatSlice = createSlice({
     },
     updateRoomLastMessage: (
       state,
-      action: PayloadAction<{ roomId: string; lastMessage: string; lastMessageAt: string }>,
+      action: PayloadAction<{
+        roomId: string;
+        lastMessage: string;
+        lastMessageAt: string;
+        incrementUnread?: boolean;
+      }>,
     ) => {
       const room = state.rooms.find((r) => r.id === action.payload.roomId);
       if (room) {
         room.lastMessage = action.payload.lastMessage;
         room.lastMessageAt = action.payload.lastMessageAt;
+        if (action.payload.incrementUnread) {
+          room.unreadCount = (room.unreadCount || 0) + 1;
+        }
+      }
+    },
+    resetRoomUnreadCount: (state, action: PayloadAction<string>) => {
+      const room = state.rooms.find((r) => r.id === action.payload);
+      if (room) {
+        room.unreadCount = 0;
       }
     },
     clearChatError: (state) => {
@@ -128,6 +142,7 @@ export const {
   setActiveRoom,
   addMessageToRoom,
   updateRoomLastMessage,
+  resetRoomUnreadCount,
   clearChatError,
   incrementUnreadCount,
   resetUnreadCount,

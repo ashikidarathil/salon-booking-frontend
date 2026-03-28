@@ -44,6 +44,7 @@ import { DiscountType, type Coupon } from '@/features/coupon/coupon.types';
 import { showSuccess, showError, showConfirm } from '@/common/utils/swal.utils';
 import { format, addDays } from 'date-fns';
 import Pagination from '@/components/pagination/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function CouponManagementPage() {
   const dispatch = useAppDispatch();
@@ -51,7 +52,7 @@ export default function CouponManagementPage() {
     'ALL',
   );
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { coupons, loading, pagination } = useAppSelector((state) => state.coupon);
@@ -86,14 +87,6 @@ export default function CouponManagementPage() {
       }),
     );
   }, [dispatch, currentPage, itemsPerPage, debouncedSearchTerm, statusFilter]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
 
   useEffect(() => {
     loadCoupons();

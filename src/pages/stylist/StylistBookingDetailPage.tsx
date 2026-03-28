@@ -94,7 +94,9 @@ export default function StylistBookingDetailPage() {
             <p className="text-muted-foreground text-sm">#{b?.bookingNumber}</p>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Badge className={getStatusColor(b?.status as BookingStatus)}>{b?.status.replace('_', ' ')}</Badge>
+            <Badge className={getStatusColor(b?.status as BookingStatus)}>
+              {b?.status.replace('_', ' ')}
+            </Badge>
           </div>
         </div>
 

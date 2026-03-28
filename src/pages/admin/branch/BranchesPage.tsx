@@ -53,6 +53,7 @@ import LeafletMapPicker from '@/components/branch/LeafletMapPicker';
 
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/branch/branch.slice';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -72,6 +73,7 @@ export default function BranchesPage() {
   const { branches, loading, error, pagination } = useAppSelector((state) => state.branch);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
@@ -94,10 +96,10 @@ export default function BranchesPage() {
       fetchPaginatedBranches({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
-        search: searchTerm || undefined,
+        search: debouncedSearch || undefined,
       }),
     );
-  }, [dispatch, currentPage, searchTerm]);
+  }, [dispatch, currentPage, debouncedSearch]);
 
   useEffect(() => {
     loadBranches();
@@ -498,7 +500,6 @@ export default function BranchesPage() {
         initialLocation={selectedLocation}
         title={editingBranch ? 'Update Branch Location' : 'Select Branch Location'}
       />
-
 
       {selectedBreakBranchId && (
         <BranchBreakModal

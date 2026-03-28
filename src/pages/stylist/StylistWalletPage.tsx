@@ -3,19 +3,14 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchStylistWallet } from '@/features/stylistWallet/stylistWallet.thunks';
 import { fetchStylistEscrows, fetchHeldBalance } from '@/features/escrow/escrow.thunks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Wallet,
-  TrendingUp,
-  Clock,
-  Search,
-  RefreshCw,
-} from 'lucide-react';
+import { Wallet, TrendingUp, Clock, Search, RefreshCw } from 'lucide-react';
 import Pagination from '@/components/pagination/Pagination';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useDebounce } from '@/hooks/useDebounce';
 import { EscrowStatus } from '@/features/escrow/escrow.types';
 
 export default function StylistWalletPage() {
@@ -29,16 +24,8 @@ export default function StylistWalletPage() {
   } = useAppSelector((s) => s.escrow);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
 
   const loadData = useCallback(() => {
     dispatch(fetchStylistWallet());

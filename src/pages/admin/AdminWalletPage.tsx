@@ -22,6 +22,7 @@ import { Input } from '../../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { Calendar } from '../../components/ui/calendar';
 import { Icon } from '@iconify/react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const PERIODS = [
   { label: 'All', value: 'all', icon: 'solar:globus-bold-duotone' },
@@ -36,7 +37,7 @@ export default function AdminWalletPage() {
   const { escrows, pagination, loading } = useAppSelector((s) => s.escrow);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState('escrowed');
   const [period, setPeriod] = useState<string>('all');
@@ -68,15 +69,6 @@ export default function AdminWalletPage() {
       endDate: end?.toISOString(),
     };
   };
-
-  // Handle debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setPage(1); // Reset to first page on search
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
 
   const loadEscrows = useCallback(() => {
     const { startDate, endDate } = getDateRange(period, selectedDate);

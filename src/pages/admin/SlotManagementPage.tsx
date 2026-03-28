@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { branchService } from '@/services/branch.service';
 import { stylistInviteService } from '@/services/stylistInvite.service';
 import { slotService } from '@/services/slot.service';
-import type { SlotItem } from '@/features/slot/slot.types';
+import type { SlotItem, ListSlotsParams } from '@/features/slot/slot.types';
 import { CreateSpecialSlotDialog } from '@/components/booking/CreateSpecialSlotDialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Icon } from '@iconify/react';
-import { format } from 'date-fns';
 import {
   showSuccess,
   showError,
@@ -48,11 +48,12 @@ export default function SlotManagementPage() {
 
   const [filters, setFilters] = useState({
     branchId: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
+    date: '',
     stylistId: 'all',
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [specialSlotOpen, setSpecialSlotOpen] = useState(false);
   const [slotView, setSlotView] = useState<'normal' | 'special'>('normal');
 
@@ -61,9 +62,6 @@ export default function SlotManagementPage() {
       try {
         const response = await branchService.list();
         setBranches(response.data.data);
-        if (response.data.data.length > 0) {
-          setFilters((prev) => ({ ...prev, branchId: response.data.data[0].id }));
-        }
       } catch (error) {
         showApiError(error, 'Failed to load branches');
       }
@@ -88,7 +86,7 @@ export default function SlotManagementPage() {
   }, [filters.branchId]);
 
   const filteredStylists = stylists.filter((s) =>
-    (s.name || s.email || '').toLowerCase().includes(searchQuery.toLowerCase()),
+    (s.name || s.email || '').toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
   );
 
   const fetchSlots = useCallback(async () => {
@@ -96,7 +94,7 @@ export default function SlotManagementPage() {
 
     setLoading(true);
     try {
-      const params = {
+      const params: ListSlotsParams = {
         branchId: filters.branchId,
         date: filters.date,
         stylistId: filters.stylistId === 'all' ? undefined : filters.stylistId,
@@ -268,12 +266,14 @@ export default function SlotManagementPage() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Branch</label>
+            <label className="text-sm font-medium text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+              Branch
+            </label>
             <Select
               value={filters.branchId}
               onValueChange={(val) => setFilters((prev) => ({ ...prev, branchId: val }))}
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl">
                 <SelectValue placeholder="Select Branch" />
               </SelectTrigger>
               <SelectContent>
@@ -287,21 +287,27 @@ export default function SlotManagementPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Date</label>
+            <label className="text-sm font-medium text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+              Date
+            </label>
             <Input
               type="date"
               value={filters.date}
               onChange={(e) => setFilters((prev) => ({ ...prev, date: e.target.value }))}
+              className="rounded-xl"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Stylist</label>
+            <label className="text-sm font-medium text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+              Stylist
+            </label>
             <Select
               value={filters.stylistId}
               onValueChange={(val) => setFilters((prev) => ({ ...prev, stylistId: val }))}
+              disabled={!filters.branchId}
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl">
                 <SelectValue placeholder="All Stylists" />
               </SelectTrigger>
               <SelectContent>
@@ -311,9 +317,6 @@ export default function SlotManagementPage() {
                     {s.name || s.email}
                   </SelectItem>
                 ))}
-                {filteredStylists.length === 0 && (
-                  <p className="p-2 text-xs text-center text-muted-foreground">No stylists found</p>
-                )}
               </SelectContent>
             </Select>
           </div>
@@ -439,9 +442,24 @@ export default function SlotManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loading ? (
+                    {!filters.branchId || !filters.date ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                        <TableCell colSpan={4} className="py-20 text-center">
+                          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                            <Icon icon="solar:filter-linear" className="size-10 opacity-20" />
+                            <p className="max-w-xs mx-auto text-sm">
+                              Please select a branch and date to view available slots.
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : loading ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="py-12 text-center text-muted-foreground">
+                          <Icon
+                            icon="eos-icons:loading"
+                            className="size-6 animate-spin mx-auto mb-2"
+                          />
                           Loading slots...
                         </TableCell>
                       </TableRow>
@@ -452,7 +470,7 @@ export default function SlotManagementPage() {
                           ),
                       ).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                        <TableCell colSpan={4} className="py-12 text-center text-muted-foreground">
                           No slots found for the selected criteria.
                         </TableCell>
                       </TableRow>

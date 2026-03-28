@@ -59,6 +59,7 @@ export default function OffDayPage() {
     try {
       await dispatch(
         requestOffDay({
+          stylistId: user.id,
           startDate: format(startDate, 'yyyy-MM-dd'),
           endDate: format(endDate, 'yyyy-MM-dd'),
           reason,

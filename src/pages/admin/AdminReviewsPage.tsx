@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { showConfirm, showSuccess, showApiError } from '@/common/utils/swal.utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type DateRangeType = 'all' | 'today' | 'week' | 'month' | 'custom';
 
@@ -36,6 +37,7 @@ export default function AdminReviewsPage() {
   const { reviews, total, isLoading } = useAppSelector((state) => state.review);
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [dateRange, setDateRange] = useState<DateRangeType>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [page, setPage] = useState(1);
@@ -69,17 +71,14 @@ export default function AdminReviewsPage() {
     }
 
     return params;
-  }, [page, search, dateRange, selectedDate]);
+  }, [page, debouncedSearch, dateRange, selectedDate]);
 
   const loadReviews = useCallback(() => {
     dispatch(fetchReviews(getFetchParams()));
   }, [dispatch, getFetchParams]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadReviews();
-    }, 500);
-    return () => clearTimeout(timer);
+    loadReviews();
   }, [loadReviews]);
 
   const handleDateSelect = (date: Date | undefined) => {

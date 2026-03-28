@@ -1,9 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import {
-  fetchReviews,
-  fetchStylistRating,
-} from '@/features/review/state/review.thunks';
+import { fetchReviews, fetchStylistRating } from '@/features/review/state/review.thunks';
 import type { ReviewPaginationParams } from '@/features/review/review.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, MessageSquare, Search, X } from 'lucide-react';
@@ -16,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 type DateRangeType = 'all' | 'today' | 'week' | 'month' | 'custom';
@@ -28,6 +26,7 @@ export default function StylistReviewsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [dateRange, setDateRange] = useState<DateRangeType>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [page, setPage] = useState(1);
@@ -61,7 +60,7 @@ export default function StylistReviewsPage() {
     }
 
     return params;
-  }, [user?.id, page, search, dateRange, selectedDate]);
+  }, [user?.id, page, debouncedSearch, dateRange, selectedDate]);
 
   useEffect(() => {
     if (user?.id) {
@@ -70,12 +69,12 @@ export default function StylistReviewsPage() {
   }, [dispatch, user?.id]);
 
   useEffect(() => {
-    const timer = setTimeout(async () => {
+    const loadReviews = async () => {
       if (!user?.id) return;
       await dispatch(fetchReviews(getFetchParams()));
       setInitialLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    };
+    loadReviews();
   }, [dispatch, user?.id, getFetchParams]);
 
   const handleDateSelect = (date: Date | undefined) => {

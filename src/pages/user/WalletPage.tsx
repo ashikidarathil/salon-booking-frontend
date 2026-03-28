@@ -12,7 +12,11 @@ import { showSuccess, showError } from '@/common/utils/swal.utils';
 import { type WalletTransaction, TransactionType } from '@/features/wallet/wallet.types';
 import { getThemeColorByRole } from '@/features/wallet/wallet.constants';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle,
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
 

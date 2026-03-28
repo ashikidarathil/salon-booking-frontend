@@ -6,6 +6,7 @@ import {
   fetchStylistServicesPaginated,
   toggleStylistServiceStatus,
 } from '@/features/stylistService/stylistService.thunks';
+import { useDebounce } from '@/hooks/useDebounce';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +59,7 @@ export default function StylistServiceManagement({
   const { services, loading, error, pagination } = useAppSelector((state) => state.stylistService);
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
 
@@ -68,12 +70,12 @@ export default function StylistServiceManagement({
           stylistId,
           page: currentPage,
           limit: ITEMS_PER_PAGE,
-          search: search || undefined,
+          search: debouncedSearch || undefined,
           isActive: filterActive === 'all' ? undefined : filterActive === 'active',
         }),
       );
     }
-  }, [stylistId, dispatch, currentPage, search, filterActive]);
+  }, [stylistId, dispatch, currentPage, debouncedSearch, filterActive]);
 
   useEffect(() => {
     loadStylistServices();

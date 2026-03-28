@@ -33,6 +33,9 @@ export const useChat = (userId: string | undefined) => {
         dispatch(incrementUnreadCount());
       }
 
+      const isMe = message.senderId === userId;
+      const prefix = isMe ? 'You: ' : '';
+
       let preview = 'New message';
       if (message.messageType === MessageType.TEXT) preview = message.content || 'Text message';
       else if (message.messageType === MessageType.IMAGE) preview = '📷 Image';
@@ -43,8 +46,9 @@ export const useChat = (userId: string | undefined) => {
       dispatch(
         updateRoomLastMessage({
           roomId: message.chatRoomId,
-          lastMessage: preview,
+          lastMessage: `${prefix}${preview}`,
           lastMessageAt: message.createdAt,
+          incrementUnread: message.senderId !== userId,
         }),
       );
     });

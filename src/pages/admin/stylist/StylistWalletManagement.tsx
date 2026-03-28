@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { EscrowStatus } from '@/features/escrow/escrow.types';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface StylistWalletManagementProps {
   stylistId: string;
@@ -41,15 +42,19 @@ export default function StylistWalletManagement({ stylistId }: StylistWalletMana
   } = useAppSelector((s) => s.escrow);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     dispatch(fetchStylistWalletById(stylistId));
     dispatch(fetchAdminStylistHeldBalance(stylistId));
     dispatch(
-      fetchAdminStylistEscrows({ stylistId, query: { page, limit: 10, search: searchTerm } }),
+      fetchAdminStylistEscrows({
+        stylistId,
+        query: { page, limit: 10, search: debouncedSearchTerm },
+      }),
     );
-  }, [dispatch, stylistId, page, searchTerm]);
+  }, [dispatch, stylistId, page, debouncedSearchTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

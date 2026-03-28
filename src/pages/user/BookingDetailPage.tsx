@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchBookingDetails, cancelBooking } from '@/features/booking/booking.thunks';
+import { fetchBranchById } from '@/features/branch/branch.thunks';
 import { processRemainingPayment, payRemainingWithWallet } from '@/features/payment/payment.thunks';
 import { fetchMyWallet } from '@/features/wallet/wallet.thunks';
 import { PAYMENT_MESSAGES as PM } from '@/features/payment/payment.constants';
@@ -59,6 +60,7 @@ export default function BookingDetailPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { currentBooking, loading, error } = useAppSelector((state) => state.booking);
+  const { selectedBranch, loading: branchLoading } = useAppSelector((state) => state.branch);
   const { loading: paymentLoading } = useAppSelector((state) => state.payment);
   const { wallet } = useAppSelector((state) => state.wallet);
   const [remainingPayMethod, setRemainingPayMethod] = useState<'razorpay' | 'wallet'>('razorpay');
@@ -71,6 +73,12 @@ export default function BookingDetailPage() {
   useEffect(() => {
     dispatch(fetchMyWallet());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (currentBooking?.branchId && selectedBranch?.id !== currentBooking.branchId) {
+      dispatch(fetchBranchById(currentBooking.branchId));
+    }
+  }, [currentBooking?.branchId, selectedBranch?.id, dispatch]);
 
   const checkLeadTime = (bookingDate: string, startTime: string) => {
     try {
@@ -204,7 +212,9 @@ export default function BookingDetailPage() {
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/40"
                   >
                     <div>
-                      <p className="font-medium text-sm">{item.serviceName || 'Professional Service'}</p>
+                      <p className="font-medium text-sm">
+                        {item.serviceName || 'Professional Service'}
+                      </p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                         <Icon icon="solar:user-bold-duotone" className="size-3" />
                         {item.stylistName}
@@ -222,6 +232,55 @@ export default function BookingDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Salon Location */}
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center gap-2">
+                <Icon icon="solar:map-point-bold-duotone" className="size-5 text-primary" />
+                <CardTitle className="text-base m-0">Salon Location</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/40 border border-border/40 min-h-[64px]">
+                  {branchLoading ? (
+                    <div className="flex items-center gap-3 w-full animate-pulse">
+                      <div className="size-10 rounded-full bg-primary/10 shrink-0" />
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-muted rounded w-1/3" />
+                        <div className="h-3 bg-muted rounded w-2/3" />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon icon="solar:shop-bold-duotone" className="size-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">
+                          {selectedBranch?.name || 'Salon details unavailable'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                          {selectedBranch?.address || 'Address not listed'}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {!branchLoading && selectedBranch?.latitude && selectedBranch?.longitude && (
+                  <Button
+                    variant="default"
+                    className="w-full gap-2 bg-primary hover:bg-primary/90 text-white font-bold h-11"
+                    onClick={() => {
+                      const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedBranch.latitude},${selectedBranch.longitude}`;
+                      window.open(url, '_blank');
+                    }}
+                  >
+                    <Icon icon="solar:routing-bold-duotone" className="size-5" />
+                    Get Directions
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Payment Summary */}
             <Card>
               <CardHeader className="pb-3 border-b">
@@ -234,7 +293,9 @@ export default function BookingDetailPage() {
                 <div className="space-y-2.5">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Service Amount</span>
-                    <span className="font-medium">₹{currentBooking.totalPrice.toLocaleString('en-IN')}</span>
+                    <span className="font-medium">
+                      ₹{currentBooking.totalPrice.toLocaleString('en-IN')}
+                    </span>
                   </div>
                   {(currentBooking.discountAmount ?? 0) > 0 && (
                     <div className="flex justify-between text-red-600 text-sm font-medium">
@@ -244,7 +305,9 @@ export default function BookingDetailPage() {
                   )}
                   <div className="flex justify-between font-bold text-slate-900 border-t border-dashed pt-2.5">
                     <span>Net Total</span>
-                    <span className="text-lg">₹{currentBooking.payableAmount.toLocaleString('en-IN')}</span>
+                    <span className="text-lg">
+                      ₹{currentBooking.payableAmount.toLocaleString('en-IN')}
+                    </span>
                   </div>
                 </div>
 
@@ -262,14 +325,20 @@ export default function BookingDetailPage() {
                       To Pay at Salon (80%)
                     </p>
                     <p className="text-xl font-black text-slate-700">
-                      ₹{(currentBooking.payableAmount - currentBooking.advanceAmount).toLocaleString('en-IN')}
+                      ₹
+                      {(currentBooking.payableAmount - currentBooking.advanceAmount).toLocaleString(
+                        'en-IN',
+                      )}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center text-xs pt-2 border-t border-dashed">
                   <span className="text-muted-foreground italic">Payment Status</span>
-                  <Badge variant="outline" className="font-bold uppercase tracking-tight text-[10px]">
+                  <Badge
+                    variant="outline"
+                    className="font-bold uppercase tracking-tight text-[10px]"
+                  >
                     {currentBooking.paymentStatus.replace('_', ' ')}
                   </Badge>
                 </div>
@@ -289,54 +358,60 @@ export default function BookingDetailPage() {
             )}
 
             {/* Pay Remaining Balance */}
-            {currentBooking.status === BookingStatus.COMPLETED && currentBooking.paymentStatus === PaymentStatus.ADVANCE_PAID && (
-              <Card className="border-primary/10 bg-primary/5">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2 text-primary">
-                    <Icon icon="solar:wallet-money-bold-duotone" className="size-5" />
-                    Pay Remaining Balance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground font-medium">Final Balance (80%)</span>
-                    <span className="text-2xl font-black text-primary">
-                      ₹{(currentBooking.payableAmount - currentBooking.advanceAmount).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
+            {currentBooking.status === BookingStatus.COMPLETED &&
+              currentBooking.paymentStatus === PaymentStatus.ADVANCE_PAID && (
+                <Card className="border-primary/10 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2 text-primary">
+                      <Icon icon="solar:wallet-money-bold-duotone" className="size-5" />
+                      Pay Remaining Balance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Final Balance (80%)
+                      </span>
+                      <span className="text-2xl font-black text-primary">
+                        ₹
+                        {(
+                          currentBooking.payableAmount - currentBooking.advanceAmount
+                        ).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={remainingPayMethod === 'razorpay' ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1 text-xs h-9"
+                        onClick={() => setRemainingPayMethod('razorpay')}
+                      >
+                        <Icon icon="solar:card-2-bold" className="size-3.5 mr-1" /> Razorpay
+                      </Button>
+                      <Button
+                        variant={remainingPayMethod === 'wallet' ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1 text-xs h-9"
+                        onClick={() => setRemainingPayMethod('wallet')}
+                      >
+                        <Icon icon="solar:wallet-bold" className="size-3.5 mr-1" />
+                        Wallet {wallet ? `(₹${wallet.balance})` : ''}
+                      </Button>
+                    </div>
                     <Button
-                      variant={remainingPayMethod === 'razorpay' ? 'default' : 'outline'}
-                      size="sm"
-                      className="flex-1 text-xs h-9"
-                      onClick={() => setRemainingPayMethod('razorpay')}
+                      className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-11"
+                      onClick={handlePayRemaining}
+                      disabled={paymentLoading}
                     >
-                      <Icon icon="solar:card-2-bold" className="size-3.5 mr-1" /> Razorpay
+                      {paymentLoading ? (
+                        <Icon icon="eos-icons:loading" className="size-4 animate-spin" />
+                      ) : (
+                        `Complete Payment · ₹${(currentBooking.payableAmount - currentBooking.advanceAmount).toLocaleString('en-IN')}`
+                      )}
                     </Button>
-                    <Button
-                      variant={remainingPayMethod === 'wallet' ? 'default' : 'outline'}
-                      size="sm"
-                      className="flex-1 text-xs h-9"
-                      onClick={() => setRemainingPayMethod('wallet')}
-                    >
-                      <Icon icon="solar:wallet-bold" className="size-3.5 mr-1" />
-                      Wallet {wallet ? `(₹${wallet.balance})` : ''}
-                    </Button>
-                  </div>
-                  <Button
-                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-11"
-                    onClick={handlePayRemaining}
-                    disabled={paymentLoading}
-                  >
-                    {paymentLoading ? (
-                      <Icon icon="eos-icons:loading" className="size-4 animate-spin" />
-                    ) : (
-                      `Complete Payment · ₹${(currentBooking.payableAmount - currentBooking.advanceAmount).toLocaleString('en-IN')}`
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              )}
 
             {/* Actions */}
             <div className="flex gap-3">
@@ -350,27 +425,30 @@ export default function BookingDetailPage() {
                   Rate & Review
                 </Button>
               )}
-              {currentBooking.status === BookingStatus.CONFIRMED && checkLeadTime(currentBooking.date, currentBooking.startTime) && (
-                <>
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2 text-blue-600 hover:bg-blue-50 border-blue-100"
-                    onClick={handleReschedule}
-                    disabled={(currentBooking.rescheduleCount ?? 0) >= BOOKING_RULES.MAX_RESCHEDULES}
-                  >
-                    <Icon icon="solar:calendar-rotate-linear" className="size-4" />
-                    Reschedule
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2 text-red-600 hover:bg-red-50 border-red-100"
-                    onClick={handleCancel}
-                  >
-                    <Icon icon="solar:close-circle-linear" className="size-4" />
-                    Cancel
-                  </Button>
-                </>
-              )}
+              {currentBooking.status === BookingStatus.CONFIRMED &&
+                checkLeadTime(currentBooking.date, currentBooking.startTime) && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2 text-blue-600 hover:bg-blue-50 border-blue-100"
+                      onClick={handleReschedule}
+                      disabled={
+                        (currentBooking.rescheduleCount ?? 0) >= BOOKING_RULES.MAX_RESCHEDULES
+                      }
+                    >
+                      <Icon icon="solar:calendar-rotate-linear" className="size-4" />
+                      Reschedule
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2 text-red-600 hover:bg-red-50 border-red-100"
+                      onClick={handleCancel}
+                    >
+                      <Icon icon="solar:close-circle-linear" className="size-4" />
+                      Cancel
+                    </Button>
+                  </>
+                )}
             </div>
 
             <ReviewModal

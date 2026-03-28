@@ -1,6 +1,12 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { StylistWalletState, StylistWallet } from '@/features/stylistWallet/stylistWallet.types';
-import { fetchStylistWallet, fetchStylistWalletById } from '@/features/stylistWallet/stylistWallet.thunks';
+import type {
+  StylistWalletState,
+  StylistWallet,
+} from '@/features/stylistWallet/stylistWallet.types';
+import {
+  fetchStylistWallet,
+  fetchStylistWalletById,
+} from '@/features/stylistWallet/stylistWallet.thunks';
 
 const initialState: StylistWalletState = {
   wallet: null,

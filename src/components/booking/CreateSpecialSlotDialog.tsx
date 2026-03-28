@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -92,7 +98,9 @@ export function CreateSpecialSlotDialog({
       <DialogContent className={`sm:max-w-[420px] ${isStylist ? 'theme-stylist' : 'theme-admin'}`}>
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">Create Special Slot</DialogTitle>
-          <DialogDescription className="sr-only">Add a manual slot for a specific stylist and date.</DialogDescription>
+          <DialogDescription className="sr-only">
+            Add a manual slot for a specific stylist and date.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-1">

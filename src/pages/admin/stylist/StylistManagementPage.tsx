@@ -14,6 +14,7 @@ import {
 import { clearInviteLink, clearError } from '@/features/stylistInvite/stylistInviteSlice';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
+import { useDebounce } from '@/hooks/useDebounce';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +74,7 @@ export default function StylistManagementPage() {
   );
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [viewInviteDialog, setViewInviteDialog] = useState<StylistListItem | null>(null);
   const [isManualInviteOpen, setIsManualInviteOpen] = useState(false);
@@ -92,10 +94,10 @@ export default function StylistManagementPage() {
       fetchPaginatedStylists({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
-        search: searchTerm || undefined,
+        search: debouncedSearchTerm || undefined,
       }),
     );
-  }, [dispatch, currentPage, searchTerm]);
+  }, [dispatch, currentPage, debouncedSearchTerm]);
 
   useEffect(() => {
     loadStylists();

@@ -120,7 +120,9 @@ export default function AdminBookingDetailPage() {
                   <p className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground mb-1">
                     Date
                   </p>
-                  <p className="font-bold text-sm">{b?.date ? format(new Date(b.date), 'PPP') : ''}</p>
+                  <p className="font-bold text-sm">
+                    {b?.date ? format(new Date(b.date), 'PPP') : ''}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground mb-1">
@@ -137,7 +139,9 @@ export default function AdminBookingDetailPage() {
                   <div className="space-y-2 bg-muted/30 p-4 rounded-xl border border-border/50">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Service Amount</span>
-                      <span className="font-semibold">₹{b?.totalPrice.toLocaleString('en-IN')}</span>
+                      <span className="font-semibold">
+                        ₹{b?.totalPrice.toLocaleString('en-IN')}
+                      </span>
                     </div>
                     {(b?.discountAmount ?? 0) > 0 && (
                       <div className="flex justify-between text-red-600 text-sm">
@@ -149,7 +153,9 @@ export default function AdminBookingDetailPage() {
                     )}
                     <div className="flex justify-between text-base font-black border-t pt-2 border-border/60">
                       <span>Net Amount</span>
-                      <span className="text-primary">₹{b?.payableAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-primary">
+                        ₹{b?.payableAmount.toLocaleString('en-IN')}
+                      </span>
                     </div>
                     <div className="flex justify-between text-[11px] font-bold italic text-muted-foreground pt-1">
                       <span>Advance Collected (20%)</span>

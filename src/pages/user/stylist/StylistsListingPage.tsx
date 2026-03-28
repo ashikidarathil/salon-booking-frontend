@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchPublicStylists } from '@/features/stylistInvite/stylistInviteThunks';
 import { fetchMyFavorites } from '@/features/wishlist/wishlistSlice';
 import { useWishlist } from '@/hooks/useWishlist';
+import { useDebounce } from '@/hooks/useDebounce';
 import { APP_ROUTES } from '@/common/constants/app.routes';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ export default function StylistsListingPage() {
 
   const { selectedBranch } = useAppSelector((state) => state.branch);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [positionFilter, setPositionFilter] = useState('all');
 
@@ -59,18 +61,18 @@ export default function StylistsListingPage() {
       fetchPublicStylists({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         branchId: selectedBranch.id,
         position: positionFilter === 'all' ? undefined : positionFilter,
       }),
     );
-  }, [dispatch, currentPage, search, selectedBranch, positionFilter]);
+  }, [dispatch, currentPage, debouncedSearch, selectedBranch, positionFilter]);
 
   useEffect(() => {
     if (selectedBranch?.id) {
       loadStylists();
     }
-  }, [loadStylists, selectedBranch, positionFilter, search]);
+  }, [loadStylists, selectedBranch, positionFilter, debouncedSearch]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -109,41 +111,40 @@ export default function StylistsListingPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-16 md:py-24 bg-gradient-to-b from-primary/10 via-primary/5 to-background">
-          <div className="container mx-auto px-4 md:px-6 text-center max-w-3xl">
-            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight mb-6 text-foreground">
+        <section className="relative py-16 overflow-hidden text-center  bg-gradient-to-b from-primary/10 via-primary/5 to-background md:py-20 ">
+          <div className="absolute top-0 w-full h-full -translate-x-1/2 pointer-events-none left-1/2 bg-gradient-to-b from-white/50 to-transparent" />
+          <div className="container relative z-10 flex flex-col items-center px-4 mx-auto">
+            <h1 className="mb-4 text-4xl font-bold md:text-5xl text-foreground font-heading">
               Our Expert Stylists
             </h1>
-            <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="max-w-2xl mx-auto mb-10 text-lg text-muted-foreground">
               Meet our talented team of professional stylists. Each brings unique expertise and
               passion to create your perfect look.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center max-w-xl mx-auto bg-white rounded-full border shadow-sm p-2 gap-2">
-              <div className="flex-1 flex items-center px-4 w-full">
-                <Icon icon="lucide:search" className="size-5 text-muted-foreground mr-3" />
-                <input
-                  type="text"
-                  placeholder="Search stylists..."
-                  value={search}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none text-sm h-10 placeholder:text-muted-foreground/70"
-                />
+            <div className="flex flex-row items-center w-full max-w-2xl gap-1 sm:gap-2 p-1.5 sm:p-2 mx-auto border rounded-full shadow-sm bg-background border-border">
+              <div className="pl-3 sm:pl-4 text-muted-foreground">
+                <Icon icon="solar:magnifer-linear" className="size-4 sm:size-5" />
               </div>
-              <div className="h-8 w-px bg-border hidden sm:block" />
-              <div className="w-full sm:w-auto">
-                <Select value={positionFilter} onValueChange={setPositionFilter}>
-                  <SelectTrigger className="border-none shadow-none focus:ring-0 w-full sm:w-[160px] rounded-full bg-transparent">
-                    <SelectValue placeholder="All Positions" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="all">All Positions</SelectItem>
-                    <SelectItem value="SENIOR">Senior Stylist</SelectItem>
-                    <SelectItem value="JUNIOR">Junior Stylist</SelectItem>
-                    <SelectItem value="TRAINEE">Trainee</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <input
+                type="text"
+                placeholder="Search stylists..."
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="flex-1 h-10 w-full min-w-0 text-xs sm:text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/70"
+              />
+              <div className="w-px h-6 mx-1 sm:mx-2 bg-border shrink-0" />
+              <Select value={positionFilter} onValueChange={setPositionFilter}>
+                <SelectTrigger className="w-[130px] sm:w-[180px] px-2 sm:px-3 text-xs sm:text-sm border-none shadow-none focus:ring-0 bg-transparent h-10 text-muted-foreground font-normal shrink-0">
+                  <SelectValue placeholder="All Positions" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All Positions</SelectItem>
+                  <SelectItem value="SENIOR">Senior Stylist</SelectItem>
+                  <SelectItem value="JUNIOR">Junior Stylist</SelectItem>
+                  <SelectItem value="TRAINEE">Trainee</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </section>

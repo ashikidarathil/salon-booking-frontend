@@ -280,7 +280,9 @@ export default function BookingsPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <Badge className={getStatusColor(booking.status as BookingStatus)}>{booking.status}</Badge>
+                      <Badge className={getStatusColor(booking.status as BookingStatus)}>
+                        {booking.status}
+                      </Badge>
                     </div>
                   </div>
 

@@ -25,6 +25,7 @@ import {
 import type { BranchServiceItem } from '@/features/branchService/branchService.types';
 import { fetchBranchStylists } from '@/features/stylistBranch/stylistBranch.thunks';
 import type { BranchStylist } from '@/features/stylistBranch/stylistBranch.types';
+import { fetchReviews } from '@/features/review/state/review.thunks';
 import { addToCart } from '@/features/cart/cart.slice';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +40,7 @@ export default function ServiceDetailsPage() {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const { currentService, loading, error } = useAppSelector((state) => state.branchService);
   const { assignedStylists } = useAppSelector((state) => state.stylistBranch);
+  const { reviews, isLoading: isLoadingReviews } = useAppSelector((state) => state.review);
 
   const [imageError, setImageError] = useState(false);
   const [relatedServices, setRelatedServices] = useState<BranchServiceItem[]>([]);
@@ -58,6 +60,14 @@ export default function ServiceDetailsPage() {
     if (branchId && serviceId) {
       dispatch(fetchBranchServicePublicDetails({ branchId, serviceId }));
       dispatch(fetchBranchStylists(branchId));
+      dispatch(
+        fetchReviews({
+          serviceId,
+          limit: 3,
+          sortBy: 'rating',
+          sortOrder: 'desc',
+        }),
+      );
     }
   }, [dispatch, branchId, serviceId]);
 
@@ -327,12 +337,71 @@ export default function ServiceDetailsPage() {
                     <CardTitle className="text-lg">Customer Reviews</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="py-8 text-center text-muted-foreground">
-                      <Icon
-                        icon="solar:star-bold"
-                        className="mx-auto mb-3 size-12 text-muted-foreground/30"
-                      />
-                      <p className="text-sm">Reviews coming soon</p>
+                    <div className="space-y-6">
+                      {reviews.length > 0 ? (
+                        reviews.map((review) => (
+                          <div key={review.id} className="pb-6 border-b last:border-0 last:pb-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center rounded-full size-8 bg-primary/10 text-primary">
+                                  {review.userId.profilePicture ? (
+                                    <img
+                                      src={review.userId.profilePicture}
+                                      alt={review.userId.name}
+                                      className="rounded-full size-full"
+                                    />
+                                  ) : (
+                                    <Icon icon="solar:user-bold" className="size-4" />
+                                  )}
+                                </div>
+                                <span className="text-sm font-semibold">{review.userId.name}</span>
+                              </div>
+                              <div className="flex items-center gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                  <Icon
+                                    key={i}
+                                    icon="solar:star-bold"
+                                    className={cn(
+                                      'size-3.5',
+                                      i < review.rating
+                                        ? 'text-yellow-400'
+                                        : 'text-muted-foreground/20',
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            {review.comment && (
+                              <p className="text-sm italic leading-relaxed text-muted-foreground">
+                                "{review.comment}"
+                              </p>
+                            )}
+                            <p className="mt-2 text-[10px] text-muted-foreground/60 uppercase tracking-wider">
+                              {new Date(review.createdAt).toLocaleDateString('en-IN', {
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </p>
+                          </div>
+                        ))
+                      ) : isLoadingReviews ? (
+                        <div className="py-8 text-center text-muted-foreground">
+                          <Icon
+                            icon="solar:restart-bold"
+                            className="mx-auto mb-3 size-12 text-muted-foreground/30 animate-spin"
+                          />
+                          <p className="text-sm">Loading reviews...</p>
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center text-muted-foreground">
+                          <Icon
+                            icon="solar:star-bold"
+                            className="mx-auto mb-3 size-12 text-muted-foreground/30"
+                          />
+                          <p className="text-sm">Reviews coming soon</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

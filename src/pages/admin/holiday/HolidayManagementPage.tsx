@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableHeader,
@@ -22,13 +23,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Icon } from '@iconify/react';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { showSuccess, showConfirm, showLoading, closeLoading } from '@/common/utils/swal.utils';
@@ -41,13 +35,21 @@ import type { CreateHolidayDto } from '@/features/holiday/holiday.types';
 const holidaySchema = z
   .object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    date: z.string().min(1, 'Date is required'),
+    date: z
+      .string()
+      .min(1, 'Date is required')
+      .refine((date) => {
+        const selected = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return selected >= today;
+      }, 'Date cannot be in the past'),
     isAllBranches: z.boolean(),
-    branchId: z.string().nullable().optional(),
+    branchIds: z.array(z.string()).optional(),
   })
-  .refine((data) => data.isAllBranches || data.branchId, {
-    message: 'Please select a branch or apply to all branches',
-    path: ['branchId'],
+  .refine((data) => data.isAllBranches || (data.branchIds && data.branchIds.length > 0), {
+    message: 'Please select at least one branch or apply to all branches',
+    path: ['branchIds'],
   });
 
 type HolidayFormData = z.infer<typeof holidaySchema>;
@@ -68,7 +70,7 @@ export default function HolidayManagementPage() {
     resolver: zodResolver(holidaySchema),
     defaultValues: {
       isAllBranches: true,
-      branchId: null,
+      branchIds: [],
     },
   });
 
@@ -89,7 +91,7 @@ export default function HolidayManagementPage() {
       name: data.name,
       date: data.date,
       isAllBranches: data.isAllBranches,
-      branchId: data.isAllBranches ? null : data.branchId,
+      branchIds: data.isAllBranches ? [] : data.branchIds,
     };
 
     const result = await dispatch(createHoliday(payload));
@@ -99,6 +101,7 @@ export default function HolidayManagementPage() {
       showSuccess('Success', 'Holiday created successfully');
       setIsAddDialogOpen(false);
       reset();
+      dispatch(fetchHolidays()); // Re-fetch to show all newly created records
     }
   };
 
@@ -117,14 +120,16 @@ export default function HolidayManagementPage() {
       closeLoading();
       if (deleteHoliday.fulfilled.match(result)) {
         showSuccess('Deleted', 'Holiday removed successfully');
+        dispatch(fetchHolidays());
       }
     }
   };
 
-  const getBranchName = (branchId?: string | null) => {
-    if (!branchId) return 'All Branches';
-    const branch = branches.find((b) => b.id === branchId);
-    return branch ? branch.name : 'Unknown Branch';
+  const getBranchData = (branchIds: string[]) => {
+    if (!branchIds || branchIds.length === 0) return [];
+    return branchIds
+      .map((id) => branches.find((b) => String(b.id) === String(id)))
+      .filter((b): b is NonNullable<typeof b> => !!b);
   };
 
   return (
@@ -169,11 +174,34 @@ export default function HolidayManagementPage() {
                     <TableCell>{format(new Date(holiday.date), 'MMMM do, yyyy')}</TableCell>
                     <TableCell>
                       {holiday.isAllBranches ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                        <Badge
+                          variant="outline"
+                          className="bg-primary/5 text-primary border-primary/20"
+                        >
                           All Branches
-                        </span>
+                        </Badge>
                       ) : (
-                        <span className="text-sm">{getBranchName(holiday.branchId)}</span>
+                        <div className="flex flex-wrap gap-1 max-w-[250px]">
+                          {getBranchData(holiday.branchIds)
+                            .slice(0, 2)
+                            .map((branch) => (
+                              <Badge
+                                key={branch.id}
+                                variant="secondary"
+                                className="whitespace-nowrap"
+                              >
+                                {branch.name}
+                              </Badge>
+                            ))}
+                          {holiday.branchIds.length > 2 && (
+                            <Badge
+                              variant="default"
+                              className="text-[10px] px-1.5 py-0 bg-orange-500 hover:bg-orange-600 border-none text-white"
+                            >
+                              +{holiday.branchIds.length - 2} more
+                            </Badge>
+                          )}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
@@ -215,7 +243,12 @@ export default function HolidayManagementPage() {
 
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
-              <Input id="date" type="date" {...register('date')} />
+              <Input
+                id="date"
+                type="date"
+                min={new Date().toISOString().split('T')[0]}
+                {...register('date')}
+              />
               {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
             </div>
 
@@ -242,28 +275,39 @@ export default function HolidayManagementPage() {
             </div>
 
             {!isAllBranches && (
-              <div className="space-y-2">
-                <Label htmlFor="branchId">Select Branch</Label>
-                <Controller
-                  name="branchId"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a branch" />
-                      </SelectTrigger>
-                      <SelectContent className="theme-admin">
+              <div className="space-y-3">
+                <Label>Select Branches</Label>
+                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-3 border rounded-xl bg-slate-50/50">
+                  <Controller
+                    name="branchIds"
+                    control={control}
+                    render={({ field }) => (
+                      <>
                         {branches.map((branch) => (
-                          <SelectItem key={branch.id} value={branch.id}>
-                            {branch.name}
-                          </SelectItem>
+                          <label
+                            key={branch.id}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-colors cursor-pointer border border-transparent hover:border-border"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={field.value?.includes(branch.id)}
+                              onChange={(e) => {
+                                const newValues = e.target.checked
+                                  ? [...(field.value || []), branch.id]
+                                  : (field.value || []).filter((id: string) => id !== branch.id);
+                                field.onChange(newValues);
+                              }}
+                              className="size-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <span className="text-sm font-medium">{branch.name}</span>
+                          </label>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.branchId && (
-                  <p className="text-xs text-destructive">{errors.branchId.message}</p>
+                      </>
+                    )}
+                  />
+                </div>
+                {errors.branchIds && (
+                  <p className="text-xs text-destructive">{errors.branchIds.message}</p>
                 )}
               </div>
             )}

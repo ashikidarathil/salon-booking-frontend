@@ -163,19 +163,18 @@ export default function DailyAdjustments({
 
   return (
     <div className="space-y-6">
-      <Card className="border-none shadow-lg overflow-hidden">
-        <CardHeader className="pb-6 bg-primary/5 border-b">
+      <Card className="border-none shadow-sm">
+        <CardHeader className="pb-6 border-b">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <CardTitle className="text-xl font-semibold flex items-center gap-2 text-primary tracking-tight">
-                <Icon icon="solar:calendar-date-linear" className="size-7" />
+              <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
                 Daily Adjustments
               </CardTitle>
-              <CardDescription className="text-xs font-medium opacity-60">
-                Override your standard routine for specific dates (holidays, extra shifts).
+              <CardDescription className="text-sm">
+                Override your standard routine for specific dates.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-3 bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -184,7 +183,7 @@ export default function DailyAdjustments({
               >
                 <Icon icon="solar:alt-arrow-left-linear" className="size-5" />
               </Button>
-              <span className="text-sm font-bold text-slate-700 min-w-[120px] text-center px-4 tracking-tight">
+              <span className="text-sm font-semibold text-slate-700 min-w-[120px] text-center">
                 {format(currentMonth, 'MMMM yyyy')}
               </span>
               <Button
@@ -223,42 +222,37 @@ export default function DailyAdjustments({
               onClick={() => handleDateClick(date)}
               disabled={past}
               className={cn(
-                'aspect-square rounded-2xl p-2 relative transition-all duration-300 group flex flex-col items-center justify-center gap-1 border border-transparent',
+                'min-h-[70px] rounded-xl p-1.5 transition-all group flex flex-col items-center justify-center gap-0.5 border',
                 past
-                  ? 'opacity-30 cursor-not-allowed bg-slate-50/50'
-                  : 'hover:border-primary/20 hover:shadow-md active:scale-95',
-                isTodayDate
-                  ? 'bg-primary/5 border-primary/20'
-                  : 'bg-white shadow-sm border-slate-100',
+                  ? 'opacity-30 cursor-not-allowed bg-muted/20 border-transparent'
+                  : 'hover:bg-accent/50',
+                isTodayDate ? 'border-primary/50 bg-primary/5' : 'bg-background border-border',
                 override &&
                   (override.isWorkingDay
-                    ? 'ring-2 ring-primary/20 bg-primary/[0.02]'
-                    : 'ring-2 ring-red-100 bg-red-50/30'),
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-destructive/30 bg-destructive/5'),
               )}
             >
               <span
                 className={cn(
-                  'text-sm font-bold tracking-tight',
-                  isTodayDate ? 'text-primary' : past ? 'text-slate-300' : 'text-slate-600',
-                  override && !override.isWorkingDay && 'text-red-500',
+                  'text-sm font-medium',
+                  isTodayDate ? 'text-primary' : past ? 'text-muted-foreground' : 'text-foreground',
+                  override && !override.isWorkingDay && 'text-destructive',
                 )}
               >
                 {format(date, 'd')}
               </span>
 
               {override && (
-                <div className="flex flex-col items-center gap-0.5 animate-in fade-in zoom-in duration-500 mt-1">
+                <div className="flex flex-col items-center gap-0.5 mt-1">
                   <Badge
-                    variant={override.isWorkingDay ? 'default' : 'destructive'}
-                    className={cn(
-                      'scale-[0.7] px-2 h-4 text-[8px] font-black uppercase tracking-tighter whitespace-nowrap rounded-lg shadow-sm',
-                      override.isWorkingDay ? 'bg-primary' : 'bg-red-500',
-                    )}
+                    variant={override.isWorkingDay ? 'secondary' : 'destructive'}
+                    className="px-1.5 h-3.5 text-[7px] font-bold uppercase tracking-tight"
                   >
-                    {override.isWorkingDay ? 'SHIFTS' : 'OFF'}
+                    {override.isWorkingDay ? 'Shift' : 'Off'}
                   </Badge>
                   {override.isWorkingDay && override.shifts[0] && (
-                    <span className="text-[8px] font-bold text-slate-400 leading-none">
+                    <span className="text-[7px] font-medium text-muted-foreground leading-none">
                       {override.shifts[0].startTime}
                     </span>
                   )}
@@ -266,7 +260,7 @@ export default function DailyAdjustments({
               )}
 
               {isTodayDate && !override && (
-                <div className="absolute top-2 right-2 size-1.5 rounded-full bg-primary" />
+                <div className="absolute top-1 right-1 size-1 rounded-full bg-primary" />
               )}
             </button>
           );
@@ -274,95 +268,71 @@ export default function DailyAdjustments({
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[420px] rounded-[2rem] gap-0 p-0 overflow-hidden border-none shadow-2xl">
-          <DialogHeader className="p-8 bg-slate-50 border-b border-slate-100 text-left">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-primary/10 rounded-xl text-primary">
-                <Icon icon="solar:calendar-edit-linear" className="size-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold text-slate-800 tracking-tight">
-                  Adjust Schedule
-                </DialogTitle>
-                <DialogDescription className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wide">
-                  {selectedDate ? format(selectedDate, 'EEEE, MMMM do') : ''}
-                </DialogDescription>
-              </div>
-            </div>
+        <DialogContent className="theme-stylist w-[calc(100%-2rem)] sm:max-w-[420px] rounded-xl gap-0 p-0 border shadow-lg flex flex-col max-h-[95dvh] overflow-hidden">
+          <DialogHeader className="p-6 border-b text-left">
+            <DialogTitle className="text-xl font-bold text-foreground">Adjust Schedule</DialogTitle>
+            <DialogDescription className="text-sm font-medium">
+              {selectedDate ? format(selectedDate, 'EEEE, MMMM do') : ''}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="p-8 space-y-8 bg-white">
-            <div className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 transition-colors">
-              <div className="space-y-1">
-                <Label className="text-sm font-bold text-slate-700">Working Day</Label>
-                <p className="text-[10px] text-slate-400 font-medium">
-                  Toggle availability for this date
-                </p>
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/10">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">Working Day</Label>
+                <p className="text-xs text-muted-foreground">Available for bookings on this date</p>
               </div>
-              <Switch
-                checked={isWorkingDay}
-                onCheckedChange={setIsWorkingDay}
-                className="data-[state=checked]:bg-green-500 scale-110"
-              />
+              <Switch checked={isWorkingDay} onCheckedChange={setIsWorkingDay} />
             </div>
 
             {isWorkingDay && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                <div className="flex flex-col gap-3">
-                  <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="flex flex-col gap-4">
+                  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                     Shift Hours
                   </Label>
-                  <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <div className="flex-1 space-y-2">
-                      <Label className="text-[10px] font-bold text-slate-500 ml-1">START</Label>
-                      <div className="relative">
-                        <Icon
-                          icon="solar:clock-circle-linear"
-                          className="absolute left-3 top-2.5 size-4 text-primary/50"
-                        />
-                        <Input
-                          type="time"
-                          value={shifts[0]?.startTime}
-                          onChange={(e) => handleTimeChange(0, 'startTime', e.target.value)}
-                          className="pl-9 h-10 rounded-xl border-none bg-white shadow-sm font-bold text-slate-700 focus-visible:ring-primary/20"
-                        />
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                        Start Time
+                      </Label>
+                      <Input
+                        type="time"
+                        value={shifts[0]?.startTime}
+                        onChange={(e) => handleTimeChange(0, 'startTime', e.target.value)}
+                        className="h-10"
+                      />
                     </div>
-                    <div className="h-10 border-r border-slate-200 mt-5 opacity-50" />
-                    <div className="flex-1 space-y-2">
-                      <Label className="text-[10px] font-bold text-slate-500 ml-1">END</Label>
-                      <div className="relative">
-                        <Icon
-                          icon="solar:clock-circle-linear"
-                          className="absolute left-3 top-2.5 size-4 text-primary/50"
-                        />
-                        <Input
-                          type="time"
-                          value={shifts[0]?.endTime}
-                          onChange={(e) => handleTimeChange(0, 'endTime', e.target.value)}
-                          className="pl-9 h-10 rounded-xl border-none bg-white shadow-sm font-bold text-slate-700 focus-visible:ring-primary/20"
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                        End Time
+                      </Label>
+                      <Input
+                        type="time"
+                        value={shifts[0]?.endTime}
+                        onChange={(e) => handleTimeChange(0, 'endTime', e.target.value)}
+                        className="h-10"
+                      />
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="space-y-3">
-              <Label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest px-1">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 Reason (Optional)
               </Label>
               <Input
-                placeholder="e.g. Special Holiday, Extra Shift"
+                placeholder="Holiday, Extra Shift etc."
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="h-12 rounded-xl border-slate-100 bg-slate-50/50 font-medium placeholder:text-slate-300 focus-visible:ring-primary/10"
+                className="h-10"
               />
             </div>
           </div>
 
-          <DialogFooter className="p-8 bg-slate-50 border-t border-slate-100 gap-3">
+          <DialogFooter className="p-6 border-t gap-3">
             {selectedDate &&
               dailyOverrides.find((o) => isSameDay(new Date(o.date), selectedDate)) && (
                 <Button
@@ -373,15 +343,12 @@ export default function DailyAdjustments({
                     );
                     if (o) handleDelete(o.id);
                   }}
-                  className="rounded-xl h-12 text-red-500 hover:text-red-600 hover:bg-red-50 border-red-100 font-bold px-6 flex-none active:scale-95 transition-all"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/5"
                 >
                   <Icon icon="solar:trash-bin-trash-linear" className="size-5" />
                 </Button>
               )}
-            <Button
-              onClick={handleSave}
-              className="flex-1 rounded-xl h-12 bg-primary hover:bg-primary/95 text-white font-bold shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
-            >
+            <Button onClick={handleSave} className="flex-1">
               Update Schedule
             </Button>
           </DialogFooter>

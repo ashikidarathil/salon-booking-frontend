@@ -39,6 +39,7 @@ import type { BranchServiceItem } from '@/features/branchService/branchService.t
 import Pagination from '@/components/pagination/Pagination';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/branchService/branchService.slice';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ArrowLeft, Scissors } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -48,13 +49,14 @@ export default function BranchServicesPage() {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   const { branches } = useAppSelector((state) => state.branch);
   const branchName = branches.find((b) => b.id === branchId)?.name || 'Branch';
 
   const { services, loading, error, pagination } = useAppSelector((state) => state.branchService);
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterConfigured, setFilterConfigured] = useState<'all' | 'configured' | 'notConfigured'>(
     'all',
@@ -71,13 +73,13 @@ export default function BranchServicesPage() {
           branchId,
           page: currentPage,
           limit: ITEMS_PER_PAGE,
-          search: search || undefined,
+          search: debouncedSearch || undefined,
           configured: filterConfigured === 'all' ? undefined : filterConfigured === 'configured',
           isActive: filterActive === 'all' ? undefined : filterActive === 'active',
         }),
       );
     }
-  }, [branchId, dispatch, currentPage, search, filterConfigured, filterActive]);
+  }, [branchId, dispatch, currentPage, debouncedSearch, filterConfigured, filterActive]);
 
   useEffect(() => {
     loadBranchServices();
@@ -205,7 +207,7 @@ export default function BranchServicesPage() {
               <CardDescription>
                 Update price, duration, and status for services at this branch.
               </CardDescription>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="search-services">Search</Label>
@@ -331,7 +333,10 @@ export default function BranchServicesPage() {
                             Not Configured
                           </Badge>
                         ) : (
-                          <Badge variant={svc.isActive ? 'default' : 'destructive'} className="px-3">
+                          <Badge
+                            variant={svc.isActive ? 'default' : 'destructive'}
+                            className="px-3"
+                          >
                             {svc.isActive ? 'Active' : 'Disabled'}
                           </Badge>
                         )}

@@ -56,6 +56,7 @@ import type { Category } from '@/features/category/category.types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/category/categorySlice';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Edit, Power, Ban, RotateCcw, CheckCircle2, XCircle } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 5;
@@ -72,6 +73,7 @@ export default function CategoriesPage() {
   const { categories, loading, error, pagination } = useAppSelector((state) => state.category);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -91,11 +93,11 @@ export default function CategoriesPage() {
       fetchPaginatedCategories({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
-        search: searchTerm || undefined,
+        search: debouncedSearch || undefined,
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
       }),
     );
-  }, [dispatch, currentPage, searchTerm, statusFilter]);
+  }, [dispatch, currentPage, debouncedSearch, statusFilter]);
 
   useEffect(() => {
     loadCategories();
@@ -236,7 +238,9 @@ export default function CategoriesPage() {
             <DialogHeader>
               <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
               <DialogDescription className="sr-only">
-                {editingCategory ? 'Edit the details of this category' : 'Add a new category to the salon'}
+                {editingCategory
+                  ? 'Edit the details of this category'
+                  : 'Add a new category to the salon'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

@@ -68,7 +68,9 @@ export default function CartPage() {
 
   const fetchStylists = useCallback(async () => {
     try {
-      const promises = items.map((item) => StylistBranchService.getStylistsByService(item.serviceId));
+      const promises = items.map((item) =>
+        StylistBranchService.getStylistsByService(item.serviceId),
+      );
       const results = await Promise.all(promises);
       const newStylistsMap: Record<string, BranchStylist[]> = {};
 

@@ -1,6 +1,6 @@
 export interface Holiday {
   id: string;
-  branchId?: string | null;
+  branchIds: string[];
   branchName?: string;
   date: string;
   name: string;
@@ -10,7 +10,7 @@ export interface Holiday {
 }
 
 export interface CreateHolidayDto {
-  branchId?: string | null;
+  branchIds?: string[];
   date: string;
   name: string;
   isAllBranches: boolean;

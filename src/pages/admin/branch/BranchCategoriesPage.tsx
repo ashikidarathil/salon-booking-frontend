@@ -8,6 +8,7 @@ import {
   fetchBranchCategoriesPaginated,
 } from '@/features/branchCategory/branchCategory.thunks';
 import Pagination from '@/components/pagination/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/branchCategory/branchCategory.slice';
 import {
@@ -45,7 +46,7 @@ export default function BranchCategoriesPage() {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   const { branches } = useAppSelector((state) => state.branch);
   const branchName = branches.find((b) => b.id === branchId)?.name || 'Branch';
 
@@ -54,6 +55,7 @@ export default function BranchCategoriesPage() {
   );
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
 
@@ -64,12 +66,12 @@ export default function BranchCategoriesPage() {
           branchId,
           page: currentPage,
           limit: ITEMS_PER_PAGE,
-          search: search || undefined,
+          search: debouncedSearch || undefined,
           isActive: filterActive === 'all' ? undefined : filterActive === 'active',
         }),
       );
     }
-  }, [branchId, dispatch, currentPage, search, filterActive]);
+  }, [branchId, dispatch, currentPage, debouncedSearch, filterActive]);
 
   useEffect(() => {
     loadBranchCategories();
@@ -145,7 +147,7 @@ export default function BranchCategoriesPage() {
               <CardDescription>
                 Enable or disable categories available at this branch.
               </CardDescription>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
                 <div className="space-y-2">
                   <Label htmlFor="search-categories">Search</Label>

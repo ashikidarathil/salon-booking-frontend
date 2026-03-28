@@ -27,6 +27,7 @@ export interface OffDay {
 }
 
 export interface RequestOffDayDto {
+  stylistId: string;
   startDate: string;
   endDate: string;
   reason: string;

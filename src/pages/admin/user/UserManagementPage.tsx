@@ -27,6 +27,7 @@ import {
 import { clearError } from '@/features/user/userSlice';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { ERROR_MESSAGES } from '@/common/constants/error.messages';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const ADMIN_COLOR = '#10B981';
 
@@ -35,6 +36,7 @@ export default function UserManagementPage() {
   const { users, pagination, loading, error } = useAppSelector((state) => state.user);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 5;
 
@@ -43,12 +45,12 @@ export default function UserManagementPage() {
       fetchUsers({
         page: currentPage,
         limit,
-        search: searchTerm,
+        search: debouncedSearch,
         sortBy: 'createdAt',
         sortOrder: 'desc',
       }),
     );
-  }, [dispatch, currentPage, limit, searchTerm]);
+  }, [dispatch, currentPage, limit, debouncedSearch]);
 
   useEffect(() => {
     loadUsers();

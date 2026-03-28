@@ -29,11 +29,11 @@ export default function WeeklyRoutine({
   const { weeklySchedule, loading } = useAppSelector((state) => state.schedule);
   const [editedSchedule, setEditedSchedule] = useState<Record<number, WeeklySchedule>>({});
   const [fetchedBranchId, setFetchedBranchId] = useState<string | null>(null);
+  const [prevWeeklySchedule, setPrevWeeklySchedule] = useState(weeklySchedule);
 
   const effectiveStylistId = propStylistId || user?.id;
   const effectiveBranchId = propBranchId || user?.branchId || fetchedBranchId;
 
-  // Fetch stylist's branch if not provided and user is a stylist
   useEffect(() => {
     const fetchStylistBranch = async () => {
       if (!propBranchId && !user?.branchId && effectiveStylistId && user?.role === 'STYLIST') {
@@ -59,8 +59,8 @@ export default function WeeklyRoutine({
     }
   }, [dispatch, effectiveStylistId, effectiveBranchId]);
 
-  // Sync Redux schedule to local state for editing
-  useEffect(() => {
+  if (weeklySchedule !== prevWeeklySchedule) {
+    setPrevWeeklySchedule(weeklySchedule);
     if (weeklySchedule.length > 0) {
       const scheduleMap = weeklySchedule.reduce(
         (acc, curr) => {
@@ -71,7 +71,7 @@ export default function WeeklyRoutine({
       );
       setEditedSchedule(scheduleMap);
     }
-  }, [weeklySchedule]);
+  }
 
   const handleToggleWorkDay = async (day: number) => {
     const currentDay = editedSchedule[day] || { dayOfWeek: day, isWorkingDay: false, shifts: [] };

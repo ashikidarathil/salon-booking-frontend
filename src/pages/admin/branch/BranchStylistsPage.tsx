@@ -29,6 +29,7 @@ import {
 import Pagination from '@/components/pagination/Pagination';
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/stylistBranch/stylistBranch.slice';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ArrowLeft, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -38,7 +39,7 @@ export default function BranchStylistsPage() {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   const { branches } = useAppSelector((state) => state.branch);
   const branchName = branches.find((b) => b.id === branchId)?.name || 'Branch';
 
@@ -52,9 +53,11 @@ export default function BranchStylistsPage() {
   } = useAppSelector((state) => state.stylistBranch);
 
   const [searchAssigned, setSearchAssigned] = useState('');
+  const debouncedSearchAssigned = useDebounce(searchAssigned, 500);
   const [currentPageAssigned, setCurrentPageAssigned] = useState(1);
 
   const [searchUnassigned, setSearchUnassigned] = useState('');
+  const debouncedSearchUnassigned = useDebounce(searchUnassigned, 500);
   const [currentPageUnassigned, setCurrentPageUnassigned] = useState(1);
 
   const loadAssignedStylists = useCallback(() => {
@@ -64,11 +67,11 @@ export default function BranchStylistsPage() {
           branchId,
           page: currentPageAssigned,
           limit: ITEMS_PER_PAGE,
-          search: searchAssigned || undefined,
+          search: debouncedSearchAssigned || undefined,
         }),
       );
     }
-  }, [branchId, dispatch, currentPageAssigned, searchAssigned]);
+  }, [branchId, dispatch, currentPageAssigned, debouncedSearchAssigned]);
 
   const loadUnassignedStylists = useCallback(() => {
     if (branchId) {
@@ -77,11 +80,11 @@ export default function BranchStylistsPage() {
           branchId,
           page: currentPageUnassigned,
           limit: ITEMS_PER_PAGE,
-          search: searchUnassigned || undefined,
+          search: debouncedSearchUnassigned || undefined,
         }),
       );
     }
-  }, [branchId, dispatch, currentPageUnassigned, searchUnassigned]);
+  }, [branchId, dispatch, currentPageUnassigned, debouncedSearchUnassigned]);
 
   useEffect(() => {
     loadAssignedStylists();
@@ -173,9 +176,7 @@ export default function BranchStylistsPage() {
                   <Users className="w-5 h-5" />
                   Available Stylists
                 </CardTitle>
-                <CardDescription>
-                  Stylists available to be assigned to this branch
-                </CardDescription>
+                <CardDescription>Stylists available to be assigned to this branch</CardDescription>
               </div>
               <Input
                 placeholder="Search available stylists..."
@@ -243,7 +244,8 @@ export default function BranchStylistsPage() {
                 </div>
               )}
               <div className="mt-4 text-xs text-muted-foreground">
-                Showing {unassignedOptions.length} of {unassignedPagination.totalItems} available stylists
+                Showing {unassignedOptions.length} of {unassignedPagination.totalItems} available
+                stylists
               </div>
             </LoadingGate>
           </CardContent>
@@ -258,9 +260,7 @@ export default function BranchStylistsPage() {
                   <Users className="w-5 h-5 text-primary" />
                   Assigned Stylists
                 </CardTitle>
-                <CardDescription>
-                  Stylists currently working at this branch
-                </CardDescription>
+                <CardDescription>Stylists currently working at this branch</CardDescription>
               </div>
               <Input
                 placeholder="Search assigned stylists..."

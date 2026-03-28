@@ -5,10 +5,7 @@ import { NOTIFICATION_MESSAGES } from '../constants/notification.messages';
 
 export const fetchNotifications = createAsyncThunk(
   'notification/fetchAll',
-  async (
-    params: { isRead?: boolean; limit?: number; skip?: number } = {},
-    { rejectWithValue },
-  ) => {
+  async (params: { isRead?: boolean; limit?: number; skip?: number } = {}, { rejectWithValue }) => {
     try {
       return await notificationService.getMyNotifications(params.isRead, params.limit, params.skip);
     } catch (error: unknown) {

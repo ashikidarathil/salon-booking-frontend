@@ -67,6 +67,7 @@ import {
 
 import { LoadingGate } from '@/components/common/LoadingGate';
 import { clearError } from '@/features/service/service.slice';
+import { useDebounce } from '@/hooks/useDebounce';
 
 import {
   Select,
@@ -95,6 +96,7 @@ export default function ServicesPage() {
   const { categories } = useAppSelector((state) => state.category);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
@@ -145,12 +147,12 @@ export default function ServicesPage() {
       fetchPaginatedServices({
         page: currentPage,
         limit: ITEMS_PER_PAGE,
-        search: searchTerm || undefined,
+        search: debouncedSearch || undefined,
         categoryId: categoryFilter !== 'ALL' ? categoryFilter : undefined,
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
       }),
     );
-  }, [dispatch, currentPage, searchTerm, categoryFilter, statusFilter]);
+  }, [dispatch, currentPage, debouncedSearch, categoryFilter, statusFilter]);
 
   useEffect(() => {
     loadServices();

@@ -4,7 +4,13 @@ import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import 'react-easy-crop/react-easy-crop.css';
@@ -118,7 +124,9 @@ export function ImageCropper({ open, onClose, imageSrc, onCropComplete }: ImageC
       <DialogContent className="theme-admin sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Crop Image</DialogTitle>
-          <DialogDescription className="sr-only">Adjust and crop your profile picture</DialogDescription>
+          <DialogDescription className="sr-only">
+            Adjust and crop your profile picture
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

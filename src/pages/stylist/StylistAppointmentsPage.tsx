@@ -14,6 +14,7 @@ import { showSuccess, showApiError } from '@/common/utils/swal.utils';
 import { BookingStatus, BOOKING_MESSAGES } from '@/features/booking/booking.constants';
 import { fetchStylistRooms, initializeChatRoom } from '@/features/chat/chat.thunks';
 import type { ChatRoom } from '@/features/chat/chat.types';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { RootState } from '@/app/store';
 
 const getStatusColor = (status: BookingStatus) => {
@@ -44,7 +45,7 @@ export default function StylistAppointmentsPage() {
   const [filterMode, setFilterMode] = useState<'today' | 'all'>('today');
   const [customDate, setCustomDate] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
   const limit = 5;
 
@@ -53,14 +54,6 @@ export default function StylistAppointmentsPage() {
   useEffect(() => {
     dispatch(fetchStylistRooms());
   }, [dispatch]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [search]);
 
   const fetchBookings = useCallback(() => {
     let dateToFetch;

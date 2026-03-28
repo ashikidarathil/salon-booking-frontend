@@ -30,6 +30,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import { addToCart, removeFromCart } from '@/features/cart/cart.slice';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function ServicesListingPage() {
   const dispatch = useAppDispatch();
@@ -41,6 +42,7 @@ export default function ServicesListingPage() {
   const { categories } = useAppSelector((state) => state.category);
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -66,12 +68,12 @@ export default function ServicesListingPage() {
           branchId: selectedBranch.id,
           page: currentPage,
           limit: 9,
-          search: search || undefined,
+          search: debouncedSearch || undefined,
           categoryId: selectedCategory || undefined,
         }),
       );
     }
-  }, [dispatch, selectedBranch, search, selectedCategory, currentPage]);
+  }, [dispatch, selectedBranch, debouncedSearch, selectedCategory, currentPage]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -105,20 +107,20 @@ export default function ServicesListingPage() {
                 ? `Available at ${selectedBranch.name}`
                 : 'Discover premium salon services tailored to enhance your style and beauty.'}
             </p>
-            <div className="flex items-center w-full max-w-2xl gap-2 p-2 mx-auto border rounded-full shadow-sm bg-background border-border">
-              <div className="pl-4 text-muted-foreground">
-                <Icon icon="solar:magnifer-linear" className="size-5" />
+            <div className="flex flex-row items-center w-full max-w-2xl gap-1 sm:gap-2 p-1.5 sm:p-2 mx-auto border rounded-full shadow-sm bg-background border-border">
+              <div className="pl-3 sm:pl-4 text-muted-foreground">
+                <Icon icon="solar:magnifer-linear" className="size-4 sm:size-5" />
               </div>
               <input
                 type="text"
                 placeholder="Search services..."
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="flex-1 h-10 text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/70"
+                className="flex-1 h-10 w-full min-w-0 text-xs sm:text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/70"
               />
-              <div className="w-px h-6 mx-2 bg-border" />
+              <div className="w-px h-6 mx-1 sm:mx-2 bg-border shrink-0" />
               <Select value={selectedCategory || 'all'} onValueChange={handleCategoryFilter}>
-                <SelectTrigger className="w-[180px] border-none shadow-none focus:ring-0 bg-transparent h-10 text-muted-foreground font-normal">
+                <SelectTrigger className="w-[130px] sm:w-[180px] px-2 sm:px-3 text-xs sm:text-sm border-none shadow-none focus:ring-0 bg-transparent h-10 text-muted-foreground font-normal shrink-0">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent className="z-[2000] bg-white">
