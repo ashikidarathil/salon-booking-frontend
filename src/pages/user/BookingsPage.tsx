@@ -264,22 +264,27 @@ export default function BookingsPage() {
               className="overflow-hidden transition-all hover:shadow-md border-border/60"
             >
               <div className="flex flex-col md:flex-row">
-                <div className="p-6 flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-mono font-bold bg-muted px-1.5 py-0.5 rounded border text-muted-foreground">
+                <div className="p-4 sm:p-6 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-3">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold bg-muted px-2 py-0.5 rounded border text-muted-foreground w-fit">
                           #{booking.bookingNumber}
                         </span>
-                        <Icon icon="solar:calendar-bold-duotone" className="size-5 text-primary" />
-                        <span className="font-semibold">
+                        <Badge className={`sm:hidden ${getStatusColor(booking.status as BookingStatus)}`}>
+                          {booking.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-start sm:items-center gap-2">
+                        <Icon icon="solar:calendar-bold-duotone" className="size-5 text-primary shrink-0 mt-0.5 sm:mt-0" />
+                        <span className="font-semibold leading-tight text-sm sm:text-base">
                           {booking.date
                             ? format(new Date(booking.date), 'EEEE, MMMM do, yyyy')
                             : 'Date not set'}
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="hidden sm:flex flex-col items-end gap-2">
                       <Badge className={getStatusColor(booking.status as BookingStatus)}>
                         {booking.status}
                       </Badge>
@@ -310,14 +315,12 @@ export default function BookingsPage() {
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 text-sm font-medium pr-2">
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-xs text-muted-foreground font-normal">
-                                {item.date ? format(new Date(item.date), 'dd MMM') : ''} ·{' '}
-                                {item.startTime} – {item.endTime}
-                              </span>
-                              <span>₹{item.price.toLocaleString('en-IN')}</span>
-                            </div>
+                          <div className="flex flex-row sm:flex-col justify-between sm:justify-center items-center sm:items-end gap-1 w-full sm:w-auto mt-1 sm:mt-0 px-1 sm:px-0">
+                            <span className="text-xs text-muted-foreground font-normal">
+                              {item.date ? format(new Date(item.date), 'dd MMM') : ''} ·{' '}
+                              {item.startTime} – {item.endTime}
+                            </span>
+                            <span className="font-bold">₹{item.price.toLocaleString('en-IN')}</span>
                           </div>
                         </div>
                       ))
@@ -337,7 +340,7 @@ export default function BookingsPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                    <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/40">
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                           Payment Status
@@ -386,7 +389,7 @@ export default function BookingsPage() {
                   </div>
                 </div>
 
-                <div className="bg-muted/30 px-6 py-4 md:w-64 border-t md:border-t-0 md:border-l border-border/40 flex flex-col justify-center gap-2">
+                <div className="bg-muted/30 p-4 sm:px-6 sm:py-4 md:w-64 border-t md:border-t-0 md:border-l border-border/40 flex flex-col justify-center gap-2">
                   {booking.status === BookingStatus.PENDING_PAYMENT && (
                     <>
                       {booking.paymentWindowExpiresAt && (

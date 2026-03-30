@@ -189,9 +189,9 @@ export default function ProfileLayout() {
           )}
         </Sidebar>
 
-        <SidebarInset className="bg-background">
-          <header className="flex items-center justify-between h-16 gap-2 px-4 sm:px-6 border-b border-border/50 sticky top-0 bg-background/80 backdrop-blur-md z-10">
-            <div className="flex items-center gap-2">
+        <SidebarInset className="bg-background min-w-0 overflow-hidden">
+          <header className="flex items-center justify-between h-16 gap-2 px-4 sm:px-6 border-b border-border/50 sticky top-0 bg-background/80 backdrop-blur-md z-10 w-full">
+            <div className="flex items-center gap-2 min-w-0">
               <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
                 <SheetTrigger asChild>
                   <SidebarTrigger className="-ml-1" />
@@ -235,7 +235,7 @@ export default function ProfileLayout() {
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto w-full">
             <Outlet />
           </main>
         </SidebarInset>
