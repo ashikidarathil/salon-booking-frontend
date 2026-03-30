@@ -10,6 +10,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
+  SheetClose,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -312,32 +313,51 @@ export function Header() {
               {/* Main Navigation - MIDDLE */}
               <nav className="flex flex-col gap-4">
                 {navItems.map((item) => (
-                  <Link key={item.label} to={item.href} className="text-lg font-medium">
-                    {item.label}
-                  </Link>
+                  <SheetClose key={item.label} asChild>
+                    <Link to={item.href} className="text-lg font-medium">
+                      {item.label}
+                    </Link>
+                  </SheetClose>
                 ))}
               </nav>
 
               {/* Mobile User Actions - BOTTOM */}
-              {isAuthenticated && user && (
+              {isAuthenticated && user ? (
                 <div className="mt-8 pt-6 border-t border-border">
                   <nav className="flex flex-col gap-4">
-                    <Link
-                      to={APP_ROUTES.USER.PROFILE}
-                      className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
-                    >
-                      My Profile
-                    </Link>
-                    <button
-                      onClick={() => {
-                        dispatch(logout());
-                        navigate('/');
-                      }}
-                      className="flex items-center gap-3 text-lg font-medium text-red-600 w-full text-left hover:opacity-80 transition-opacity"
-                    >
-                      Logout
-                    </button>
+                    <SheetClose asChild>
+                      <Link
+                        to={APP_ROUTES.USER.PROFILE}
+                        className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+                      >
+                        My Profile
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <button
+                        onClick={() => {
+                          dispatch(logout());
+                          navigate('/');
+                        }}
+                        className="flex items-center gap-3 text-lg font-medium text-red-600 w-full text-left hover:opacity-80 transition-opacity"
+                      >
+                        Logout
+                      </button>
+                    </SheetClose>
                   </nav>
+                </div>
+              ) : (
+                <div className="mt-8 pt-6 border-t border-border flex flex-col gap-3">
+                  <SheetClose asChild>
+                    <Button variant="outline" className="w-full text-lg h-12" asChild>
+                      <Link to="/login">Login</Link>
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button className="w-full text-lg h-12" asChild>
+                      <Link to="/signup">Signup</Link>
+                    </Button>
+                  </SheetClose>
                 </div>
               )}
             </SheetContent>
