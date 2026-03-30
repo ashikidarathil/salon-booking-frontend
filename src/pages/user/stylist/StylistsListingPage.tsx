@@ -24,6 +24,13 @@ import { Icon } from '@iconify/react';
 import { Header } from '@/components/user/Header';
 import { Footer } from '@/components/user/Footer';
 import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import {
   Select,
   SelectTrigger,
   SelectValue,
@@ -133,39 +140,74 @@ export default function StylistsListingPage() {
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="flex-1 h-10 w-full min-w-0 text-xs sm:text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/70"
               />
-              <div className="w-px h-6 mx-1 sm:mx-2 bg-border shrink-0" />
-              <Select value={positionFilter} onValueChange={setPositionFilter}>
-                <SelectTrigger className="w-[130px] sm:w-[180px] px-2 sm:px-3 text-xs sm:text-sm border-none shadow-none focus:ring-0 bg-transparent h-10 text-muted-foreground font-normal shrink-0">
-                  <SelectValue placeholder="All Positions" />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="all">All Positions</SelectItem>
-                  <SelectItem value="SENIOR">Senior Stylist</SelectItem>
-                  <SelectItem value="JUNIOR">Junior Stylist</SelectItem>
-                  <SelectItem value="TRAINEE">Trainee</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="hidden sm:block w-px h-6 mx-1 sm:mx-2 bg-border shrink-0" />
+              <div className="hidden sm:block">
+                <Select value={positionFilter} onValueChange={setPositionFilter}>
+                  <SelectTrigger className="w-[130px] sm:w-[180px] px-2 sm:px-3 text-xs sm:text-sm border-none shadow-none focus:ring-0 bg-transparent h-10 text-muted-foreground font-normal shrink-0">
+                    <SelectValue placeholder="All Positions" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-[2000]">
+                    <SelectItem value="all">All Positions</SelectItem>
+                    <SelectItem value="SENIOR">Senior Stylist</SelectItem>
+                    <SelectItem value="JUNIOR">Junior Stylist</SelectItem>
+                    <SelectItem value="TRAINEE">Trainee</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="container mx-auto px-4 md:px-6 py-8">
           {/* Category Filter Buttons */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {filterButtons.map((btn) => (
-              <Button
-                key={btn.value}
-                variant={positionFilter === btn.value ? 'secondary' : 'ghost'}
-                className={`rounded-full px-6 transition-all duration-300 ${
-                  positionFilter === btn.value
-                    ? 'bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary border-primary/20 border shadow-none'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                onClick={() => setPositionFilter(btn.value)}
+          <div className="relative w-full max-w-4xl mb-12 mx-auto">
+            <div className="flex items-center gap-3 px-4 pb-2 overflow-x-auto md:hidden scrollbar-hide">
+              {filterButtons.map((btn) => (
+                <Button
+                  key={btn.value}
+                  variant={positionFilter === btn.value ? 'default' : 'ghost'}
+                  className={
+                    positionFilter === btn.value
+                      ? 'rounded-full px-6 shadow-md shadow-primary/20 shrink-0'
+                      : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0'
+                  }
+                  onClick={() => setPositionFilter(btn.value)}
+                >
+                  {btn.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Desktop View: Carousel */}
+            <div className="hidden px-12 md:block">
+              <Carousel
+                opts={{
+                  align: 'start',
+                  dragFree: true,
+                }}
+                className="w-full"
               >
-                {btn.label}
-              </Button>
-            ))}
+                <CarouselContent className="-ml-4">
+                  {filterButtons.map((btn) => (
+                    <CarouselItem key={btn.value} className="pl-4 basis-auto sm:basis-auto">
+                      <Button
+                        variant={positionFilter === btn.value ? 'default' : 'ghost'}
+                        className={
+                          positionFilter === btn.value
+                            ? 'rounded-full px-6 shadow-md shadow-primary/20 shrink-0'
+                            : 'rounded-full px-6 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0'
+                        }
+                        onClick={() => setPositionFilter(btn.value)}
+                      >
+                        {btn.label}
+                      </Button>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="-left-12" />
+                <CarouselNext className="-right-12" />
+              </Carousel>
+            </div>
           </div>
 
           <LoadingGate

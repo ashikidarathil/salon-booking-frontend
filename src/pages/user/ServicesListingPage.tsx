@@ -118,26 +118,28 @@ export default function ServicesListingPage() {
                 onChange={(e) => handleSearch(e.target.value)}
                 className="flex-1 h-10 w-full min-w-0 text-xs sm:text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground/70"
               />
-              <div className="w-px h-6 mx-1 sm:mx-2 bg-border shrink-0" />
-              <Select value={selectedCategory || 'all'} onValueChange={handleCategoryFilter}>
-                <SelectTrigger className="w-[130px] sm:w-[180px] px-2 sm:px-3 text-xs sm:text-sm border-none shadow-none focus:ring-0 bg-transparent h-10 text-muted-foreground font-normal shrink-0">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent className="z-[2000] bg-white">
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories && categories.length > 0 ? (
-                    categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+              <div className="hidden sm:block w-px h-6 mx-1 sm:mx-2 bg-border shrink-0" />
+              <div className="hidden sm:block">
+                <Select value={selectedCategory || 'all'} onValueChange={handleCategoryFilter}>
+                  <SelectTrigger className="w-[130px] sm:w-[180px] px-2 sm:px-3 text-xs sm:text-sm border-none shadow-none focus:ring-0 bg-transparent h-10 text-muted-foreground font-normal shrink-0">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[2000] bg-white">
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories && categories.length > 0 ? (
+                      categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-categories" disabled>
+                        No categories available
                       </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-categories" disabled>
-                      No categories available
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </section>
