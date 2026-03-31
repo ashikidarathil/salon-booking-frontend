@@ -51,6 +51,7 @@ const chatSlice = createSlice({
       action: PayloadAction<{
         roomId: string;
         lastMessage: string;
+        lastMessageType?: string;
         lastMessageAt: string;
         incrementUnread?: boolean;
       }>,
@@ -58,6 +59,7 @@ const chatSlice = createSlice({
       const room = state.rooms.find((r) => r.id === action.payload.roomId);
       if (room) {
         room.lastMessage = action.payload.lastMessage;
+        room.lastMessageType = action.payload.lastMessageType;
         room.lastMessageAt = action.payload.lastMessageAt;
         if (action.payload.incrementUnread) {
           room.unreadCount = (room.unreadCount || 0) + 1;

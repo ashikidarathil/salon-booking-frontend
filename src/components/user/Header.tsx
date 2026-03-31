@@ -33,6 +33,9 @@ import {
 import { fetchPublicBranches } from '@/features/branch/branch.thunks';
 import { APP_ROUTES } from '@/common/constants/app.routes';
 import { NotificationCenter } from '@/features/notification/components/NotificationCenter';
+import { Badge } from '@/components/ui/badge';
+import { fetchTotalUnreadCount } from '@/features/chat/chat.thunks';
+import type { RootState } from '@/app/store';
 
 export function Header() {
   const dispatch = useAppDispatch();
@@ -42,8 +45,15 @@ export function Header() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { selectedBranch, branches } = useAppSelector((state) => state.branch);
   const cartItems = useAppSelector((state) => state.cart.items);
+  const { totalUnreadCount } = useAppSelector((state: RootState) => state.chat);
 
   const [branchPopoverOpen, setBranchPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      dispatch(fetchTotalUnreadCount());
+    }
+  }, [dispatch, isAuthenticated, user]);
 
   useEffect(() => {
     const saved = localStorage.getItem('selectedBranch');
@@ -276,6 +286,27 @@ export function Header() {
             </Button>
           )}
 
+          {/* Chat Icon - only for authenticated users */}
+          {isAuthenticated && user?.role === 'USER' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/chat')}
+              className="relative h-10 w-10 text-muted-foreground hover:text-primary transition-colors"
+              title="Messages"
+            >
+              <Icon icon="solar:chat-round-bold-duotone" className="size-6" />
+              {totalUnreadCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold border-2 border-white"
+                >
+                  {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                </Badge>
+              )}
+            </Button>
+          )}
+
           {isAuthenticated && <NotificationCenter />}
 
           {/* Mobile Menu Trigger */}
@@ -331,6 +362,19 @@ export function Header() {
                         className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
                       >
                         My Profile
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link
+                        to="/chat"
+                        className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
+                      >
+                        Messages
+                        {totalUnreadCount > 0 && (
+                          <span className="ml-1 bg-primary text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                            {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                          </span>
+                        )}
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>

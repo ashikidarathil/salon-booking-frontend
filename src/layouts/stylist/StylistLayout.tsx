@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   SidebarProvider,
   Sidebar,
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Icon } from '@iconify/react';
 import {
   Sheet,
@@ -39,11 +40,9 @@ interface NavItem {
 function StylistSidebarContent({
   onLogout,
   onNavigate,
-  unreadCount = 0,
 }: {
   onLogout: () => void;
   onNavigate: (path: string) => void;
-  unreadCount?: number;
 }) {
   const navItems: NavItem[] = [
     { icon: 'solar:widget-bold', label: 'Dashboard', path: '/stylist' },
@@ -53,7 +52,6 @@ function StylistSidebarContent({
     { icon: 'solar:letter-bold', label: 'Leave Requests', path: '/stylist/off-days' },
     { icon: 'solar:bell-bold', label: 'Notifications', path: '/stylist/notifications' },
     { icon: 'solar:wallet-bold', label: 'My Wallet', path: '/stylist/wallet' },
-    { icon: 'solar:chat-round-bold', label: 'Chat', path: '/stylist/chat' },
     { icon: 'solar:star-bold', label: 'Reviews', path: '/stylist/reviews' },
     { icon: 'solar:user-bold', label: 'Profile', path: '/stylist/profile' },
   ];
@@ -77,16 +75,9 @@ function StylistSidebarContent({
                 onClick={() => onNavigate(item.path)}
                 className="hover:bg-accent/50"
               >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <Icon icon={item.icon} className="size-4" />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.label === 'Chat' && unreadCount > 0 && (
-                    <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Icon icon={item.icon} className="size-4" />
+                  <span>{item.label}</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -110,6 +101,8 @@ function StylistSidebarContent({
 export function StylistLayout() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isChatPage = location.pathname === '/stylist/chat';
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user } = useAppSelector((state) => state.auth);
   const { totalUnreadCount } = useAppSelector((state: RootState) => state.chat);
@@ -138,7 +131,6 @@ export function StylistLayout() {
           <StylistSidebarContent
             onLogout={handleLogout}
             onNavigate={handleNavigate}
-            unreadCount={totalUnreadCount}
           />
         </Sidebar>
 
@@ -160,7 +152,6 @@ export function StylistLayout() {
                     <StylistSidebarContent
                       onLogout={handleLogout}
                       onNavigate={handleNavigate}
-                      unreadCount={totalUnreadCount}
                     />
                   </div>
                 </SheetContent>
@@ -175,6 +166,24 @@ export function StylistLayout() {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Chat icon button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-9 w-9 text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => navigate('/stylist/chat')}
+                title="Messages"
+              >
+                <Icon icon="solar:chat-round-bold-duotone" className="size-6" />
+                {totalUnreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold border-2 border-background"
+                  >
+                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                  </Badge>
+                )}
+              </Button>
               <NotificationCenter />
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium leading-none">{user?.name}</p>
@@ -191,10 +200,18 @@ export function StylistLayout() {
             </div>
           </header>
 
-          <main className="flex-1 overflow-x-hidden p-4 md:p-6 lg:p-8 bg-muted/30">
-            <div className="mx-auto max-w-7xl">
+          <main
+            className={`flex-1 overflow-hidden bg-muted/30 ${
+              isChatPage ? 'p-0' : 'p-4 md:p-6 lg:p-8 overflow-x-hidden'
+            }`}
+          >
+            {isChatPage ? (
               <Outlet />
-            </div>
+            ) : (
+              <div className="mx-auto max-w-7xl">
+                <Outlet />
+              </div>
+            )}
           </main>
         </SidebarInset>
       </div>

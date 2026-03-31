@@ -3,6 +3,7 @@ import { useAppDispatch } from '@/app/hooks';
 import { fetchMe } from '@/features/auth/authThunks';
 import AppRoutes from '@/routes/AppRoutes';
 import { NotificationWrapper } from '@/features/notification/components/NotificationWrapper';
+import { ScrollToTop } from '@/components/common/ScrollToTop';
 
 export default function App() {
   const dispatch = useAppDispatch();
@@ -31,6 +32,7 @@ export default function App() {
 
   return (
     <NotificationWrapper>
+      <ScrollToTop />
       <AppRoutes />
     </NotificationWrapper>
   );

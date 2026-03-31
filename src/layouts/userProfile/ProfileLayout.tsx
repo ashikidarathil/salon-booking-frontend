@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   SidebarProvider,
@@ -18,7 +18,6 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAppSelector, useAppDispatch } from '@/app/hooks';
 import { logout } from '@/features/auth/authThunks';
-import { fetchTotalUnreadCount } from '@/features/chat/chat.thunks';
 
 import {
   Sheet,
@@ -30,8 +29,6 @@ import {
 } from '@/components/ui/sheet';
 
 import type { User } from '@/features/auth/auth.types';
-import { NotificationCenter } from '@/features/notification/components/NotificationCenter';
-import type { RootState } from '@/app/store';
 
 interface MenuItem {
   icon: string;
@@ -45,13 +42,11 @@ function ProfileSidebarContent({
   onLogout,
   onNavigate,
   pathname,
-  unreadCount = 0,
 }: {
   user: User;
   onLogout: () => void;
   onNavigate?: () => void;
   pathname: string;
-  unreadCount?: number;
 }) {
   const role = user?.role || 'USER';
   const isUser = role === 'USER';
@@ -62,11 +57,8 @@ function ProfileSidebarContent({
     ...(isUser
       ? [
           { icon: 'solar:calendar-bold', label: 'My Bookings', path: '/profile/bookings' },
-          { icon: 'solar:chat-round-bold', label: 'Messages', path: '/profile/chat' },
           { icon: 'solar:heart-bold', label: 'Favorites', path: '/profile/favorites' },
           { icon: 'solar:bell-bold', label: 'Notifications', path: '/profile/notifications' },
-          // { icon: 'solar:ticket-bold', label: 'Coupons', path: '/profile/coupons' },
-          // { icon: 'solar:star-bold', label: 'Salon Points', path: 'points' },
           { icon: 'solar:wallet-bold', label: 'My Wallet', path: 'wallet' },
         ]
       : isStylist
@@ -74,11 +66,8 @@ function ProfileSidebarContent({
             { icon: 'solar:calendar-bold', label: 'My Schedule', path: 'schedule' },
             { icon: 'solar:briefcase-bold', label: 'Appointments', path: 'appointments' },
             { icon: 'solar:trending-up-bold', label: 'Earnings', path: 'earnings' },
-            // { icon: 'solar:star-bold', label: 'Reviews', path: '/profile/reviews' },
           ]
         : []),
-    // { icon: 'solar:settings-bold', label: 'Settings', path: '/profile/settings' },
-    // { icon: 'solar:chat-round-dots-bold', label: 'Contact Support', path: '/profile/support' },
   ];
 
   const checkActive = (path: string) => {
@@ -125,11 +114,6 @@ function ProfileSidebarContent({
                       <Icon icon={item.icon} className="size-4" />
                       <span>{item.label}</span>
                     </div>
-                    {item.label === 'Messages' && unreadCount > 0 && (
-                      <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
                   </div>
                 </Link>
               </SidebarMenuButton>
@@ -159,16 +143,9 @@ export default function ProfileLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const { user } = useAppSelector((state) => state.auth);
-  const { totalUnreadCount } = useAppSelector((state: RootState) => state.chat);
 
   const themeClass =
     user?.role === 'STYLIST' ? 'theme-stylist' : user?.role === 'ADMIN' ? 'theme-admin' : '';
-
-  useEffect(() => {
-    if (user) {
-      dispatch(fetchTotalUnreadCount());
-    }
-  }, [dispatch, user]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -184,7 +161,6 @@ export default function ProfileLayout() {
               user={user}
               onLogout={handleLogout}
               pathname={location.pathname}
-              unreadCount={totalUnreadCount}
             />
           )}
         </Sidebar>
@@ -208,7 +184,6 @@ export default function ProfileLayout() {
                         onLogout={handleLogout}
                         onNavigate={() => setIsMobileOpen(false)}
                         pathname={location.pathname}
-                        unreadCount={totalUnreadCount}
                       />
                     )}
                   </div>
@@ -230,9 +205,7 @@ export default function ProfileLayout() {
               </h1>
             </div>
 
-            <div className="flex items-center gap-2">
-              <NotificationCenter />
-            </div>
+
           </header>
 
           <main className="flex-1 overflow-x-hidden overflow-y-auto w-full">

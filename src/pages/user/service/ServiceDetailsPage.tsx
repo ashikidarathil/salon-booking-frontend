@@ -170,19 +170,19 @@ export default function ServiceDetailsPage() {
               </Button>
             </div>
 
-            {/* Service Title */}
             <div className="mb-8">
-              <div className="flex items-center gap-4 mb-2">
-                <h1 className="text-4xl font-bold font-heading">
+              {/* Category badge — full row on mobile, inline on desktop */}
+              <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:gap-4">
+                {currentService?.categoryName && (
+                  <Badge className="self-start px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-accent text-accent-foreground hover:bg-primary/10 hover:text-primary">
+                    {currentService.categoryName}
+                  </Badge>
+                )}
+                <h1 className="text-3xl font-bold sm:text-4xl font-heading">
                   {currentService?.name
                     ? currentService.name.charAt(0).toUpperCase() + currentService.name.slice(1)
                     : ''}
                 </h1>
-                {currentService?.categoryName && (
-                  <Badge className="px-3 py-1 text-xs font-semibold tracking-wider uppercase bg-accent text-accent-foreground hover:bg-primary/10 hover:text-primary">
-                    {currentService?.categoryName}
-                  </Badge>
-                )}
               </div>
               {currentService?.description && (
                 <p className="text-lg text-muted-foreground">
@@ -417,7 +417,7 @@ export default function ServiceDetailsPage() {
                     Complete your look with these complementary services
                   </p>
                 </div>
-                <div className="relative w-full px-12 mx-auto">
+                <div className="relative w-full md:px-12 mx-auto">
                   <Carousel
                     opts={{
                       align: 'start',
@@ -429,7 +429,7 @@ export default function ServiceDetailsPage() {
                       {relatedServices.map((service) => (
                         <CarouselItem
                           key={service.serviceId}
-                          className="pl-4 basis-full sm:basis-1/2 md:basis-1/3"
+                          className="pl-4 basis-4/5 sm:basis-1/2 md:basis-1/3"
                         >
                           <Card className="flex flex-col h-full pt-0 overflow-hidden transition-shadow hover:shadow-md">
                             <div className="relative w-full h-48 bg-muted">

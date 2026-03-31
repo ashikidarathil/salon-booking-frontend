@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import type { ChatRoom } from '../chat.types';
+import { MessageType } from '../chat.types';
 
 interface ChatSidebarProps {
   rooms: ChatRoom[];
@@ -10,6 +11,31 @@ interface ChatSidebarProps {
   onRoomSelect: (roomId: string) => void;
   isStylist: boolean;
   onSearch?: (query: string) => void;
+}
+
+function getMessagePreviewContent(room: ChatRoom) {
+  const type = room.lastMessageType?.toUpperCase();
+
+  if (type === MessageType.IMAGE) {
+    return (
+      <span className="flex items-center gap-1">
+        <Icon icon="solar:gallery-bold" className="size-3 shrink-0 text-muted-foreground" />
+        <span>Photo</span>
+      </span>
+    );
+  }
+
+  if (type === MessageType.VOICE) {
+    const durationMatch = room.lastMessage?.match(/\(([^)]+)\)/);
+    return (
+      <span className="flex items-center gap-1">
+        <Icon icon="solar:microphone-bold" className="size-3 shrink-0 text-muted-foreground" />
+        <span>Voice message{durationMatch ? ` ${durationMatch[0]}` : ''}</span>
+      </span>
+    );
+  }
+
+  return <span>{room.lastMessage || 'Start a conversation'}</span>;
 }
 
 export function ChatSidebar({
@@ -71,20 +97,23 @@ export function ChatSidebar({
             .map((room) => {
               const partner = getPartnerDetails(room);
               const isActive = activeRoomId === room.id;
+              const hasUnread = !isActive && (room.unreadCount ?? 0) > 0;
               const closed = room.status === 'CLOSED';
               const ref = bookingRef(room);
+
               return (
                 <div
                   key={room.id}
                   onClick={() => onRoomSelect(room.id)}
-                  className={`flex items-center gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50 border-b border-border/20 ${
+                  className={`flex items-center gap-3 p-4 cursor-pointer transition-all hover:bg-muted/50 border-b border-border/20 ${
                     isActive
                       ? 'bg-primary/10 border-r-2 border-r-primary'
-                      : room.unreadCount && room.unreadCount > 0
+                      : hasUnread
                         ? 'bg-primary/5'
                         : ''
                   }`}
                 >
+                  {/* Avatar with unread dot */}
                   <div className="relative shrink-0">
                     <Avatar className="size-12 rounded-xl ring-2 ring-primary/10 bg-background">
                       <AvatarImage src={partner.pic} />
@@ -92,21 +121,31 @@ export function ChatSidebar({
                         {partner.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    {room.unreadCount !== undefined && room.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 size-4 bg-primary text-[10px] text-white font-bold rounded-full flex items-center justify-center ring-2 ring-background ring-offset-0 animate-in zoom-in-50 duration-300">
-                        {room.unreadCount > 9 ? '9+' : room.unreadCount}
-                      </span>
-                    )}
                   </div>
+
+                  {/* Room info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-0.5">
-                      <h4 className="font-semibold text-sm truncate pr-2">{partner.name}</h4>
-                      {room.lastMessageAt && (
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {format(new Date(room.lastMessageAt), 'MMM d, h:mm a')}
-                        </span>
-                      )}
+                      <h4
+                        className={`text-sm truncate pr-2 ${
+                          hasUnread ? 'font-bold text-foreground' : 'font-semibold'
+                        }`}
+                      >
+                        {partner.name}
+                      </h4>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {room.lastMessageAt && (
+                          <span
+                            className={`text-[10px] whitespace-nowrap ${
+                              hasUnread ? 'text-primary font-medium' : 'text-muted-foreground'
+                            }`}
+                          >
+                            {format(new Date(room.lastMessageAt), 'MMM d, h:mm a')}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
                     {ref && (
                       <p className="text-[10px] text-muted-foreground font-mono mb-0.5">
                         #{ref}
@@ -117,17 +156,28 @@ export function ChatSidebar({
                         )}
                       </p>
                     )}
-                    <p
-                      className={`text-xs truncate ${
-                        isActive
-                          ? 'text-primary'
-                          : room.unreadCount && room.unreadCount > 0
-                            ? 'text-foreground font-semibold'
-                            : 'text-muted-foreground'
-                      }`}
-                    >
-                      {room.lastMessage || 'Start a conversation'}
-                    </p>
+
+                    {/* Message preview + unread count row */}
+                    <div className="flex items-center justify-between gap-2">
+                      <p
+                        className={`text-xs truncate ${
+                          isActive
+                            ? 'text-primary'
+                            : hasUnread
+                              ? 'text-foreground font-semibold'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        {getMessagePreviewContent(room)}
+                      </p>
+
+                      {/* Unread count badge */}
+                      {hasUnread && (
+                        <span className="shrink-0 min-w-[20px] h-5 bg-primary text-[10px] text-white font-bold rounded-full flex items-center justify-center px-1.5 ring-2 ring-background animate-in zoom-in-50 duration-300">
+                          {(room.unreadCount ?? 0) > 99 ? '99+' : room.unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

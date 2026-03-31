@@ -47,6 +47,7 @@ export const useChat = (userId: string | undefined) => {
         updateRoomLastMessage({
           roomId: message.chatRoomId,
           lastMessage: `${prefix}${preview}`,
+          lastMessageType: message.messageType,
           lastMessageAt: message.createdAt,
           incrementUnread: message.senderId !== userId,
         }),

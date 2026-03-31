@@ -28,6 +28,7 @@ export interface ChatRoom {
   stylistProfilePic?: string;
   status: ChatRoomStatus;
   lastMessage?: string;
+  lastMessageType?: string;
   lastMessageAt?: string;
   updatedAt: string;
   unreadCount?: number;

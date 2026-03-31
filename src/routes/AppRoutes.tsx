@@ -70,6 +70,7 @@ import ContactPage from '@/pages/user/ContactPage';
 import ProfileContent from '@/pages/user/ProfileContent';
 import FavoritesPage from '@/pages/user/FavoritesPage';
 import NotificationsPage from '@/features/notification/pages/NotificationsPage';
+import UserChatPage from '@/pages/user/UserChatPage';
 
 // HOC
 import ProtectedRoute from '@/hoc/ProtectedRoute';
@@ -110,6 +111,7 @@ export default function AppRoutes() {
         <Route path={APP_ROUTES.USER.CHECKOUT} element={<CheckoutPage />} />
         <Route path="/payment/success/:bookingId" element={<PaymentSuccessPage />} />
         <Route path="/payment/failure/:bookingId" element={<PaymentFailurePage />} />
+        <Route path="/chat" element={<UserChatPage />} />
         <Route path={APP_ROUTES.USER.PROFILE} element={<ProfileLayout />}>
           <Route index element={<ProfileContent />} />
           <Route path="favorites" element={<FavoritesPage />} />
@@ -117,7 +119,6 @@ export default function AppRoutes() {
           <Route path="bookings" element={<BookingsPage />} />
           <Route path="bookings/:id" element={<BookingDetailPage />} />
           <Route path="wallet" element={<WalletPage />} />
-          <Route path="chat" element={<ChatPage />} />
         </Route>
       </Route>
 
