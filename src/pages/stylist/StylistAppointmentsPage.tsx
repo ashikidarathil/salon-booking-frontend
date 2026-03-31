@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchStylistBookings, updateBookingStatus } from '@/features/booking/booking.thunks';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -148,7 +148,7 @@ export default function StylistAppointmentsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-border pb-4 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4 w-full">
         <div className="flex gap-2 bg-muted p-1 rounded-lg w-full sm:w-auto">
           <Button
             variant={filterMode === 'today' ? 'default' : 'ghost'}
@@ -212,108 +212,130 @@ export default function StylistAppointmentsPage() {
         backPath="/stylist"
         role="STYLIST"
       >
-        <div className="grid gap-4 ">
+        <div className="grid gap-4">
           {bookingsList.map((booking) => (
             <Card
               key={booking.id}
-              className="overflow-hidden transition-all border-border/60 hover:shadow-md"
+              className="overflow-hidden transition-all hover:shadow-md border-border/60"
             >
-              <CardContent className="p-6 mt-5">
-                <div className="flex flex-col justify-between gap-6 text-left sm:flex-row sm:items-center">
-                  <div className="flex items-start gap-4">
-                    <div className="flex flex-col items-center justify-center size-14 rounded-xl bg-primary/10 shrink-0">
-                      <span className="text-xs font-bold text-primary">
-                        {booking.startTime.slice(0, 5)}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {format(new Date(booking.date), 'dd MMM')}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold bg-muted px-1.5 py-0.5 rounded border text-muted-foreground">
+              <div className="flex flex-col md:flex-row">
+                <div className="p-4 sm:p-6 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-3">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold bg-muted px-2 py-0.5 rounded border text-muted-foreground w-fit">
                           #{booking.bookingNumber}
                         </span>
-                        <p className="font-semibold">
-                          {booking.items
-                            .map((i) => i.serviceName)
-                            .filter(Boolean)
-                            .join(' + ') || 'Appointment'}
-                        </p>
-                        <Badge
-                          className={`text-[10px] h-5 border ${getStatusColor(booking.status)}`}
-                        >
-                          {booking.status === BookingStatus.SPECIAL
-                            ? 'Special'
-                            : booking.status.replace('_', ' ')}
+                        <Badge className={`sm:hidden ${getStatusColor(booking.status)}`}>
+                          {booking.status === BookingStatus.SPECIAL ? 'Special' : booking.status.replace('_', ' ')}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Icon icon="solar:user-rounded-linear" className="size-3" />
-                        {booking.userName || 'Customer'}
-                        <span className="mx-1">·</span>
-                        <Icon icon="solar:clock-circle-linear" className="size-3" />
-                        {booking.startTime} – {booking.endTime}
-                        <span className="mx-1">·</span>
-                        <span className="font-medium text-foreground">
-                          ₹{booking.totalPrice?.toLocaleString('en-IN') ?? '0'}
+                      <div className="flex items-start sm:items-center gap-2">
+                        <Icon icon="solar:calendar-bold-duotone" className="size-5 text-primary shrink-0 mt-0.5 sm:mt-0" />
+                        <span className="font-semibold leading-tight text-sm sm:text-base">
+                          {booking.date
+                            ? format(new Date(booking.date), 'EEEE, MMMM do, yyyy')
+                            : 'Date not set'}
                         </span>
-                      </p>
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex flex-col items-end gap-2">
+                      <Badge className={getStatusColor(booking.status)}>
+                        {booking.status === BookingStatus.SPECIAL ? 'Special' : booking.status.replace('_', ' ')}
+                      </Badge>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-xs"
-                      onClick={() => navigate(`/stylist/appointments/${booking.id}`)}
-                    >
-                      <Icon icon="solar:document-text-linear" className="size-4" />
-                      Details
-                    </Button>
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/40 gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Icon icon="solar:scissors-square-bold-duotone" className="size-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">
+                            {booking.items.map((i) => i.serviceName).filter(Boolean).join(' + ') || 'Appointment'}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Icon icon="solar:user-bold-duotone" className="size-3" />
+                            <span>{booking.userName || 'Customer'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-row sm:flex-col justify-between sm:justify-center items-center sm:items-end gap-1 w-full sm:w-auto mt-1 sm:mt-0 px-1 sm:px-0">
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {format(new Date(booking.date), 'dd MMM')} · {booking.startTime} - {booking.endTime}
+                        </span>
+                        <span className="font-bold">₹{booking.totalPrice?.toLocaleString('en-IN') ?? '0'}</span>
+                      </div>
+                    </div>
 
-                    {(booking.status === BookingStatus.CONFIRMED ||
-                      booking.status === BookingStatus.COMPLETED) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1.5 text-xs text-primary hover:bg-primary/5"
-                        onClick={() => handleOpenChat(booking.id)}
-                      >
-                        <Icon icon="solar:chat-round-bold-duotone" className="size-4" />
-                        Chat
-                      </Button>
-                    )}
-
-                    {booking.status === BookingStatus.CONFIRMED && (
-                      <>
-                        <Button
-                          size="sm"
-                          className="gap-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white"
-                          onClick={() =>
-                            handleStatusUpdate(booking.id, BookingStatus.COMPLETED, 'Completed')
-                          }
-                        >
-                          <Icon icon="solar:check-circle-bold-duotone" className="size-4" />
-                          Complete
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1.5 text-xs text-gray-600"
-                          onClick={() =>
-                            handleStatusUpdate(booking.id, BookingStatus.NO_SHOW, 'No Show')
-                          }
-                        >
-                          <Icon icon="solar:ghost-bold-duotone" className="size-4" />
-                          No Show
-                        </Button>
-                      </>
-                    )}
+                    <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/40">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+                          Booking Status
+                        </p>
+                        <Badge variant="outline" className={`mt-1 text-[10px] h-5 ${getStatusColor(booking.status)}`}>
+                          {booking.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
+                          Total Amount
+                        </p>
+                        <p className="text-xl font-bold text-primary">₹{booking.totalPrice?.toLocaleString('en-IN') ?? '0'}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
+
+                <div className="bg-muted/30 p-4 sm:px-6 sm:py-4 md:w-64 border-t md:border-t-0 md:border-l border-border/40 flex flex-col justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 h-10"
+                    onClick={() => navigate(`/stylist/appointments/${booking.id}`)}
+                  >
+                    <Icon icon="solar:document-text-linear" className="size-4" />
+                    View Details
+                  </Button>
+
+                  {(booking.status === BookingStatus.CONFIRMED ||
+                    booking.status === BookingStatus.COMPLETED) && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2 h-10 text-primary hover:text-primary/90 hover:bg-primary/5 border-primary/10"
+                      onClick={() => handleOpenChat(booking.id)}
+                    >
+                      <Icon icon="solar:chat-round-bold-duotone" className="size-4" />
+                      Chat with Customer
+                    </Button>
+                  )}
+
+                  {booking.status === BookingStatus.CONFIRMED && (
+                    <>
+                      <Button
+                        className="w-full justify-start gap-2 h-10 bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
+                        onClick={() =>
+                          handleStatusUpdate(booking.id, BookingStatus.COMPLETED, 'Completed')
+                        }
+                      >
+                        <Icon icon="solar:check-circle-bold-duotone" className="size-4" />
+                        Mark as Completed
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-2 h-10 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100"
+                        onClick={() =>
+                          handleStatusUpdate(booking.id, BookingStatus.NO_SHOW, 'No Show')
+                        }
+                      >
+                        <Icon icon="solar:ghost-bold-duotone" className="size-4" />
+                        Mark as No Show
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
             </Card>
           ))}
         </div>

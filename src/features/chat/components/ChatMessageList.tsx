@@ -11,6 +11,7 @@ interface ChatMessageListProps {
   isLoading: boolean;
   isClosed: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  onImageLoad?: () => void;
 }
 
 export function ChatMessageList({
@@ -20,6 +21,7 @@ export function ChatMessageList({
   isLoading,
   isClosed,
   messagesEndRef,
+  onImageLoad,
 }: ChatMessageListProps) {
   if (isLoading) {
     return (
@@ -104,9 +106,11 @@ export function ChatMessageList({
                           alt="Chat attachment"
                           className="max-sm:max-w-48 max-w-sm rounded-lg object-contain bg-muted/20"
                           loading="lazy"
+                          onLoad={onImageLoad}
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
                               'https://placehold.co/400x300?text=Image+Not+Found';
+                            onImageLoad?.();
                           }}
                         />
                       </a>

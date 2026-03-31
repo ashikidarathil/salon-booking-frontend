@@ -59,7 +59,6 @@ export default function ChatPage() {
     }
   }, [dispatch, isStylist, isUser, debouncedQuery]);
 
-  // Handle room state on selection
   useEffect(() => {
     if (activeRoomId) {
       dispatch(fetchRoomMessages({ roomId: activeRoomId }));
@@ -74,6 +73,36 @@ export default function ChatPage() {
   useEffect(() => {
     if (activeRoomId && isConnected) joinRoom(activeRoomId);
   }, [activeRoomId, isConnected, joinRoom]);
+
+  const prevMsgCount = useRef(0);
+  const prevRoomId = useRef<string | null>(null);
+
+  // Scroll logic with mobile-safe timing
+  useEffect(() => {
+    if (!activeRoomId || isLoadingMessages) return;
+
+    const hasRoomChanged = activeRoomId !== prevRoomId.current;
+    const hasNewMessages = currentMessages.length > prevMsgCount.current;
+
+    const performScroll = (behavior: ScrollBehavior) => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+      }
+    };
+
+    if (hasRoomChanged) {
+      // Instant jump on room change
+      performScroll('auto');
+      // Extra safety for mobile browsers where layout may shift
+      setTimeout(() => performScroll('auto'), 100);
+      prevRoomId.current = activeRoomId;
+    } else if (hasNewMessages) {
+      // Smooth scroll for new messages
+      performScroll('smooth');
+    }
+
+    prevMsgCount.current = currentMessages.length;
+  }, [currentMessages, activeRoomId, isLoadingMessages]);
 
   const handleSendMessage = useCallback(
     (payload: SendMessagePayload) => {
@@ -189,6 +218,9 @@ export default function ChatPage() {
               isLoading={isLoadingMessages}
               isClosed={isClosed}
               messagesEndRef={messagesEndRef}
+              onImageLoad={() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }}
             />
 
             {!isClosed && (

@@ -146,7 +146,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="p-3 md:p-4 bg-background/80 backdrop-blur border-t border-border/50 sticky bottom-0 shrink-0 w-full max-sm:pb-6">
+    <div className="p-3 md:p-4 bg-background/95 backdrop-blur-md border-t border-border/50 sticky bottom-0 shrink-0 w-full pb-safe-offset-2 shadow-[0_-8px_30px_rgb(0,0,0,0.04)] z-20">
       <div className="flex items-end gap-2 max-w-4xl mx-auto w-full">
         <input
           type="file"

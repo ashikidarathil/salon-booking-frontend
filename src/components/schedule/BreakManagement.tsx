@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { showSuccess, showError, showLoading, showConfirm } from '@/common/utils/swal.utils';
@@ -118,156 +117,186 @@ export default function BreakManagement({
 
   return (
     <div className="space-y-6">
-      <Card className="border-none shadow-sm">
-        <CardHeader className="pb-6 border-b">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <Card className="border-border/40 shadow-sm overflow-hidden rounded-3xl">
+        <CardHeader className="pb-6 bg-muted/30 border-b border-border/40">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
+              <CardTitle className="text-xl font-semibold flex items-center gap-2.5 text-foreground">
+                <div className="size-10 rounded-2xl bg-primary/5 flex items-center justify-center">
+                  <Icon icon="solar:tea-cup-bold-duotone" className="size-6 text-primary/80" />
+                </div>
                 Break Management
               </CardTitle>
-              <CardDescription className="text-sm">
-                Schedule personal time or lunch breaks.
+              <CardDescription className="text-sm font-medium text-muted-foreground/50 mt-1 ml-12">
+                Schedule personal time or lunch breaks to block your calendar.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsDialogOpen(true)} className="flex items-center gap-2">
-              <Icon icon="solar:add-circle-linear" className="size-5" />
+            <Button onClick={() => setIsDialogOpen(true)} className="h-10 px-6 rounded-2xl bg-primary text-white font-semibold text-xs shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 transition-all active:scale-95">
+              <Icon icon="solar:add-circle-bold-duotone" className="size-4 mr-2" />
               Schedule Break
             </Button>
           </div>
         </CardHeader>
+
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {upcomingBreaks.length > 0 ? (
+              upcomingBreaks.map((item) => (
+                <div
+                  key={item.id}
+                  className="group relative flex flex-col p-6 rounded-3xl border border-border/40 bg-background transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                     <div className="size-12 rounded-2xl bg-muted/20 flex flex-col items-center justify-center border border-border/5">
+                        <span className="text-[10px] font-bold text-primary/70 uppercase leading-none">{item.date ? format(new Date(item.date), 'MMM') : ''}</span>
+                        <span className="text-sm font-bold text-foreground">{item.date ? format(new Date(item.date), 'dd') : ''}</span>
+                     </div>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteBreak(item.id)}
+                        className="size-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Icon icon="solar:trash-bin-trash-bold-duotone" className="size-4" />
+                      </Button>
+                  </div>
+
+                  <div className="space-y-1 mb-4">
+                     <h4 className="text-base font-bold text-foreground tracking-tight">
+                        {item.date ? format(new Date(item.date), 'EEEE, MMMM do') : '—'}
+                     </h4>
+                     <p className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider leading-none">
+                        Scheduled Break
+                     </p>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                     <div className="flex items-center gap-3 p-3 rounded-2xl bg-primary/[0.02] border border-primary/5">
+                        <Icon icon="solar:clock-circle-bold-duotone" className="size-5 text-primary/80" />
+                        <span className="text-sm font-bold text-primary/80 tracking-tight">
+                          {item.startTime} - {item.endTime}
+                        </span>
+                     </div>
+
+                     {item.description && (
+                        <div className="flex items-center gap-2 px-3 py-1">
+                           <div className="size-1.5 rounded-full bg-primary/40 shrink-0" />
+                           <p className="text-xs text-muted-foreground font-semibold italic truncate">
+                              {item.description}
+                           </p>
+                        </div>
+                     )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-6 bg-muted/10 rounded-[3rem] border border-dashed border-border/40">
+                <div className="size-24 rounded-[2.5rem] bg-background shadow-xl flex items-center justify-center text-muted-foreground/10 border border-border/5">
+                  <Icon icon="solar:tea-cup-bold-duotone" className="size-12" />
+                </div>
+                <div className="space-y-2 max-w-sm px-6">
+                  <h3 className="text-xl font-bold text-foreground tracking-tight">Fully Available</h3>
+                  <p className="text-sm text-muted-foreground/50 font-medium">
+                    You haven't scheduled any breaks yet. Your calendar is wide open for bookings!
+                  </p>
+                </div>
+                <Button variant="outline" onClick={() => setIsDialogOpen(true)} className="rounded-2xl font-semibold text-xs h-10 px-6">
+                  Quick Schedule
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {upcomingBreaks.length > 0 ? (
-          upcomingBreaks.map((item) => (
-            <Card
-              key={item.id}
-              className="group border shadow-sm rounded-xl overflow-hidden bg-background"
-            >
-              <CardContent className="p-0">
-                <div className="p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                        {item.date && isValid(new Date(item.date))
-                          ? format(new Date(item.date), 'EEEE')
-                          : '—'}
-                      </p>
-                      <h4 className="text-sm font-bold text-slate-800">
-                        {item.date && isValid(new Date(item.date))
-                          ? format(new Date(item.date), 'MMMM do, yyyy')
-                          : '—'}
-                      </h4>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteBreak(item.id)}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
-                    >
-                      <Icon icon="solar:trash-bin-trash-linear" className="size-4" />
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg border border-border">
-                    <Icon icon="solar:clock-circle-bold" className="size-5 text-primary" />
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold">
-                        {item.startTime} - {item.endTime}
-                      </span>
-                    </div>
-                  </div>
-
-                  {item.description && (
-                    <p className="text-xs text-muted-foreground font-medium italic">
-                      {item.description}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
-            <div className="size-20 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-200">
-              <Icon icon="solar:tea-cup-bold-duotone" className="size-10" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-400">No breaks scheduled</h3>
-              <p className="text-sm text-slate-400/60 font-medium">
-                Your upcoming schedule is fully open.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="theme-stylist w-[calc(100%-2rem)] sm:max-w-[420px] rounded-xl gap-0 p-0 border shadow-lg flex flex-col max-h-[95dvh] overflow-hidden">
-          <DialogHeader className="p-6 border-b text-left">
-            <DialogTitle className="text-xl font-bold text-foreground">Schedule Break</DialogTitle>
-            <DialogDescription className="text-sm font-medium">
-              Block your calendar for personal time
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[440px] rounded-3xl gap-0 p-0 border-none shadow-2xl overflow-hidden theme-stylist">
+          <div className="bg-primary/5 p-8 border-b border-primary/10">
+             <DialogHeader className="p-0 text-left">
+                <DialogTitle className="text-2xl font-bold text-primary tracking-tight">Schedule Break</DialogTitle>
+                <DialogDescription className="text-sm font-medium text-primary/40">
+                  Block your calendar for personal time
+                </DialogDescription>
+              </DialogHeader>
+          </div>
 
-          <div className="p-6 space-y-6">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                Date
-              </Label>
+          <div className="p-8 space-y-8 bg-background">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 pl-1">
+                 <div className="size-6 rounded-lg bg-primary/5 flex items-center justify-center">
+                    <Icon icon="solar:calendar-bold-duotone" className="size-4 text-primary/70" />
+                 </div>
+                 <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    Target Date
+                 </Label>
+              </div>
               <Input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 min={format(new Date(), 'yyyy-MM-dd')}
-                className="h-10"
+                className="h-12 rounded-2xl border-border/40 bg-muted/5 px-4 font-semibold text-sm focus-visible:ring-primary/10"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                  From
-                </Label>
-                <Input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="h-10"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                  To
-                </Label>
-                <Input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="h-10"
-                />
-              </div>
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 mb-1">
+                   <div className="size-6 rounded-lg bg-primary/5 flex items-center justify-center">
+                      <Icon icon="solar:clock-circle-bold-duotone" className="size-4 text-primary/70" />
+                   </div>
+                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Break Interval
+                   </Label>
+                </div>
+                <div className="grid grid-cols-2 gap-6 p-4 rounded-2xl border border-border/20 bg-muted/5">
+                  <div className="space-y-2">
+                    <Label className="text-[9px] font-semibold text-muted-foreground/30 uppercase tracking-wider pl-1">
+                      Start Time
+                    </Label>
+                    <Input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="h-11 rounded-xl border-none bg-background shadow-inner font-semibold text-sm focus-visible:ring-primary/10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[9px] font-semibold text-muted-foreground/30 uppercase tracking-wider pl-1">
+                      End Time
+                    </Label>
+                    <Input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="h-11 rounded-xl border-none bg-background shadow-inner font-semibold text-sm focus-visible:ring-primary/10"
+                    />
+                  </div>
+                </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                Reason / Note
-              </Label>
-              <Input
-                placeholder="Lunch, Break etc."
+            <div className="space-y-3">
+               <div className="flex items-center gap-2 pl-1">
+                 <div className="size-6 rounded-lg bg-primary/5 flex items-center justify-center">
+                    <Icon icon="solar:notes-bold-duotone" className="size-4 text-primary/70" />
+                 </div>
+                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                   Reason / Note
+                 </Label>
+               </div>
+               <Input
+                placeholder="e.g. Lunch, Doctor Visit, Team Meeting"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="h-10"
+                className="h-12 rounded-2xl border-border/40 bg-muted/5 px-4 font-semibold text-sm focus-visible:ring-primary/10"
               />
             </div>
           </div>
 
-          <DialogFooter className="p-6 border-t">
-            <Button onClick={handleCreateBreak} disabled={loading} className="flex-1">
-              Add Break
+          <div className="p-8 pt-4 bg-background">
+            <Button onClick={handleCreateBreak} disabled={loading} className="w-full h-14 rounded-2xl text-base font-bold shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20 transition-all active:scale-95">
+               Confirm Break Schedule
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

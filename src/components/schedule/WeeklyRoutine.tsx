@@ -156,137 +156,136 @@ export default function WeeklyRoutine({
 
   return (
     <div className="space-y-6">
-      <Card className="border-none shadow-lg overflow-hidden">
-        <CardHeader className="pb-6 bg-primary/5 border-b">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <Card className="border-border/40 shadow-sm overflow-hidden rounded-3xl">
+        <CardHeader className="pb-6 bg-muted/30 border-b border-border/40">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-xl font-semibold flex items-center gap-2 text-primary tracking-tight">
-                <Icon icon="solar:calendar-linear" className="size-7" />
+              <CardTitle className="text-xl font-semibold flex items-center gap-2.5 text-foreground">
+                <div className="size-10 rounded-2xl bg-primary/5 flex items-center justify-center">
+                  <Icon icon="solar:calendar-bold-duotone" className="size-6 text-primary/80" />
+                </div>
                 Weekly Routine
               </CardTitle>
-              <CardDescription className="text-xs font-medium opacity-60">
-                Define your standard working hours for each day of the week.
+              <CardDescription className="text-sm font-medium text-muted-foreground/50 mt-1 md:ml-12">
+                Define your default working hours for each day of the week.
               </CardDescription>
             </div>
-            <div className="hidden md:block">
-              <Badge
-                variant="outline"
-                className="h-7 px-3 rounded-full border-primary/20 text-primary font-medium text-[9px] tracking-wide"
-              >
-                RECURRING SCHEDULE
-              </Badge>
-            </div>
+            <Badge variant="secondary" className="rounded-xl px-4 py-1 text-[10px] font-semibold uppercase tracking-wider bg-primary/5 text-primary/70 border-primary/10">
+              Recurring Schedule
+            </Badge>
           </div>
         </CardHeader>
-      </Card>
 
-      <div className="grid grid-cols-1 gap-4">
-        {DAYS.map((dayName, index) => {
-          const schedule = editedSchedule[index] || {
-            dayOfWeek: index,
-            isWorkingDay: false,
-            shifts: [],
-          };
-          const shift = schedule.shifts?.[0] || { startTime: '09:00', endTime: '18:00' };
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/30">
+            {DAYS.map((dayName, index) => {
+              const schedule = editedSchedule[index] || {
+                dayOfWeek: index,
+                isWorkingDay: false,
+                shifts: [],
+              };
+              const shift = schedule.shifts?.[0] || { startTime: '09:00', endTime: '18:00' };
 
-          return (
-            <Card
-              key={dayName}
-              className={cn(
-                'overflow-hidden border border-slate-100 shadow-sm transition-all duration-300 rounded-2xl',
-                schedule.isWorkingDay ? 'bg-white' : 'bg-muted/30 opacity-80',
-              )}
-            >
-              <CardContent className="p-5 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div className="flex items-center gap-5 min-w-[180px]">
-                    <Switch
-                      checked={schedule.isWorkingDay}
-                      onCheckedChange={() => handleToggleWorkDay(index)}
-                      className="data-[state=checked]:bg-green-500 scale-110"
-                    />
-                    <div className="flex flex-col">
-                      <span
+              return (
+                <div
+                  key={dayName}
+                  className={cn(
+                    'group transition-colors duration-200',
+                    schedule.isWorkingDay ? 'bg-background' : 'bg-muted/10 opacity-70'
+                  )}
+                >
+                  <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div className="flex items-center gap-6 sm:w-64">
+                      <div className="relative">
+                        <Switch
+                          checked={schedule.isWorkingDay}
+                          onCheckedChange={() => handleToggleWorkDay(index)}
+                          className="data-[state=checked]:bg-green-500"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className={cn(
+                          'text-lg font-semibold tracking-tight',
+                          !schedule.isWorkingDay ? 'text-muted-foreground' : 'text-foreground'
+                        )}>
+                          {dayName}
+                        </span>
+                        <span className={cn(
+                          'text-[10px] font-semibold uppercase tracking-wider',
+                          schedule.isWorkingDay ? 'text-green-600' : 'text-muted-foreground/60'
+                        )}>
+                          {schedule.isWorkingDay ? 'Working' : 'Not Working'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex items-center justify-center sm:justify-start">
+                      {schedule.isWorkingDay ? (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 bg-muted/30 p-3 sm:p-2 sm:px-4 rounded-2xl border border-border/20 shadow-sm transition-all hover:bg-muted/50 w-full sm:w-auto">
+                          <div className="flex items-center gap-2 justify-between sm:justify-start">
+                             <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-lg bg-background flex items-center justify-center shadow-sm border border-border/10">
+                                  <Icon icon="solar:clock-circle-bold-duotone" className="size-4 text-primary" />
+                                </div>
+                                <span className="text-[10px] sm:hidden font-bold text-muted-foreground/40 uppercase">From</span>
+                             </div>
+                             <Input
+                                type="time"
+                                value={shift.startTime}
+                                onChange={(e) => handleTimeChange(index, 'startTime', e.target.value)}
+                                className="w-24 sm:w-28 h-9 border-none bg-transparent focus-visible:ring-0 text-sm font-semibold p-0 text-right sm:text-left"
+                             />
+                          </div>
+                          
+                          <div className="hidden sm:block size-1 rounded-full bg-border" />
+
+                          <div className="flex items-center gap-2 justify-between sm:justify-start">
+                             <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-lg bg-background flex items-center justify-center shadow-sm border border-border/10">
+                                  <Icon icon="solar:clock-circle-bold-duotone" className="size-4 text-primary" />
+                                </div>
+                                <span className="text-[10px] sm:hidden font-bold text-muted-foreground/40 uppercase">To</span>
+                             </div>
+                             <Input
+                                type="time"
+                                value={shift.endTime}
+                                onChange={(e) => handleTimeChange(index, 'endTime', e.target.value)}
+                                className="w-24 sm:w-28 h-9 border-none bg-transparent focus-visible:ring-0 text-sm font-semibold p-0 text-right sm:text-left"
+                             />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 py-3 text-muted-foreground/30">
+                          <Icon icon="solar:sleeping-bold-duotone" className="size-5" />
+                          <span className="text-xs font-semibold uppercase tracking-wider">Off Duty</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant={schedule.isWorkingDay ? 'default' : 'ghost'}
                         className={cn(
-                          'text-base font-semibold tracking-tight leading-none',
-                          !schedule.isWorkingDay ? 'text-muted-foreground' : 'text-slate-800',
+                          'rounded-xl text-xs font-semibold h-10 px-6 transition-all duration-300',
+                          schedule.isWorkingDay 
+                            ? 'bg-primary text-white shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5' 
+                            : 'opacity-0 pointer-events-none group-hover:opacity-10'
                         )}
+                        onClick={() => handleSave(index)}
+                        disabled={loading || !schedule.isWorkingDay}
                       >
-                        {dayName}
-                      </span>
-                      <span className="text-[9px] font-medium text-muted-foreground mt-1">
-                        {schedule.isWorkingDay ? 'Working' : 'Not Working'}
-                      </span>
+                        <Icon icon="solar:diskette-bold-duotone" className="size-4 mr-2" />
+                        Save
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="flex-1 flex items-center justify-center">
-                    {schedule.isWorkingDay ? (
-                      <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                        <div className="relative">
-                          <Icon
-                            icon="solar:clock-circle-linear"
-                            className="absolute left-3 top-2.5 size-4 text-muted-foreground"
-                          />
-                          <Input
-                            type="time"
-                            value={shift.startTime}
-                            onChange={(e) => handleTimeChange(index, 'startTime', e.target.value)}
-                            className="pl-9 w-32 h-9 rounded-xl font-medium border-muted/50 focus:ring-primary/20 bg-muted/10 text-sm"
-                          />
-                        </div>
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase">
-                          To
-                        </span>
-                        <div className="relative">
-                          <Icon
-                            icon="solar:clock-circle-linear"
-                            className="absolute left-3 top-2.5 size-4 text-muted-foreground"
-                          />
-                          <Input
-                            type="time"
-                            value={shift.endTime}
-                            onChange={(e) => handleTimeChange(index, 'endTime', e.target.value)}
-                            className="pl-9 w-32 h-9 rounded-xl font-medium border-muted/50 focus:ring-primary/20 bg-muted/10 text-sm"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3 text-muted-foreground/40 italic">
-                        <Icon icon="solar:sleeping-bold" className="size-5" />
-                        <span className="text-sm font-medium uppercase tracking-widest">
-                          Taking a break
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end sm:min-w-[100px]">
-                    <Button
-                      size="sm"
-                      variant={schedule.isWorkingDay ? 'default' : 'outline'}
-                      className={cn(
-                        'rounded-xl font-medium text-xs h-9 px-4 transition-all active:scale-95 group',
-                        schedule.isWorkingDay
-                          ? 'shadow-sm active:shadow-none'
-                          : 'opacity-30 pointer-events-none',
-                      )}
-                      onClick={() => handleSave(index)}
-                      disabled={loading || !schedule.isWorkingDay}
-                    >
-                      <Icon
-                        icon="solar:diskette-linear"
-                        className="size-4 mr-2 group-hover:scale-110 transition-transform"
-                      />
-                      Save Hours
-                    </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

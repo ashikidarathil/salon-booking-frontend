@@ -61,7 +61,7 @@ export default function BookingsPage() {
       try {
         const action = await dispatch(initializeChatRoom(bookingId)).unwrap();
         room = action;
-        showSuccess('Room Ready', 'Chat room initialized successfully.');
+        // showSuccess('Room Ready', 'Chat room initialized successfully.');
       } catch {
         showApiError('Chat room not ready yet.', 'Please try again later.');
         return;
@@ -69,7 +69,7 @@ export default function BookingsPage() {
     }
 
     if (room && room.id) {
-      navigate(`/profile/chat?roomId=${room.id}`);
+      navigate(`/chat?roomId=${room.id}`);
     } else {
       showApiError('Chat room not ready yet.', 'Please try again later.');
     }

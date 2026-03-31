@@ -7,7 +7,7 @@ export const BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string) ?? 'http://localhost:5001/api';
 export const SOCKET_BASE_URL = 
   (import.meta.env.VITE_SOCKET_URL as string) ?? BASE_URL.replace('/api', '');
-  
+
 export const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
@@ -21,9 +21,7 @@ api.interceptors.request.use((config) => {
   if (role) {
     config.headers['X-Auth-Role'] = role;
   } else {
-    // If no role in session, we assume USER but don't force it in the header
-    // to allow the backend to fall back to default or public routes.
-    // Except for explicit private routes where we might want to default.
+
     config.headers['X-Auth-Role'] = 'USER';
   }
   return config;

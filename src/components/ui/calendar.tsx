@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 
 import { cn } from '@/lib/utils';
@@ -20,11 +19,11 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         nav: 'flex items-center',
         button_previous: cn(
           buttonVariants({ variant: 'outline' }),
-          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1 z-10',
+          'h-8 w-8 bg-transparent p-0 hover:bg-accent hover:text-accent-foreground absolute left-1 z-20 flex items-center justify-center border-border/40',
         ),
         button_next: cn(
           buttonVariants({ variant: 'outline' }),
-          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1 z-10',
+          'h-8 w-8 bg-transparent p-0 hover:bg-accent hover:text-accent-foreground absolute right-1 z-20 flex items-center justify-center border-border/40',
         ),
         month_grid: 'w-full border-collapse',
         weekdays: 'flex w-full justify-between',
@@ -43,14 +42,44 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         disabled: 'text-muted-foreground opacity-50',
         range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
         hidden: 'invisible',
+        chevron: 'inline-block fill-primary text-primary h-5 w-5',
         ...classNames,
       }}
       components={{
+        PreviousMonthButton: ({ className, ...props }) => (
+          <button
+            {...props}
+            type="button"
+            className={cn(
+              buttonVariants({ variant: 'ghost' }),
+              'h-8 w-8 p-0 absolute left-1 z-20 flex items-center justify-center transition-opacity hover:opacity-70',
+              className,
+            )}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+        ),
+        NextMonthButton: ({ className, ...props }) => (
+          <button
+            {...props}
+            type="button"
+            className={cn(
+              buttonVariants({ variant: 'ghost' }),
+              'h-8 w-8 p-0 absolute right-1 z-20 flex items-center justify-center transition-opacity hover:opacity-70',
+              className,
+            )}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        ),
         Chevron: ({ orientation }) => {
-          if (orientation === 'left') return <ChevronLeft className="h-4 w-4" />;
-          if (orientation === 'right') return <ChevronRight className="h-4 w-4" />;
-          return <></>;
-        },
+          const isLeft = orientation === 'left';
+          return (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <path d={isLeft ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
+            </svg>
+          );
+        }
       }}
       {...props}
     />
