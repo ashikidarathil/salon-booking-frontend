@@ -32,6 +32,7 @@ import { Footer } from '@/components/user/Footer';
 export default function ContactPage() {
   const dispatch = useAppDispatch();
   const { loading, error } = useAppSelector((state) => state.auth);
+  const { selectedBranch } = useAppSelector((state) => state.branch);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({
     email: '',
@@ -136,21 +137,67 @@ export default function ContactPage() {
                 Contact Information
               </h2>
               <div className="space-y-4">
-                <Card>
-                  <CardContent className="flex items-start gap-4 pt-6">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <Icon icon="solar:map-point-bold" className="size-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="mb-1 font-semibold">Visit Us</h3>
-                      <p className="text-sm text-muted-foreground">
-                        123 Salon Street, Beauty District
-                      </p>
-                      <p className="text-sm text-muted-foreground">New York, NY 10001</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                {/* Other contact cards... */}
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
+                  <Card className="overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
+                    <CardContent className="flex items-start gap-4 pt-6">
+                      <div className="p-3 rounded-xl bg-primary/10">
+                        <Icon icon="solar:map-point-bold" className="size-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="mb-1 text-lg font-semibold">Visit Us</h3>
+                        {selectedBranch ? (
+                          <div className="space-y-3">
+                            <div>
+                              <p className="font-medium text-foreground">{selectedBranch.name}</p>
+                              <p className="text-sm text-muted-foreground">{selectedBranch.address}</p>
+                            </div>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              className="w-full h-9 group"
+                              onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedBranch.latitude},${selectedBranch.longitude}`, '_blank')}
+                            >
+                              Get Directions
+                              <Icon icon="solar:arrow-right-up-bold" className="ml-2 transition-transform size-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            Please select a branch to see our location and get directions.
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
+                    <CardContent className="flex items-start gap-4 pt-6">
+                      <div className="p-3 rounded-xl bg-primary/10">
+                        <Icon icon="solar:phone-bold" className="size-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="mb-1 text-lg font-semibold">Call Us</h3>
+                        {selectedBranch?.phone ? (
+                          <>
+                            <p className="font-medium text-foreground">{selectedBranch.phone}</p>
+                            <p className="text-sm text-muted-foreground">Mon - Sun, 9am - 9pm</p>
+                            <a 
+                              href={`tel:${selectedBranch.phone}`}
+                              className="inline-block mt-1 text-sm font-medium text-primary hover:underline"
+                            >
+                              Call now
+                            </a>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-medium text-foreground">+91 98765 43210</p>
+                            <p className="text-sm text-muted-foreground">General support line</p>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
 
